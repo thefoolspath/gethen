@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft
+Decision recorded for alpha planning.
 
 ## Question
 
@@ -26,13 +26,15 @@ Adapter complexity, lifecycle cleanup, SSR import safety, peer dependencies, use
 
 No adapter prototype exists. Required:
 
-- core demo without framework.
-- React mount/unmount/Strict Mode test.
+- framework-neutral core mount path.
 - Angular lifecycle test before promising same-alpha support.
+- React mount/unmount/Strict Mode test before adding React as a follow-up adapter.
 
 ## Analysis
 
-Business logic belongs in framework-neutral core. React is likely the smaller first adapter because a thin wrapper around imperative core can be tested quickly and React package setup is common for grid demos. Angular should remain on the roadmap but conditional for alpha.
+Business logic belongs in framework-neutral core. React is likely the smaller adapter because a thin wrapper around imperative core can be tested quickly and React package setup is common for grid demos. However, maintainer priority on 2026-08-07 selected Angular as the first adapter path.
+
+Angular-first increases lifecycle, packaging, and test setup risk for the alpha foundation, so the core must remain framework-neutral and the Angular package must stay a thin wrapper.
 
 ## Options
 
@@ -44,15 +46,16 @@ Business logic belongs in framework-neutral core. React is likely the smaller fi
 
 ## Recommendation
 
-Build framework-neutral core and demo first, then React adapter. Treat Angular as conditional for alpha or first follow-up.
+Proceed with Angular as the first framework adapter because maintainer priority explicitly selected it. Keep React deferred until after the first complete Angular-backed vertical slice or until adapter bandwidth is reassessed.
 
 ## Limitations
 
-No maintainer preference or user demand data has been collected.
+Maintainer preference has been collected. User demand data has not been collected.
 
 ## Open Questions
 
-- Is Angular strategically more important because of future ASP.NET/Core enterprise users?
+- What minimum Angular version should be supported for alpha?
+- Should the alpha demo use standalone Angular components only?
 
 ## References
 

@@ -8,10 +8,10 @@ Status: Proposed. No packages currently exist.
 
 | Package | Proposed responsibility | Alpha status |
 | --- | --- | --- |
-| `@thefoolspath/gethen-protocol` | Shared protocol schemas and generated TypeScript types | Proposed |
-| `@thefoolspath/gethen-core` | Framework-neutral grid controller, state, DataSource, renderer and engine contracts | Proposed |
-| `@thefoolspath/gethen-react` | Thin React adapter | Proposed |
-| `@thefoolspath/gethen-angular` | Thin Angular adapter | Conditional |
+| `@thefoolspath/gethen-protocol` | Shared protocol schemas and generated/inferred TypeScript types | Initial skeleton |
+| `@thefoolspath/gethen-core` | Framework-neutral grid controller, state, DataSource, renderer and engine contracts | Initial skeleton |
+| `@thefoolspath/gethen-react` | Thin React adapter | Deferred |
+| `@thefoolspath/gethen-angular` | Thin Angular adapter | Selected first adapter; initial skeleton |
 | `@thefoolspath/gethen-wasm` | Optional Worker/WASM adapter | Conditional |
 
 ## Proposed Rust Crates

@@ -1,0 +1,22 @@
+{
+  "name": "gethen",
+  "version": "0.0.0-alpha.0",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@11.16.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm -r --if-present check",
+    "test": "vitest run --passWithNoTests",
+    "test:browser": "node scripts/run-browser-tests.mjs",
+    "bench": "pnpm build && node benchmarks/run-benchmarks.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "ajv": "^8.20.0",
+    "json-schema-to-ts": "^3.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

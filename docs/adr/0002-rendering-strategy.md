@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted for alpha
 
 ## Context
 
@@ -10,7 +10,7 @@ Gethen needs virtualized rendering, keyboard navigation, editing, and accessibil
 
 ## Decision
 
-Select the alpha renderer through a prototype gate. The current recommendation is virtualized DOM first unless Canvas demonstrates material benefit for the alpha performance budget.
+Use virtualized DOM as the alpha renderer. Keep Canvas 2D deferred unless later browser trace evidence shows virtualized DOM cannot meet the alpha budget.
 
 ## Alternatives Considered
 
@@ -22,29 +22,30 @@ Select the alpha renderer through a prototype gate. The current recommendation i
 ## Supporting Evidence
 
 - [../research/RENDERER_EVALUATION.md](../research/RENDERER_EVALUATION.md)
+- [../research/findings/2026-08-07-renderer-prototype-comparison.md](../research/findings/2026-08-07-renderer-prototype-comparison.md)
 - [../architecture/ACCESSIBILITY_AND_SECURITY.md](../architecture/ACCESSIBILITY_AND_SECURITY.md)
 
 ## Consequences
 
 ### Positive
 
-Avoids premature Canvas commitment.
+Keeps the alpha renderer accessible and easier to integrate with keyboard navigation and editing.
 
 ### Negative
 
-Requires prototype work before locking renderer APIs.
+May need revisit if browser trace evidence later shows DOM cannot meet scroll or memory budgets.
 
 ### Neutral
 
-Renderer contract should remain internal during alpha.
+Renderer contract should remain internal during alpha. Canvas remains a deferred option.
 
 ## Uncertainties
 
-Whether virtualized DOM meets the alpha visible-cell budget.
+Exact cross-browser scroll-frame behavior still needs trace measurement.
 
 ## Revisit Conditions
 
-Revisit after DOM and Canvas prototype measurements and accessibility smoke tests.
+Revisit after browser trace measurements, accessibility smoke tests, or evidence that visible-cell density exceeds the DOM budget.
 
 ## Related Documents
 

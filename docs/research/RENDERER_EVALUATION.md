@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft
+Initial alpha direction selected.
 
 ## Question
 
@@ -24,16 +24,19 @@ Performance, accessibility, text rendering, editing complexity, sticky UI, varia
 
 ## Experiments And Benchmarks
 
-No renderer prototype exists yet. Required experiments:
+Initial virtualized DOM prototype scaffold exists at `../../apps/renderer-prototype/`. Initial Canvas 2D prototype scaffold exists at `../../apps/renderer-canvas-prototype/`. Manual benchmark notes exist at `../../benchmarks/renderer-prototype/` and `../../benchmarks/renderer-canvas-prototype/`.
 
-- virtualized DOM prototype for fixed row height and 100 visible columns.
-- Canvas 2D prototype for same viewport.
-- keyboard navigation and edit overlay test.
+Preliminary measured comparison: `findings/2026-08-07-renderer-prototype-comparison.md`.
+
+Required experiments still outstanding:
+
+- browser trace frame timing for the selected renderer.
+- edit overlay test.
 - screen-reader smoke test for active cell semantics.
 
 ## Analysis
 
-Virtualized DOM is likely the smallest accessible alpha renderer because native semantics and editor integration are simpler. Canvas may provide benefits at wider or denser viewports, but it makes accessibility, text measurement, selection, browser zoom, sticky rows/columns, and testing harder.
+Virtualized DOM is the smallest credible alpha renderer because native semantics and editor integration are simpler, and the initial Canvas comparison did not show a material performance advantage. Canvas may still provide benefits at wider or denser viewports, but it makes accessibility, text measurement, selection, browser zoom, sticky rows/columns, and testing harder.
 
 ## Options
 
@@ -44,11 +47,11 @@ Virtualized DOM is likely the smallest accessible alpha renderer because native 
 
 ## Recommendation
 
-Do not accept Canvas yet. Build the smallest alpha renderer as a research-gated decision. The default recommendation is virtualized DOM first unless a Canvas prototype shows meaningful benefit for the alpha dataset budget.
+Use virtualized DOM for the alpha renderer slice. Do not accept Canvas for alpha unless later browser trace evidence shows DOM cannot meet the budget.
 
 ## Limitations
 
-No local benchmark exists. This recommendation has medium confidence only.
+The current result is based on a single local Chromium run and prototype counters, so confidence is still limited.
 
 ## Open Questions
 

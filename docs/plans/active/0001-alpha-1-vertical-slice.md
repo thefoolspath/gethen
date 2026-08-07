@@ -17,8 +17,8 @@ Deliver the smallest credible `0.0.0-alpha.1`: a developer can define columns, p
 | Web Worker | Conditional | Add if compute or render work creates UI long tasks |
 | Canvas | Conditional | Compare against virtualized DOM before accepting |
 | Columnar data | Conditional | Add where benchmarked conversion improves target operations |
-| Angular adapter | Conditional | Include only if core API is stable enough |
-| React adapter | Recommended first adapter | Confirm with maintainer priority |
+| Angular adapter | Selected first adapter | Include only after framework-neutral core API is stable enough |
+| React adapter | Deferred first follow-up candidate | Add after Angular-backed alpha path or when adapter bandwidth allows |
 | Server-side DataSource | Conditional | Include if vertical slice remains complete and testable |
 | Full protocol scope | Not required | Keep only alpha operations |
 | Formula engine | Deferred | Beyond alpha |
@@ -53,12 +53,12 @@ Current documentation restructure.
 ### Tasks
 
 - [x] Open the pre-alpha research gate and record decision readiness.
-- [ ] Prototype virtualized DOM renderer.
-- [ ] Prototype Canvas renderer only enough to compare.
-- [ ] Benchmark TypeScript reference operations.
-- [ ] Benchmark representative Rust native operations.
-- [ ] Decide first adapter.
-- [ ] Validate dependency license candidates.
+- [x] Prototype virtualized DOM renderer.
+- [x] Prototype Canvas renderer only enough to compare.
+- [x] Benchmark TypeScript reference operations.
+- [x] Benchmark representative Rust native operations.
+- [x] Decide first adapter.
+- [x] Validate dependency license candidates.
 
 ### Expected Files And Packages
 
@@ -71,11 +71,11 @@ Current documentation restructure.
 
 ### Tests
 
-Prototype smoke tests.
+Prototype smoke tests. Current syntax smoke checks: `node --check apps/renderer-prototype/prototype.js`; `node --check apps/renderer-canvas-prototype/prototype.js`; `node --check benchmarks/typescript-reference/reference-operations.mjs`. Rust benchmark checks: `cargo check --manifest-path crates/gethen-engine/Cargo.toml`; `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`.
 
 ### Performance Checks
 
-Renderer and compute baseline measurements.
+Renderer and compute baseline measurements. Current renderer prototype measurement notes are scaffolded but no benchmark result is accepted yet. Preliminary TypeScript-compatible reference operation benchmark result is recorded but is not accepted architecture evidence by itself.
 
 ### Risks
 
@@ -95,13 +95,13 @@ Update research notes, ADRs, and performance budget.
 
 ### Completion Evidence
 
-Record benchmark report and commands after completion.
+Virtualized DOM prototype scaffold: `apps/renderer-prototype/`. Canvas prototype scaffold: `apps/renderer-canvas-prototype/`. Manual benchmark notes: `benchmarks/renderer-prototype/` and `benchmarks/renderer-canvas-prototype/`. Preliminary TypeScript reference benchmark: `benchmarks/typescript-reference/` and `docs/research/findings/2026-08-07-typescript-reference-operations.md`. Preliminary Rust native GNU benchmark: `crates/gethen-engine/` and `docs/research/findings/2026-08-07-rust-native-operations-gnu.md`. Default MSVC release execution is blocked by missing `msvcrt.lib`, recorded in `docs/research/findings/2026-08-07-rust-native-benchmark-blocked.md`. First adapter decision: Angular first by maintainer priority on 2026-08-07. Dependency license candidate review: `docs/research/DEPENDENCY_LICENSE_EVALUATION.md`. Renderer benchmark report and repeat compute runs still required before related decisions can be accepted.
 
 ## Milestone 1 - Repository And Quality Foundation
 
 ### Status
 
-Not started
+Initial foundation complete.
 
 ### Goal
 
@@ -122,13 +122,13 @@ Milestone 0 decisions that affect tooling.
 
 ### Tasks
 
-- [ ] Initialize Git repository if appropriate.
-- [ ] Add package manager workspace.
-- [ ] Add TypeScript configuration.
-- [ ] Add unit test tooling.
-- [ ] Add browser test tooling.
-- [ ] Add benchmark harness.
-- [ ] Add CI after commands are verified locally.
+- [x] Initialize Git repository if appropriate.
+- [x] Add package manager workspace.
+- [x] Add TypeScript configuration.
+- [x] Add unit test tooling.
+- [x] Add browser test tooling.
+- [x] Add benchmark harness.
+- [x] Add CI after commands are verified locally.
 
 ### Expected Files And Packages
 
@@ -136,15 +136,15 @@ Root config, `packages/`, `apps/`, `tests/`, `benchmarks/`.
 
 ### Acceptance Criteria
 
-- [ ] Install/build/test commands are documented and pass.
+- [x] Install/build/test commands are documented and pass.
 
 ### Tests
 
-Initial smoke tests.
+Initial smoke tests through Vitest and Playwright.
 
 ### Performance Checks
 
-Benchmark harness dry run.
+Benchmark harness dry run through `pnpm bench`.
 
 ### Risks
 
@@ -160,17 +160,17 @@ Release automation.
 
 ### Documentation Updates
 
-Update `AGENTS.md` verified commands.
+Updated `AGENTS.md` verified commands.
 
 ### Completion Evidence
 
-Record command output.
+Verified commands: `pnpm install`, `pnpm run check`, `pnpm run build`, `pnpm run test`, `pnpm exec playwright install chromium`, `pnpm run test:browser`, and `pnpm run bench`. CI scaffold: `.github/workflows/ci.yml`.
 
 ## Milestone 2 - Protocol And Public TypeScript Contracts
 
 ### Status
 
-Not started
+Initial contracts complete.
 
 ### Goal
 
@@ -191,9 +191,9 @@ Milestone 1.
 
 ### Tasks
 
-- [ ] Define minimal TypeScript public types.
-- [ ] Define JSON Schema for server-facing request/response if server mode remains in alpha.
-- [ ] Add contract tests.
+- [x] Define minimal TypeScript public types.
+- [x] Define JSON Schema for server-facing request/response if server mode remains in alpha.
+- [x] Add contract tests.
 
 ### Expected Files And Packages
 
@@ -201,16 +201,16 @@ Milestone 1.
 
 ### Acceptance Criteria
 
-- [ ] Types compile.
-- [ ] Schema examples validate.
+- [x] Types compile.
+- [x] Schema examples validate.
 
 ### Tests
 
-Type and contract tests.
+Type and contract tests through `pnpm check` and `pnpm test`.
 
 ### Performance Checks
 
-Request payload size sanity.
+Request payload size sanity remains informal; schema enforces a maximum `rowCount` of `1000`.
 
 ### Risks
 
@@ -226,17 +226,17 @@ Formula, pivot, grouping, aggregation protocol.
 
 ### Documentation Updates
 
-Update protocol architecture and ADR status if accepted.
+Updated protocol architecture. ADR remains Proposed because future generation and cross-language validation are not complete.
 
 ### Completion Evidence
 
-Record test output.
+Verified commands: `pnpm run check`, `pnpm run build`, and `pnpm run test`. Contract tests validate `GetRowsRequest`, `GetRowsResult`, `CellUpdateRequest`, `UpdateCellsResult`, and `ProtocolError`.
 
 ## Milestone 3 - Minimal TypeScript Reference Engine
 
 ### Status
 
-Not started
+Initial reference engine complete.
 
 ### Goal
 
@@ -256,11 +256,11 @@ Milestone 2.
 
 ### Tasks
 
-- [ ] Implement row access.
-- [ ] Implement cell lookup.
-- [ ] Implement selection state.
-- [ ] Implement edit state.
-- [ ] Implement update application.
+- [x] Implement row access.
+- [x] Implement cell lookup.
+- [x] Implement selection state.
+- [x] Implement edit state.
+- [x] Implement update application.
 - [ ] Add sort/filter only if retained in alpha scope.
 
 ### Expected Files And Packages
@@ -269,15 +269,15 @@ Milestone 2.
 
 ### Acceptance Criteria
 
-- [ ] Engine behavior is deterministic and tested.
+- [x] Engine behavior is deterministic and tested.
 
 ### Tests
 
-Unit tests and property-style cases where useful.
+Unit tests cover row/cell access, selection, edit commit/cancel, stale update rejection, and duplicate row identity rejection.
 
 ### Performance Checks
 
-Reference baseline benchmark.
+Reference baseline benchmark through `benchmarks/typescript-reference/core-engine-operations.mjs`.
 
 ### Risks
 
@@ -293,17 +293,17 @@ Rust/WASM integration.
 
 ### Documentation Updates
 
-Update data model if ownership changes.
+No data ownership change from the proposed data model. Reference engine owns a copied row set and preserves stable row IDs.
 
 ### Completion Evidence
 
-Record test and benchmark output.
+Verified commands: `pnpm run check`, `pnpm run test`, and `pnpm run bench`.
 
 ## Milestone 4 - Rust Native Compute Benchmark
 
 ### Status
 
-Conditional
+Initial research benchmark complete.
 
 ### Goal
 
@@ -324,8 +324,8 @@ Milestone 3 baseline.
 
 ### Tasks
 
-- [ ] Implement representative Rust operations only.
-- [ ] Compare to TypeScript baseline.
+- [x] Implement representative Rust operations only.
+- [x] Compare to TypeScript baseline.
 
 ### Expected Files And Packages
 
@@ -333,7 +333,7 @@ Milestone 3 baseline.
 
 ### Acceptance Criteria
 
-- [ ] Benchmark report justifies accept/defer decision.
+- [x] Benchmark report justifies accept/defer decision.
 
 ### Tests
 
@@ -341,7 +341,7 @@ Rust unit tests and parity fixtures.
 
 ### Performance Checks
 
-Native Rust versus TypeScript baseline.
+Native Rust versus TypeScript baseline. Result: Rust remains research-only; production WASM/Worker is deferred until end-to-end boundary costs are measured.
 
 ### Risks
 
@@ -357,17 +357,17 @@ Public Rust API.
 
 ### Documentation Updates
 
-Update ADR-0001 and ADR-0003.
+Updated ADR-0001 and ADR-0003 for alpha.
 
 ### Completion Evidence
 
-Record benchmark report.
+Preliminary reports: `docs/research/findings/2026-08-07-typescript-reference-operations.md` and `docs/research/findings/2026-08-07-rust-native-operations-gnu.md`.
 
 ## Milestone 5 - WASM And Worker Integration
 
 ### Status
 
-Conditional
+Deferred for alpha.
 
 ### Goal
 
@@ -391,7 +391,7 @@ Milestone 4.
 - [ ] Define internal Worker message contract.
 - [ ] Implement load/query/update/range calls.
 - [ ] Implement cancellation and worker failure recovery.
-- [ ] Keep TypeScript fallback.
+- [x] Keep TypeScript fallback.
 
 ### Expected Files And Packages
 
@@ -424,17 +424,17 @@ SharedArrayBuffer and Arrow.
 
 ### Documentation Updates
 
-Update ADR status and performance budget.
+Updated ADR status to defer production Worker/WASM for alpha.
 
 ### Completion Evidence
 
-Record benchmark and test output.
+Deferred because no end-to-end Worker/WASM evidence justifies production integration yet.
 
 ## Milestone 6 - Virtual Viewport And Renderer Slice
 
 ### Status
 
-Not started
+Initial renderer slice complete.
 
 ### Goal
 
@@ -455,11 +455,11 @@ Milestone 0 renderer gate and Milestone 3 reference engine.
 
 ### Tasks
 
-- [ ] Implement viewport calculation.
-- [ ] Implement overscan.
-- [ ] Implement scroll synchronization.
-- [ ] Implement resize handling.
-- [ ] Add render performance instrumentation.
+- [x] Implement viewport calculation.
+- [x] Implement overscan.
+- [x] Implement scroll synchronization.
+- [x] Implement resize handling.
+- [x] Add render performance instrumentation.
 
 ### Expected Files And Packages
 
@@ -467,8 +467,8 @@ Milestone 0 renderer gate and Milestone 3 reference engine.
 
 ### Acceptance Criteria
 
-- [ ] No DOM element is created per dataset cell.
-- [ ] Scrolling keeps row identity stable.
+- [x] No DOM element is created per dataset cell.
+- [x] Scrolling keeps row identity stable.
 
 ### Tests
 
@@ -496,13 +496,13 @@ Update renderer research with results.
 
 ### Completion Evidence
 
-Record browser test and benchmark output.
+Verified commands: `pnpm run check`, `pnpm run build`, `pnpm run test`, `pnpm run test:browser`, and `pnpm run bench`.
 
 ## Milestone 7 - Selection And Keyboard Navigation
 
 ### Status
 
-Not started
+Initial navigation complete.
 
 ### Goal
 
@@ -522,11 +522,11 @@ Milestone 6.
 
 ### Tasks
 
-- [ ] Implement focus model.
-- [ ] Implement click selection.
-- [ ] Implement arrow navigation.
-- [ ] Implement Home and End.
-- [ ] Scroll active cell into view.
+- [x] Implement focus model.
+- [x] Implement click selection.
+- [x] Implement arrow navigation.
+- [x] Implement Home and End.
+- [x] Scroll active cell into view.
 
 ### Expected Files And Packages
 
@@ -534,8 +534,8 @@ Milestone 6.
 
 ### Acceptance Criteria
 
-- [ ] Keyboard-only cell navigation works.
-- [ ] Active cell is announced or represented in the accessibility layer.
+- [x] Keyboard-only cell navigation works.
+- [x] Active cell is announced or represented in the accessibility layer.
 
 ### Tests
 
@@ -563,13 +563,13 @@ Update accessibility notes.
 
 ### Completion Evidence
 
-Record browser test output.
+Verified command: `pnpm test:browser`.
 
 ## Milestone 8 - Cell Editing
 
 ### Status
 
-Not started
+Initial editing complete.
 
 ### Goal
 
@@ -589,11 +589,11 @@ Milestone 7.
 
 ### Tasks
 
-- [ ] Implement edit activation.
-- [ ] Implement text and number editors.
-- [ ] Implement boolean toggle.
-- [ ] Implement commit/cancel events.
-- [ ] Restore focus after editing.
+- [x] Implement edit activation.
+- [x] Implement text and number editors.
+- [x] Implement boolean toggle.
+- [x] Implement commit/cancel events.
+- [x] Restore focus after editing.
 
 ### Expected Files And Packages
 
@@ -601,8 +601,8 @@ Milestone 7.
 
 ### Acceptance Criteria
 
-- [ ] Readonly cells do not commit.
-- [ ] Change events include row ID, column ID, old value, and new value.
+- [x] Readonly cells do not commit.
+- [x] Change events include row ID, column ID, old value, and new value.
 
 ### Tests
 
@@ -630,13 +630,13 @@ Update public API docs when created.
 
 ### Completion Evidence
 
-Record test output.
+Verified command: `pnpm test:browser`.
 
 ## Milestone 9 - Client-Side DataSource
 
 ### Status
 
-Not started
+Initial client DataSource complete.
 
 ### Goal
 
@@ -657,9 +657,9 @@ Milestone 3 and Milestone 8.
 
 ### Tasks
 
-- [ ] Implement row-key extraction.
-- [ ] Implement range retrieval.
-- [ ] Implement cell updates.
+- [x] Implement row-key extraction.
+- [x] Implement range retrieval.
+- [x] Implement cell updates.
 - [ ] Add optional sort/filter only if retained in alpha.
 
 ### Expected Files And Packages
@@ -668,8 +668,8 @@ Milestone 3 and Milestone 8.
 
 ### Acceptance Criteria
 
-- [ ] Row IDs remain stable.
-- [ ] Updates are reflected in visible cells.
+- [x] Row IDs remain stable.
+- [x] Updates are reflected in later ranges.
 
 ### Tests
 
@@ -697,13 +697,13 @@ Update DataSource architecture.
 
 ### Completion Evidence
 
-Record test and benchmark output.
+Verified commands: `pnpm run check` and `pnpm run test`.
 
 ## Milestone 10 - Server-Side DataSource
 
 ### Status
 
-Conditional
+Deferred for alpha.
 
 ### Goal
 
@@ -770,7 +770,7 @@ Record test output.
 
 ### Status
 
-Not started
+Initial Angular adapter complete.
 
 ### Goal
 
@@ -790,28 +790,28 @@ Milestones 6-9.
 
 ### Tasks
 
-- [ ] Confirm first adapter choice.
-- [ ] Implement typed wrapper.
-- [ ] Map options and events.
-- [ ] Clean up lifecycle resources.
-- [ ] Add example app.
+- [x] Confirm first adapter choice.
+- [x] Implement typed wrapper.
+- [x] Map options and events.
+- [x] Clean up lifecycle resources.
+- [x] Add example app.
 
 ### Expected Files And Packages
 
-`packages/gethen-react` or framework-neutral demo package.
+`packages/gethen-angular` and framework-neutral core demo package.
 
 ### Acceptance Criteria
 
-- [ ] Example runs.
-- [ ] Adapter does not duplicate core business logic.
+- [x] Example runs.
+- [x] Adapter does not duplicate core business logic.
 
 ### Tests
 
-Mount/unmount and SSR import tests.
+SSR/import test for Angular wrapper; browser demo tests for the framework-neutral core renderer path.
 
 ### Performance Checks
 
-No duplicate controller or leaked listeners.
+Angular wrapper destroys and remounts the core renderer during lifecycle changes.
 
 ### Risks
 
@@ -827,11 +827,11 @@ Second adapter.
 
 ### Documentation Updates
 
-Update package boundaries.
+Updated package boundaries.
 
 ### Completion Evidence
 
-Record build and test output.
+Verified commands: `pnpm run check`, `pnpm run build`, and `pnpm run test`.
 
 ## Milestone 12 - Second Framework Adapter
 

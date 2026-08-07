@@ -48,7 +48,22 @@ Gethen is a proposed MIT-licensed, Excel-like data-grid ecosystem. The repositor
 
 ## Verified Commands
 
-No build, test, lint, benchmark, or package commands are currently verified because the repository has no package manager, Cargo workspace, source code, or CI configuration yet.
+- `node --check apps/renderer-prototype/prototype.js`
+- `node --check apps/renderer-canvas-prototype/prototype.js`
+- `node --check benchmarks/typescript-reference/reference-operations.mjs`
+- `node benchmarks/typescript-reference/reference-operations.mjs`
+- `pnpm install`
+- `pnpm run check`
+- `pnpm run build`
+- `pnpm run test`
+- `pnpm exec playwright install chromium`
+- `pnpm run test:browser`
+- `pnpm run bench`
+- `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
+- `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`
+- `cargo +stable-x86_64-pc-windows-gnu run --manifest-path crates/gethen-engine/Cargo.toml --release`
+
+No lint, package publish, or Cargo workspace commands are currently verified. `cargo run --manifest-path crates/gethen-engine/Cargo.toml --release` with the default MSVC toolchain currently fails during linking because `msvcrt.lib` is missing from the local MSVC linker environment.
 
 ## Dependency And Security Constraints
 

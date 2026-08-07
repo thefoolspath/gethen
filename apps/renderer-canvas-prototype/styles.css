@@ -1,0 +1,133 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  --border: #c8d0d9;
+  --panel: #f6f7f9;
+  --text: #1d2630;
+  --muted: #5e6a75;
+  --accent: #176b87;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: #ffffff;
+}
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.toolbar {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+  min-width: 500px;
+}
+
+.stats div {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.stats dt {
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.stats dd {
+  margin: 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gridFrame {
+  min-height: 0;
+  padding: 16px;
+}
+
+.grid {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 116px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  outline: none;
+  background: #ffffff;
+}
+
+.grid:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(23, 107, 135, 0.18);
+}
+
+.spacer {
+  position: absolute;
+  inset: 0 auto auto 0;
+}
+
+.canvas {
+  position: sticky;
+  top: 0;
+  left: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stats {
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid {
+    height: calc(100vh - 220px);
+  }
+}

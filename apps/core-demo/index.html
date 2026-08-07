@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gethen Core Demo</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="toolbar">
+        <div>
+          <h1>Gethen Core Demo</h1>
+          <p>Framework-neutral virtualized DOM grid mounted from the built core package.</p>
+        </div>
+        <dl class="stats" aria-label="Renderer statistics">
+          <div><dt>Rendered cells</dt><dd id="renderedCells">0</dd></div>
+          <div><dt>Render time</dt><dd id="renderTime">0 ms</dd></div>
+          <div><dt>Active cell</dt><dd id="activeCell">row-1 / c0</dd></div>
+          <div><dt>Last change</dt><dd id="lastChange">none</dd></div>
+        </dl>
+      </header>
+      <section id="gridHost" class="gridHost" aria-label="Gethen core demo grid"></section>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

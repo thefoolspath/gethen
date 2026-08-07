@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft
+Initial alpha decision recorded.
 
 ## Question
 
@@ -28,9 +28,9 @@ Algorithm speed, UI-thread responsiveness, startup cost, transfer/serialization 
 
 Required before acceptance:
 
-- TypeScript main-thread baseline.
+- TypeScript main-thread baseline. Preliminary single-run Node result exists at `findings/2026-08-07-typescript-reference-operations.md`.
 - TypeScript Worker baseline.
-- Rust native benchmark.
+- Rust native benchmark. Preliminary GNU-target result exists at `findings/2026-08-07-rust-native-operations-gnu.md`; default MSVC release execution is currently blocked by local linker error `LNK1104: cannot open file 'msvcrt.lib'`.
 - Rust/WASM main-thread benchmark.
 - Rust/WASM Worker benchmark.
 - Separate measurement of startup, transfer, serialization, algorithm time, and retained memory.
@@ -38,6 +38,8 @@ Required before acceptance:
 ## Analysis
 
 Workers are valuable for avoiding UI long tasks even if algorithm time is similar. Rust/WASM is only valuable if it beats TypeScript after boundary costs and does not create unacceptable maintenance or package burden.
+
+The preliminary native Rust benchmark is much faster for the representative numeric operations, but it does not include WASM startup, transfer, serialization, browser execution, fallback behavior, or package cost. Therefore it is not sufficient to add production Rust/WASM or Worker integration to the alpha path.
 
 ## Options
 
@@ -48,11 +50,11 @@ Workers are valuable for avoiding UI long tasks even if algorithm time is simila
 
 ## Recommendation
 
-Implement TypeScript reference engine first. Add Rust native benchmark next. Integrate WASM/Worker only if representative operations show material improvement after transfer and startup costs.
+Use TypeScript reference compute for alpha. Keep Rust native benchmark code as research evidence. Defer production WASM and Worker integration until end-to-end measurements show material improvement after transfer and startup costs.
 
 ## Limitations
 
-No local benchmark exists yet.
+No accepted local benchmark exists yet. Preliminary TypeScript-compatible and Rust GNU native benchmark results exist, while default MSVC Rust release execution is currently blocked by local linker setup.
 
 ## Open Questions
 

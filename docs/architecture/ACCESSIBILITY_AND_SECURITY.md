@@ -2,6 +2,8 @@
 
 Last reviewed: 2026-08-04.
 
+Initial alpha note: the virtualized DOM renderer represents the active cell with `aria-activedescendant`, cell `aria-selected`, and row/column indexes. Full screen-reader validation remains required before release confidence.
+
 Status: Proposed.
 
 ## Accessibility

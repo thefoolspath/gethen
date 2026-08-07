@@ -44,23 +44,23 @@ This gate does not cover production grid implementation, package publishing, ser
 
 | Decision | Current state | Required evidence before acceptance | Gate result |
 | --- | --- | --- | --- |
-| Renderer strategy | Proposed; virtualized DOM is the default recommendation | DOM and Canvas prototype comparison, keyboard/edit smoke test, accessibility smoke test | Open |
-| Rust language boundary | Proposed; TypeScript remains public/control baseline | TypeScript baseline and representative Rust native benchmark | Open |
-| Worker boundary | Proposed; conditional | UI long-task evidence or Worker end-to-end improvement after clone/transfer cost | Open |
-| WASM boundary | Proposed; conditional | WASM startup, transfer, serialization, algorithm time, memory, and bundle measurement | Open |
+| Renderer strategy | Virtualized DOM selected for alpha; Canvas deferred | Browser trace, edit overlay, and screen-reader smoke tests before release confidence | Accepted for alpha |
+| Rust language boundary | TypeScript selected for alpha public/control layer; Rust remains research-only | End-to-end WASM/Worker evidence before production Rust/WASM acceptance | Accepted for alpha |
+| Worker boundary | Deferred for alpha | UI long-task evidence or Worker end-to-end improvement after clone/transfer cost | Deferred |
+| WASM boundary | Deferred for alpha | WASM startup, transfer, serialization, algorithm time, memory, and bundle measurement | Deferred |
 | Columnar data | Proposed; conditional | Row-object baseline, typed vector benchmark, string clone/dictionary-cost measurement, update/disposal behavior | Open |
-| First adapter | Proposed; framework-neutral demo then React is current recommendation | Maintainer priority or prototype evidence for first wrapper path | Open |
-| Dependency licensing | Draft guidance exists | Candidate dependency list and license review before runtime dependency introduction | Open |
+| First adapter | Maintainer-selected Angular first; core remains framework-neutral | Angular lifecycle prototype and package setup validation before alpha adapter acceptance | Selected for alpha planning |
+| Dependency licensing | Initial alpha tooling and Angular peer candidates reviewed | Verify installed lockfile metadata before release or adding unreviewed runtime dependencies | Initially reviewed |
 
 ## Execution Order
 
 1. Confirm alpha dataset shapes and benchmark environment.
 2. Create the smallest benchmark harness needed to record repeatable local measurements.
-3. Prototype virtualized DOM rendering for the alpha viewport budget.
-4. Prototype Canvas 2D only enough to compare the same viewport.
-5. Benchmark TypeScript reference row access, cell lookup, updates, and any retained sort/filter operation.
-6. Run representative Rust native benchmark only as research evidence.
-7. Record adapter choice and dependency/license review results.
+3. Prototype virtualized DOM rendering for the alpha viewport budget. Initial scaffold: `../../apps/renderer-prototype/`.
+4. Prototype Canvas 2D only enough to compare the same viewport. Initial scaffold: `../../apps/renderer-canvas-prototype/`.
+5. Benchmark TypeScript reference row access, cell lookup, updates, and any retained sort/filter operation. Preliminary result: `findings/2026-08-07-typescript-reference-operations.md`.
+6. Run representative Rust native benchmark only as research evidence. Preliminary GNU-target result: `findings/2026-08-07-rust-native-operations-gnu.md`; default MSVC release execution remains blocked by missing `msvcrt.lib`.
+7. Record adapter choice and dependency/license review results. Adapter choice: Angular first by maintainer priority on 2026-08-07.
 8. Update research notes, ADR statuses, performance budget, and active plan completion evidence.
 
 ## Required Benchmark Report Fields

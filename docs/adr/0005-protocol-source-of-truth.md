@@ -22,6 +22,7 @@ Use JSON Schema 2020-12 as the proposed protocol source of truth, with generated
 
 - JSON Schema publishes a current 2020-12 specification.
 - [../architecture/PROTOCOL_V1.md](../architecture/PROTOCOL_V1.md)
+- Initial alpha schemas and Ajv contract tests exist in `../../packages/protocol/src/`.
 
 ## Consequences
 

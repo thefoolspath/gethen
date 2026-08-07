@@ -1,0 +1,22 @@
+{
+  "name": "@thefoolspath/gethen-angular",
+  "version": "0.0.0-alpha.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config ../../vitest.config.ts --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=22.0.0"
+  },
+  "dependencies": {
+    "@thefoolspath/gethen-core": "workspace:*",
+    "@thefoolspath/gethen-protocol": "workspace:*"
+  }
+}

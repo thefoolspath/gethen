@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted for alpha deferral
 
 ## Context
 
@@ -10,7 +10,7 @@ Heavy local data operations may block the UI thread. Workers and WASM may help, 
 
 ## Decision
 
-Build TypeScript reference compute first. Treat Rust/WASM and Worker integration as conditional milestones gated by benchmark evidence.
+Build TypeScript reference compute first. Defer production Rust/WASM and Worker integration for alpha until end-to-end benchmark evidence justifies the added build, package, transfer, startup, fallback, and maintenance cost.
 
 ## Alternatives Considered
 
@@ -24,6 +24,8 @@ Build TypeScript reference compute first. Treat Rust/WASM and Worker integration
 
 - [../research/WORKER_WASM_EVALUATION.md](../research/WORKER_WASM_EVALUATION.md)
 - [../architecture/RUST_WASM_BOUNDARY.md](../architecture/RUST_WASM_BOUNDARY.md)
+- [../research/findings/2026-08-07-typescript-reference-operations.md](../research/findings/2026-08-07-typescript-reference-operations.md)
+- [../research/findings/2026-08-07-rust-native-operations-gnu.md](../research/findings/2026-08-07-rust-native-operations-gnu.md)
 
 ## Consequences
 
@@ -45,7 +47,7 @@ End-to-end speed after serialization and transfer.
 
 ## Revisit Conditions
 
-Revisit after representative TypeScript, Rust native, WASM, and Worker benchmarks.
+Revisit after representative TypeScript Worker, Rust/WASM main-thread, Rust/WASM Worker, startup, transfer, serialization, retained memory, and bundle-size benchmarks.
 
 ## Related Documents
 

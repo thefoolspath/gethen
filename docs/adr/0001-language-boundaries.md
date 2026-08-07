@@ -2,15 +2,15 @@
 
 ## Status
 
-Proposed
+Accepted for alpha
 
 ## Context
 
-Gethen needs browser integration, framework adapters, data operations, and future backend compatibility. No implementation exists yet.
+Gethen needs browser integration, framework adapters, data operations, and future backend compatibility. Initial TypeScript protocol and core package skeletons now exist.
 
 ## Decision
 
-Use TypeScript as the public API and control layer. Use Rust only as a conditional compute implementation behind an internal contract.
+Use TypeScript as the public API and control layer for alpha. Keep Rust as research-only and conditional for future compute implementation behind an internal contract.
 
 ## Alternatives Considered
 
@@ -22,6 +22,8 @@ Use TypeScript as the public API and control layer. Use Rust only as a condition
 
 - [../research/WORKER_WASM_EVALUATION.md](../research/WORKER_WASM_EVALUATION.md)
 - [../research/FRAMEWORK_ADAPTER_EVALUATION.md](../research/FRAMEWORK_ADAPTER_EVALUATION.md)
+- [../research/findings/2026-08-07-typescript-reference-operations.md](../research/findings/2026-08-07-typescript-reference-operations.md)
+- [../research/findings/2026-08-07-rust-native-operations-gnu.md](../research/findings/2026-08-07-rust-native-operations-gnu.md)
 
 ## Consequences
 
@@ -39,11 +41,11 @@ Rust stays optional until benchmarks justify it.
 
 ## Uncertainties
 
-Rust/WASM value after transfer and startup costs.
+Rust/WASM value after transfer and startup costs remains unproven.
 
 ## Revisit Conditions
 
-Accept, reject, or revise after the TypeScript reference engine and Rust benchmark milestones.
+Revisit if Worker/WASM end-to-end benchmarks show material benefit after startup, transfer, serialization, memory, package, and fallback costs.
 
 ## Related Documents
 

@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-04.
 
-Status: Proposed.
+Status: Initial client-side DataSource implemented.
 
 ## Proposed Interface
 
@@ -31,3 +31,5 @@ Required server-mode behaviors before release:
 - bounded block cache
 
 Server-side DataSource is conditional for `alpha.1` if it threatens the first complete vertical slice.
+
+Initial implementation: `packages/core/src/client-data-source.ts` provides client-side row ID extraction, range retrieval, and stale-safe cell updates. Server-side DataSource remains deferred for alpha.

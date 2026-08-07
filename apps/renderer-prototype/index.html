@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gethen Virtualized DOM Prototype</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="toolbar">
+        <div>
+          <h1>Gethen Virtualized DOM Prototype</h1>
+          <p>Research gate prototype: fixed-size cells, visible viewport rendering, keyboard active-cell movement.</p>
+        </div>
+        <dl class="stats" aria-label="Renderer statistics">
+          <div><dt>Rows</dt><dd id="rowCount">100000</dd></div>
+          <div><dt>Columns</dt><dd id="columnCount">50</dd></div>
+          <div><dt>Mounted cells</dt><dd id="mountedCells">0</dd></div>
+          <div><dt>Render time</dt><dd id="renderTime">0 ms</dd></div>
+        </dl>
+      </header>
+
+      <section class="gridFrame" aria-label="Virtualized grid research prototype">
+        <div
+          id="grid"
+          class="grid"
+          role="grid"
+          aria-rowcount="100000"
+          aria-colcount="50"
+          tabindex="0"
+        >
+          <div id="spacer" class="spacer" aria-hidden="true"></div>
+          <div id="viewport" class="viewport"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./prototype.js"></script>
+  </body>
+</html>

@@ -2,11 +2,13 @@
 
 Last reviewed: 2026-08-04.
 
-Status: Proposed. No data model is implemented yet.
+Status: Initial TypeScript reference model implemented.
 
 ## Public Model
 
 The public developer API should start with row-oriented objects and typed column definitions because that is the most natural integration shape for web apps.
+
+Initial implementation: `packages/core/src/client-grid-engine.ts` uses rows shaped as stable `id` plus a `cells` record keyed by column ID.
 
 ## Identity
 
@@ -19,6 +21,8 @@ Visible indexes must not be treated as stable row identity.
 ## Authoritative Ownership
 
 Client-side mode must have one authoritative mutable dataset. The TypeScript reference engine should own it initially. If Rust/WASM is later introduced, ownership must be explicit and the TypeScript copy must not become a second independently mutable truth.
+
+Initial implementation: `ClientGridEngine` copies the supplied rows and owns update application for the in-memory reference path.
 
 Server-side mode: the server owns the full dataset and whole-result sorting/filtering.
 

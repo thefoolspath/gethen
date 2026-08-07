@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gethen Canvas Renderer Prototype</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="toolbar">
+        <div>
+          <h1>Gethen Canvas Renderer Prototype</h1>
+          <p>Research gate prototype: fixed-size cells, visible viewport drawing, keyboard active-cell movement.</p>
+        </div>
+        <dl class="stats" aria-label="Renderer statistics">
+          <div><dt>Rows</dt><dd id="rowCount">100000</dd></div>
+          <div><dt>Columns</dt><dd id="columnCount">50</dd></div>
+          <div><dt>Drawn cells</dt><dd id="drawnCells">0</dd></div>
+          <div><dt>Draw time</dt><dd id="drawTime">0 ms</dd></div>
+        </dl>
+      </header>
+
+      <section class="gridFrame" aria-label="Canvas grid research prototype">
+        <div
+          id="grid"
+          class="grid"
+          role="grid"
+          aria-rowcount="100000"
+          aria-colcount="50"
+          aria-activedescendant="activeCell"
+          tabindex="0"
+        >
+          <div id="spacer" class="spacer" aria-hidden="true"></div>
+          <canvas id="canvas" class="canvas" aria-hidden="true"></canvas>
+          <div id="activeCell" class="srOnly" role="gridcell" aria-selected="true">Row 1, Column 1</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./prototype.js"></script>
+  </body>
+</html>

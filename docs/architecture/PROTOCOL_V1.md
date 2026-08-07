@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-04.
 
-Status: Proposed.
+Status: Initial alpha contracts implemented.
 
 ## Purpose
 
@@ -10,7 +10,7 @@ Define a safe, language-neutral request/response contract for DataSource operati
 
 ## Proposed Source Of Truth
 
-JSON Schema 2020-12 is the proposed source of truth. TypeScript types should be generated and validated in CI once tooling exists.
+JSON Schema 2020-12 is the source of truth for the initial alpha protocol contracts. TypeScript types are inferred from schema literals with `json-schema-to-ts`, and examples are validated with Ajv in contract tests.
 
 ## Minimal Alpha Concepts
 
@@ -21,6 +21,14 @@ JSON Schema 2020-12 is the proposed source of truth. TypeScript types should be 
 - filtering
 - cell update request
 - structured errors
+
+Implemented initial schemas:
+
+- `GetRowsRequest`
+- `GetRowsResult`
+- `CellUpdateRequest`
+- `UpdateCellsResult`
+- `ProtocolError`
 
 ## Safety Rules
 
