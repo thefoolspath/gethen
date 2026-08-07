@@ -8,13 +8,18 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has initial workspace/tooling scaffolding and research prototypes, but no production grid implementation yet. No packages are published.
+Gethen now has initial workspace/tooling scaffolding, research prototypes, and a local `0.0.0-alpha.1` release-candidate vertical-slice grid implementation. No packages are published.
 
-The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, initial pnpm workspace configuration, package skeletons, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
+The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
 ## Implemented
 
-None.
+- Initial protocol schemas and inferred TypeScript protocol contracts.
+- Initial TypeScript client grid engine and client DataSource.
+- Initial virtualized DOM renderer with viewport virtualization, selection, keyboard navigation, text/number editing, boolean toggling, and typed change events.
+- Framework-neutral core demo.
+- Initial Angular standalone adapter and Angular browser demo.
+- Local `0.0.0-alpha.1` package metadata for protocol, core, and Angular packages.
 
 ## Present Repository Assets
 
@@ -28,6 +33,8 @@ None.
 - Initial TypeScript reference engine in `packages/core/src/client-grid-engine.ts`.
 - Initial virtualized DOM renderer slice, selection/navigation, editing, framework-neutral core demo, and client DataSource in `packages/core/src/` and `apps/core-demo/`.
 - Initial Angular standalone adapter component in `packages/gethen-angular/src/gethen-grid.component.ts`.
+- Angular-backed browser demo in `apps/angular-demo/`.
+- Alpha.1 local release notes: [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md).
 - Research scaffold: dependency-free virtualized DOM renderer prototype in `apps/renderer-prototype/`.
 - Research scaffold: dependency-free Canvas 2D renderer prototype in `apps/renderer-canvas-prototype/`.
 - Research scaffold: manual renderer prototype benchmark notes in `benchmarks/renderer-prototype/`.
@@ -62,13 +69,15 @@ None.
 - Rust language boundary is accepted for alpha as TypeScript public/control layer with Rust research-only.
 - Worker/WASM production integration is deferred for alpha.
 - Milestones 6-9 are initially complete. Server-side DataSource is deferred for alpha.
-- Milestone 11 first framework adapter is initially complete with Angular as selected adapter.
+- Milestone 11 first framework adapter is complete for alpha.1 with Angular as selected adapter and browser-tested demo path.
+- Milestone 12 second adapter is deferred from alpha.1; React remains a follow-up candidate.
+- Milestone 13 local release verification has passed for alpha.1; publishing remains blocked until explicit maintainer approval and PR review to `main`.
 - Virtualized DOM and Canvas renderer prototype scaffolds exist; measured benchmark results are still open.
 - Preliminary TypeScript reference operation benchmark exists; repeat runs and Rust comparison are still open.
 - Preliminary Rust GNU native benchmark exists; default MSVC release execution is blocked by local MSVC linker configuration: `LINK : fatal error LNK1104: cannot open file 'msvcrt.lib'`.
 - First alpha adapter path is selected as Angular first; React is deferred until after Angular-backed alpha path or later reassessment.
-- Initial dependency/license candidate review is complete; installed lockfile metadata must still be verified after dependencies are added.
-- No ADR is accepted yet.
+- Initial dependency/license candidate review is complete; installed package metadata was verified for the alpha.1 dependency set.
+- Accepted ADRs for alpha: ADR-0001 TypeScript public/control layer with Rust research-only, ADR-0002 virtualized DOM renderer for alpha, and ADR-0003 Worker/WASM deferral for alpha.
 
 ## Verified Commands
 
@@ -83,11 +92,12 @@ None.
 - `pnpm exec playwright install chromium`
 - `pnpm run test:browser`
 - `pnpm run bench`
+- `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu run --manifest-path crates/gethen-engine/Cargo.toml --release`
 
-The repository still has no Cargo workspace or production grid implementation. `cargo run --manifest-path crates/gethen-engine/Cargo.toml --release` with the default MSVC toolchain is not verified because linking fails with missing `msvcrt.lib`.
+The repository still has no Cargo workspace. `cargo run --manifest-path crates/gethen-engine/Cargo.toml --release` with the default MSVC toolchain is not verified because linking fails with missing `msvcrt.lib`.
 
 ## Research Handling Rules
 
@@ -118,3 +128,5 @@ The repository still has no Cargo workspace or production grid implementation. `
 | 2026-08-07 | Accepted virtualized DOM renderer for alpha and deferred production Worker/WASM | [../adr/0002-rendering-strategy.md](../adr/0002-rendering-strategy.md), [../adr/0001-language-boundaries.md](../adr/0001-language-boundaries.md), [../adr/0003-worker-wasm-boundary.md](../adr/0003-worker-wasm-boundary.md) |
 | 2026-08-07 | Added virtualized DOM renderer slice, selection/navigation, editing, core demo, and client DataSource | `packages/core/src/`, `apps/core-demo/`, `tests/browser/renderer-prototypes.spec.ts` |
 | 2026-08-07 | Added initial Angular standalone adapter wrapper | `packages/gethen-angular/src/gethen-grid.component.ts`, `packages/gethen-angular/src/gethen-grid.component.test.ts` |
+| 2026-08-07 | Added Angular-backed browser demo and adapter integration tests | `apps/angular-demo/`, `tests/browser/renderer-prototypes.spec.ts` |
+| 2026-08-07 | Prepared local `0.0.0-alpha.1` release candidate verification notes | [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md), package manifests |

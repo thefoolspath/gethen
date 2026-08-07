@@ -1,8 +1,11 @@
 # Apps
 
-Application and demo workspaces will live here once implementation begins.
+Application and demo workspaces live here.
 
-Planned examples include a framework-neutral demo and, if selected, framework-specific demo applications.
+Current demos:
+
+- `angular-demo/`: Angular-backed demo that mounts the `@thefoolspath/gethen-angular` adapter.
+- `core-demo/`: framework-neutral demo for the core virtualized DOM renderer.
 
 Current research prototypes:
 

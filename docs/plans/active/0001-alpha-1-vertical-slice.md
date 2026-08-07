@@ -67,7 +67,7 @@ Current documentation restructure.
 ### Acceptance Criteria
 
 - [x] Decision readiness updated.
-- [ ] ADR statuses remain Proposed or become Accepted with evidence.
+- [x] ADR statuses remain Proposed or become Accepted with evidence.
 
 ### Tests
 
@@ -770,7 +770,7 @@ Record test output.
 
 ### Status
 
-Initial Angular adapter complete.
+Complete for alpha.1.
 
 ### Goal
 
@@ -807,7 +807,7 @@ Milestones 6-9.
 
 ### Tests
 
-SSR/import test for Angular wrapper; browser demo tests for the framework-neutral core renderer path.
+SSR/import test for Angular wrapper; browser demo tests for both the framework-neutral core renderer path and Angular-backed adapter path.
 
 ### Performance Checks
 
@@ -831,13 +831,13 @@ Updated package boundaries.
 
 ### Completion Evidence
 
-Verified commands: `pnpm run check`, `pnpm run build`, and `pnpm run test`.
+Verified commands: `pnpm run check`, `pnpm run build`, and `pnpm run test`. Angular-backed demo: `apps/angular-demo/`. Browser integration coverage: `tests/browser/renderer-prototypes.spec.ts`.
 
 ## Milestone 12 - Second Framework Adapter
 
 ### Status
 
-Conditional
+Deferred for alpha.1
 
 ### Goal
 
@@ -845,7 +845,7 @@ Add the second adapter only if it does not compromise alpha completeness.
 
 ### Outcome
 
-React and Angular both wrap the same core.
+React and Angular both wrap the same core when a second adapter is accepted after the Angular-backed alpha path.
 
 ### Dependencies
 
@@ -870,6 +870,7 @@ Milestone 11 and stable core adapter API.
 
 - [ ] No duplicated business logic.
 - [ ] Adapter tests pass.
+- [x] Second adapter is explicitly deferred if it would delay the Angular-first alpha.1 vertical slice.
 
 ### Tests
 
@@ -889,7 +890,7 @@ L
 
 ### Explicitly Deferred Work
 
-Framework-specific advanced APIs.
+React adapter and framework-specific advanced APIs.
 
 ### Documentation Updates
 
@@ -897,13 +898,13 @@ Update roadmap if deferred.
 
 ### Completion Evidence
 
-Record test output.
+Deferred by maintainer priority for Angular first and by alpha.1 scope control. Revisit after release verification or in a follow-up alpha.
 
 ## Milestone 13 - Release Verification
 
 ### Status
 
-Not started
+Complete locally; not published.
 
 ### Goal
 
@@ -925,13 +926,13 @@ All included alpha milestones.
 
 ### Tasks
 
-- [ ] Run build.
-- [ ] Run tests.
-- [ ] Run browser tests.
-- [ ] Run benchmarks.
-- [ ] Inspect bundle/package contents.
-- [ ] Review licenses.
-- [ ] Draft changelog and alpha notes.
+- [x] Run build.
+- [x] Run tests.
+- [x] Run browser tests.
+- [x] Run benchmarks.
+- [x] Inspect bundle/package contents.
+- [x] Review licenses.
+- [x] Draft changelog and alpha notes.
 
 ### Expected Files And Packages
 
@@ -939,8 +940,8 @@ All alpha packages, docs, release notes.
 
 ### Acceptance Criteria
 
-- [ ] Release candidate is locally verifiable.
-- [ ] No package is published.
+- [x] Release candidate is locally verifiable.
+- [x] No package is published.
 
 ### Tests
 
@@ -968,4 +969,4 @@ Update README, release strategy, and risk register.
 
 ### Completion Evidence
 
-Record all verification commands and outputs.
+Verified commands: `pnpm run check`, `pnpm run build`, `pnpm run test`, `pnpm run test:browser`, and `pnpm run bench`. Package contents inspected with `npm.cmd pack --dry-run --json` for protocol, core, and Angular packages using a workspace-local npm cache. Installed license metadata checked for Angular packages, RxJS, tslib, TypeScript, Playwright, Ajv, json-schema-to-ts, and Vitest. Alpha release notes: [../../project/ALPHA_1_RELEASE_NOTES.md](../../project/ALPHA_1_RELEASE_NOTES.md).

@@ -9,6 +9,7 @@ const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".map": "application/json; charset=utf-8"
 };
@@ -23,6 +24,14 @@ export function createStaticServer(port = 4173) {
       response.writeHead(403);
       response.end("Forbidden");
       return;
+    }
+
+    if (extname(filePath) === "" || !existsSync(filePath)) {
+      const modulePath = [".js", ".mjs"].map((extension) => `${filePath}${extension}`).find((path) => existsSync(path));
+
+      if (modulePath) {
+        filePath = modulePath;
+      }
     }
 
     if (existsSync(filePath) && statSync(filePath).isDirectory()) {
