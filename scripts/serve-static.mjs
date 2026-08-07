@@ -1,6 +1,7 @@
 import http from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 
@@ -41,7 +42,7 @@ export function createStaticServer(port = 4173) {
   });
 }
 
-if (import.meta.url === `file:///${process.argv[1]?.replaceAll("\\", "/")}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.argv[2] ?? 4173);
   const server = createStaticServer(port);
 
