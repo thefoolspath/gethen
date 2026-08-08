@@ -119,6 +119,8 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
             columnIndex,
             rowHeight,
             columnWidth,
+            virtualViewport.firstRow,
+            virtualViewport.firstColumn,
             rowIndex === activeCell.rowIndex && columnIndex === activeCell.columnIndex,
             editState?.rowIndex === rowIndex && editState.columnIndex === columnIndex,
             editState?.draftValue ?? "",
@@ -205,6 +207,13 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     } else if (event.key === " " && options.columns[activeCell.columnIndex]?.dataType === "boolean") {
       event.preventDefault();
       toggleBooleanCell();
+    } else if (isTypeToEditKey(event)) {
+      const column = options.columns[activeCell.columnIndex];
+
+      if (column && !column.readonly && column.dataType !== "boolean") {
+        event.preventDefault();
+        startEdit(event.key);
+      }
     }
   }
 
@@ -215,16 +224,24 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
       return;
     }
 
-    const rowIndex = Number(target.dataset.rowIndex);
-    const columnIndex = Number(target.dataset.columnIndex);
+    const cell = target.closest<HTMLElement>("[data-row-index][data-column-index]");
+    const rowIndex = Number(cell?.dataset.rowIndex);
+    const columnIndex = Number(cell?.dataset.columnIndex);
 
     if (Number.isInteger(rowIndex) && Number.isInteger(columnIndex)) {
       grid.focus();
-      setActiveCell(rowIndex, columnIndex);
+
+      if (rowIndex !== activeCell.rowIndex || columnIndex !== activeCell.columnIndex) {
+        setActiveCell(rowIndex, columnIndex);
+      }
+
+      if (event.detail === 2) {
+        startEdit();
+      }
     }
   }
 
-  function startEdit(): void {
+  function startEdit(initialDraftValue?: string): void {
     const column = options.columns[activeCell.columnIndex];
     const row = rows[activeCell.rowIndex];
 
@@ -240,12 +257,15 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     editState = {
       rowIndex: activeCell.rowIndex,
       columnIndex: activeCell.columnIndex,
-      draftValue: String(row.cells[column.id] ?? "")
+      draftValue: initialDraftValue ?? String(row.cells[column.id] ?? "")
     };
     render();
     const editor = viewport.querySelector<HTMLInputElement>("[data-gethen-editor='true']");
     editor?.focus();
-    editor?.select();
+
+    if (initialDraftValue === undefined) {
+      editor?.select();
+    }
   }
 
   function handleEditorCommit(value: string): void {
@@ -327,6 +347,8 @@ function createCell(
   columnIndex: number,
   rowHeight: number,
   columnWidth: number,
+  firstRenderedRow: number,
+  firstRenderedColumn: number,
   active: boolean,
   editing: boolean,
   draftValue: string,
@@ -342,8 +364,8 @@ function createCell(
   cell.dataset.rowIndex = String(rowIndex);
   cell.dataset.columnIndex = String(columnIndex);
   cell.style.position = "absolute";
-  cell.style.left = `${columnIndex * columnWidth}px`;
-  cell.style.top = `${rowIndex * rowHeight}px`;
+  cell.style.left = `${(columnIndex - firstRenderedColumn) * columnWidth}px`;
+  cell.style.top = `${(rowIndex - firstRenderedRow) * rowHeight}px`;
   cell.style.width = `${columnWidth}px`;
   cell.style.height = `${rowHeight}px`;
   cell.style.overflow = "hidden";
@@ -370,9 +392,11 @@ function createCell(
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
+        event.stopPropagation();
         commitEdit(input.value);
       } else if (event.key === "Escape") {
         event.preventDefault();
+        event.stopPropagation();
         cancelEdit();
       }
     });
@@ -386,6 +410,10 @@ function createCell(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function isTypeToEditKey(event: KeyboardEvent): boolean {
+  return event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && !event.isComposing;
 }
 
 function coerceValue(value: string | boolean, dataType: GridColumn["dataType"]): CellValue {
