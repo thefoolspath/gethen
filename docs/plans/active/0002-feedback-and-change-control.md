@@ -26,7 +26,7 @@ Future defects and change requests have a clear intake location, status flow, an
 - [x] Define status flow and ID format.
 - [x] Define when feedback updates roadmap, active plans, ADRs, release notes, and project state.
 - [x] Require maintainer approval before converting conversation points into issue or change-request intake rows.
-- [ ] Use the intake log for the next real-use feedback item.
+- [x] Use the intake log for the next real-use feedback item.
 - [ ] Move this plan to completed after the first feedback item is triaged successfully.
 
 ## Acceptance Criteria

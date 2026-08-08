@@ -48,6 +48,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Documentation entry point: [../README.md](../README.md).
 - Active plan: [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md).
 - Active feedback/control plan: [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md).
+- Proposed developer customization and row transaction plan: [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md).
 - Pre-alpha research gate tracker: [../research/PRE_ALPHA_RESEARCH_GATE.md](../research/PRE_ALPHA_RESEARCH_GATE.md).
 - Proposed ADRs: [../adr/README.md](../adr/README.md).
 - Provisional quality documents: [../quality/PERFORMANCE_BUDGET.md](../quality/PERFORMANCE_BUDGET.md), [../quality/BENCHMARK_PLAN.md](../quality/BENCHMARK_PLAN.md), and [../quality/TESTING_STRATEGY.md](../quality/TESTING_STRATEGY.md).
@@ -83,6 +84,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Initial dependency/license candidate review is complete; installed package metadata was verified for the alpha.1 dependency set.
 - Accepted ADRs for alpha: ADR-0001 TypeScript public/control layer with Rust research-only, ADR-0002 virtualized DOM renderer for alpha, and ADR-0003 Worker/WASM deferral for alpha.
 - Post-plan issues and change requests should be captured in [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) before they are promoted into roadmap versions or active implementation plans. Conversation-derived feedback must not be added to the intake log until the maintainer approves whether it is an issue or change request.
+- First hands-on issue intake entries are captured for scroll virtualization, mouse editing, type-to-edit, and browser-test port handling. They are not yet promoted into roadmap versions or active implementation plans.
+- Developer-friendly customization is now planned as follow-up work: application-owned CSS classes, conditional row/column/cell styling, theme tokens, DTO-to-column mapping with hidden key fields, row-level edit/insert/save events, and optional spreadsheet-style clipboard paste with blank-cell handling and pre-commit per-cell validation. Custom renderers, custom editors, raw HTML formatters, framework-specific per-cell component mounting, XLSX import/export, and rich clipboard content remain deferred.
 
 ## Verified Commands
 
@@ -138,3 +141,6 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-07 | Prepared local `0.0.0-alpha.1` release candidate verification notes | [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md), package manifests |
 | 2026-08-08 | Split app demo/prototype source into separate HTML, CSS, and TypeScript files and added workspace build configs for TypeScript-backed app demos | `apps/core-demo/`, `apps/angular-demo/`, `apps/renderer-prototype/`, `apps/renderer-canvas-prototype/` |
 | 2026-08-08 | Added issue/change-request intake process for future real-use feedback | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
+| 2026-08-08 | Captured first hands-on issue intake entries from Chrome QA | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md) |
+| 2026-08-08 | Added follow-up planning for developer customization, DTO column mapping, and row-level edit/insert/save transactions | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
+| 2026-08-08 | Added alpha.2 planning for optional Excel/MySQL Workbench-style clipboard paste, blank-cell handling, and validation-before-commit with per-cell errors | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
