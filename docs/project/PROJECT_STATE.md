@@ -84,7 +84,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Initial dependency/license candidate review is complete; installed package metadata was verified for the alpha.1 dependency set.
 - Accepted ADRs for alpha: ADR-0001 TypeScript public/control layer with Rust research-only, ADR-0002 virtualized DOM renderer for alpha, and ADR-0003 Worker/WASM deferral for alpha.
 - Post-plan issues and change requests should be captured in [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) before they are promoted into roadmap versions or active implementation plans. Conversation-derived feedback must not be added to the intake log until the maintainer approves whether it is an issue or change request.
-- First hands-on issue intake entries are captured for scroll virtualization, mouse editing, type-to-edit, and browser-test port handling. They are not yet promoted into roadmap versions or active implementation plans.
+- The first hands-on issues are fixed with browser regression coverage: deep vertical scrolling, double-click editing, type-to-edit, and automatic browser-test port allocation.
 - Developer-friendly customization is now planned as follow-up work: application-owned CSS classes, conditional row/column/cell styling, theme tokens, DTO-to-column mapping with hidden key fields, row-level edit/insert/save events, and optional spreadsheet-style clipboard paste with blank-cell handling and pre-commit per-cell validation. Custom renderers, custom editors, raw HTML formatters, framework-specific per-cell component mounting, XLSX import/export, and rich clipboard content remain deferred.
 
 ## Verified Commands
@@ -99,7 +99,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `pnpm run test`
 - `pnpm exec playwright install chromium`
 - `pnpm run test:browser`
-- Browser tests via `scripts/serve-static.mjs` on `127.0.0.1:4174` with `GETHEN_BASE_URL=http://127.0.0.1:4174` because `127.0.0.1:4173` was already in use locally.
+- `pnpm run test:browser` with automatic allocation of an available loopback port, including when `127.0.0.1:4173` is already in use.
 - `pnpm run bench`
 - `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
@@ -144,3 +144,5 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-08 | Captured first hands-on issue intake entries from Chrome QA | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md) |
 | 2026-08-08 | Added follow-up planning for developer customization, DTO column mapping, and row-level edit/insert/save transactions | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
 | 2026-08-08 | Added alpha.2 planning for optional Excel/MySQL Workbench-style clipboard paste, blank-cell handling, and validation-before-commit with per-cell errors | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
+| 2026-08-08 | Fixed core renderer cells disappearing after vertical scrolling and added browser regression coverage | `packages/core/src/virtual-dom-grid.ts`, `tests/browser/renderer-prototypes.spec.ts`, [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
+| 2026-08-08 | Fixed double-click editing, type-to-edit, and browser-test port conflicts with browser regression coverage | `packages/core/src/virtual-dom-grid.ts`, `scripts/run-browser-tests.mjs`, `tests/browser/renderer-prototypes.spec.ts`, [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
