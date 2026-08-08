@@ -3,12 +3,19 @@ import { join } from "node:path";
 
 import { createStaticServer } from "./serve-static.mjs";
 
-const port = 4173;
-const server = createStaticServer(port);
+const server = createStaticServer(0);
 
 await new Promise((resolve) => {
-  server.listen(port, "127.0.0.1", resolve);
+  server.listen(0, "127.0.0.1", resolve);
 });
+
+const address = server.address();
+
+if (!address || typeof address === "string") {
+  throw new Error("Browser test server did not bind to a TCP port.");
+}
+
+const port = address.port;
 
 const playwrightCli = join(process.cwd(), "node_modules", "@playwright", "test", "cli.js");
 
