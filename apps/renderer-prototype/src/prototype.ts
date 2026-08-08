@@ -8,11 +8,11 @@
   const overscanRows = 6;
   const overscanColumns = 2;
 
-  const grid = document.getElementById("grid");
-  const spacer = document.getElementById("spacer");
-  const viewport = document.getElementById("viewport");
-  const mountedCells = document.getElementById("mountedCells");
-  const renderTime = document.getElementById("renderTime");
+  const grid = requireElement("grid");
+  const spacer = requireElement("spacer");
+  const viewport = requireElement("viewport");
+  const mountedCells = requireElement("mountedCells");
+  const renderTime = requireElement("renderTime");
 
   const activeCell = { row: 0, column: 0 };
   let lastRange = "";
@@ -21,7 +21,7 @@
   spacer.style.width = `${columnCount * columnWidth}px`;
   spacer.style.height = `${rowCount * rowHeight}px`;
 
-  function cellValue(rowIndex, columnIndex) {
+  function cellValue(rowIndex: number, columnIndex: number): string {
     if (columnIndex === 0) {
       return `Row ${rowIndex + 1}`;
     }
@@ -33,11 +33,16 @@
     return `R${rowIndex + 1} C${columnIndex + 1}`;
   }
 
-  function clamp(value, min, max) {
+  function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
   }
 
-  function visibleRange() {
+  function visibleRange(): {
+    firstRow: number;
+    lastRow: number;
+    firstColumn: number;
+    lastColumn: number;
+  } {
     const firstRow = Math.max(0, Math.floor(grid.scrollTop / rowHeight) - overscanRows);
     const lastRow = Math.min(
       rowCount - 1,
@@ -52,7 +57,7 @@
     return { firstRow, lastRow, firstColumn, lastColumn };
   }
 
-  function render() {
+  function render(): void {
     scheduled = false;
     const started = performance.now();
     const range = visibleRange();
@@ -95,7 +100,7 @@
     renderTime.textContent = `${(performance.now() - started).toFixed(2)} ms`;
   }
 
-  function scheduleRender() {
+  function scheduleRender(): void {
     if (scheduled) {
       return;
     }
@@ -104,7 +109,7 @@
     requestAnimationFrame(render);
   }
 
-  function scrollActiveCellIntoView() {
+  function scrollActiveCellIntoView(): void {
     const left = activeCell.column * columnWidth;
     const top = activeCell.row * rowHeight;
     const right = left + columnWidth;
@@ -160,3 +165,13 @@
 
   render();
 })();
+
+function requireElement(id: string): HTMLElement {
+  const element = document.getElementById(id);
+
+  if (!element) {
+    throw new Error(`Missing required element: ${id}`);
+  }
+
+  return element;
+}

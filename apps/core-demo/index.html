@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gethen Core Demo</title>
     <link rel="stylesheet" href="./styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "@thefoolspath/gethen-core": "../../packages/core/dist/index.js",
+          "@thefoolspath/gethen-protocol": "../../packages/protocol/dist/index.js"
+        }
+      }
+    </script>
   </head>
   <body>
     <main class="shell">
@@ -22,6 +30,6 @@
       </header>
       <section id="gridHost" class="gridHost" aria-label="Gethen core demo grid"></section>
     </main>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./dist/main.js"></script>
   </body>
 </html>

@@ -35,26 +35,7 @@ const rows: readonly GridRow[] = Array.from({ length: 50000 }, (_, rowIndex) => 
   selector: "gethen-angular-demo",
   standalone: true,
   imports: [GethenGridComponent],
-  template: `
-    <main class="demo-shell">
-      <header class="demo-toolbar">
-        <h1 class="demo-title">Gethen Angular</h1>
-        <span class="demo-stat">Rows<strong id="rowCount">{{ rows.length }}</strong></span>
-        <span class="demo-stat">Active<strong id="activeCell">{{ activeCell() }}</strong></span>
-        <span class="demo-stat">Last change<strong id="lastChange">{{ lastChange() }}</strong></span>
-      </header>
-      <section class="demo-grid">
-        <gethen-grid
-          [columns]="columns"
-          [rows]="rows"
-          [rowHeight]="32"
-          [columnWidth]="132"
-          (selectionChange)="handleSelection($event)"
-          (cellChange)="handleCellChange($event)"
-        />
-      </section>
-    </main>
-  `
+  templateUrl: "./src/main.html"
 })
 export class DemoAppComponent {
   protected readonly columns = columns;

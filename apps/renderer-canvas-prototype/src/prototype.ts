@@ -8,13 +8,13 @@
   const overscanRows = 6;
   const overscanColumns = 2;
 
-  const grid = document.getElementById("grid");
-  const spacer = document.getElementById("spacer");
-  const canvas = document.getElementById("canvas");
-  const activeCellDescription = document.getElementById("activeCell");
-  const drawnCells = document.getElementById("drawnCells");
-  const drawTime = document.getElementById("drawTime");
-  const context = canvas.getContext("2d");
+  const grid = requireElement("grid");
+  const spacer = requireElement("spacer");
+  const canvas = requireElement("canvas", HTMLCanvasElement);
+  const activeCellDescription = requireElement("activeCell");
+  const drawnCells = requireElement("drawnCells");
+  const drawTime = requireElement("drawTime");
+  const context = requireCanvasContext(canvas);
 
   const activeCell = { row: 0, column: 0 };
   let lastRange = "";
@@ -23,7 +23,7 @@
   spacer.style.width = `${columnCount * columnWidth}px`;
   spacer.style.height = `${rowCount * rowHeight}px`;
 
-  function cellValue(rowIndex, columnIndex) {
+  function cellValue(rowIndex: number, columnIndex: number): string {
     if (columnIndex === 0) {
       return `Row ${rowIndex + 1}`;
     }
@@ -35,11 +35,16 @@
     return `R${rowIndex + 1} C${columnIndex + 1}`;
   }
 
-  function clamp(value, min, max) {
+  function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
   }
 
-  function visibleRange() {
+  function visibleRange(): {
+    firstRow: number;
+    lastRow: number;
+    firstColumn: number;
+    lastColumn: number;
+  } {
     const firstRow = Math.max(0, Math.floor(grid.scrollTop / rowHeight) - overscanRows);
     const lastRow = Math.min(
       rowCount - 1,
@@ -54,7 +59,7 @@
     return { firstRow, lastRow, firstColumn, lastColumn };
   }
 
-  function resizeCanvas() {
+  function resizeCanvas(): void {
     const pixelRatio = window.devicePixelRatio || 1;
     const width = Math.max(1, grid.clientWidth);
     const height = Math.max(1, grid.clientHeight);
@@ -66,7 +71,7 @@
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   }
 
-  function drawCell(rowIndex, columnIndex, left, top) {
+  function drawCell(rowIndex: number, columnIndex: number, left: number, top: number): void {
     const isRowHeader = columnIndex === 0;
     const isActive = rowIndex === activeCell.row && columnIndex === activeCell.column;
 
@@ -93,7 +98,7 @@
     context.restore();
   }
 
-  function render() {
+  function render(): void {
     scheduled = false;
     const started = performance.now();
     const range = visibleRange();
@@ -126,7 +131,7 @@
     drawTime.textContent = `${(performance.now() - started).toFixed(2)} ms`;
   }
 
-  function scheduleRender() {
+  function scheduleRender(): void {
     if (scheduled) {
       return;
     }
@@ -135,7 +140,7 @@
     requestAnimationFrame(render);
   }
 
-  function scrollActiveCellIntoView() {
+  function scrollActiveCellIntoView(): void {
     const left = activeCell.column * columnWidth;
     const top = activeCell.row * rowHeight;
     const right = left + columnWidth;
@@ -191,3 +196,30 @@
 
   render();
 })();
+
+function requireElement<TElement extends HTMLElement>(
+  id: string,
+  constructor: { new (): TElement } = HTMLElement as { new (): TElement }
+): TElement {
+  const element = document.getElementById(id);
+
+  if (!element) {
+    throw new Error(`Missing required element: ${id}`);
+  }
+
+  if (!(element instanceof constructor)) {
+    throw new Error(`Element ${id} has unexpected type.`);
+  }
+
+  return element;
+}
+
+function requireCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  return context;
+}
