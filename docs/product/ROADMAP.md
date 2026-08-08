@@ -1,6 +1,6 @@
 # Product Roadmap
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-08-08.
 
 Status: In progress. A local `0.0.0-alpha.1` release candidate exists; no package is published.
 
@@ -154,6 +154,9 @@ Use more than one run. Do not use arithmetic mean alone as the main decision sig
 
 - Roadmap entries are not accepted architecture.
 - Features are not considered implemented until source code and tests exist.
+- New issues and change requests discovered after hands-on use are captured first in [../project/ISSUE_AND_CHANGE_REQUESTS.md](../project/ISSUE_AND_CHANGE_REQUESTS.md).
+- Accepted issue/change-request items update this roadmap only when they affect product sequencing, version scope, or release commitments.
+- Active plans should link to issue/change-request IDs when new feedback becomes current execution work.
 - Public API changes must update documentation.
 - Performance-sensitive changes must include benchmark evidence.
 - Package publishing is out of scope until explicitly requested.

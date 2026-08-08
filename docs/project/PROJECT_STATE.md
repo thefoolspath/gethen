@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-08-07.
+Last updated: 2026-08-08.
 
 ## Purpose
 
@@ -8,7 +8,7 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has initial workspace/tooling scaffolding, research prototypes, and a local `0.0.0-alpha.1` release-candidate vertical-slice grid implementation. No packages are published.
+Gethen now has initial workspace/tooling scaffolding, research prototypes, separated app demo source files, and a local `0.0.0-alpha.1` release-candidate vertical-slice grid implementation. No packages are published.
 
 The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
@@ -19,6 +19,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Initial virtualized DOM renderer with viewport virtualization, selection, keyboard navigation, text/number editing, boolean toggling, and typed change events.
 - Framework-neutral core demo.
 - Initial Angular standalone adapter and Angular browser demo.
+- App demos and renderer prototypes keep HTML, CSS, and TypeScript source separated, with TypeScript compiled to app-local `dist/` output during workspace builds.
 - Local `0.0.0-alpha.1` package metadata for protocol, core, and Angular packages.
 
 ## Present Repository Assets
@@ -34,7 +35,9 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Initial virtualized DOM renderer slice, selection/navigation, editing, framework-neutral core demo, and client DataSource in `packages/core/src/` and `apps/core-demo/`.
 - Initial Angular standalone adapter component in `packages/gethen-angular/src/gethen-grid.component.ts`.
 - Angular-backed browser demo in `apps/angular-demo/`.
+- App demo/prototype source split: `apps/core-demo/src/main.ts`, `apps/angular-demo/src/main.html`, `apps/angular-demo/src/main.ts`, `apps/renderer-prototype/src/prototype.ts`, and `apps/renderer-canvas-prototype/src/prototype.ts`, with app-local TypeScript package configs where needed.
 - Alpha.1 local release notes: [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md).
+- Issue and change-request intake log for post-plan feedback: [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md).
 - Research scaffold: dependency-free virtualized DOM renderer prototype in `apps/renderer-prototype/`.
 - Research scaffold: dependency-free Canvas 2D renderer prototype in `apps/renderer-canvas-prototype/`.
 - Research scaffold: manual renderer prototype benchmark notes in `benchmarks/renderer-prototype/`.
@@ -44,6 +47,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Initial dependency/license candidate review for Milestone 1 and Angular-first alpha tooling in `docs/research/DEPENDENCY_LICENSE_EVALUATION.md`.
 - Documentation entry point: [../README.md](../README.md).
 - Active plan: [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md).
+- Active feedback/control plan: [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md).
 - Pre-alpha research gate tracker: [../research/PRE_ALPHA_RESEARCH_GATE.md](../research/PRE_ALPHA_RESEARCH_GATE.md).
 - Proposed ADRs: [../adr/README.md](../adr/README.md).
 - Provisional quality documents: [../quality/PERFORMANCE_BUDGET.md](../quality/PERFORMANCE_BUDGET.md), [../quality/BENCHMARK_PLAN.md](../quality/BENCHMARK_PLAN.md), and [../quality/TESTING_STRATEGY.md](../quality/TESTING_STRATEGY.md).
@@ -78,6 +82,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - First alpha adapter path is selected as Angular first; React is deferred until after Angular-backed alpha path or later reassessment.
 - Initial dependency/license candidate review is complete; installed package metadata was verified for the alpha.1 dependency set.
 - Accepted ADRs for alpha: ADR-0001 TypeScript public/control layer with Rust research-only, ADR-0002 virtualized DOM renderer for alpha, and ADR-0003 Worker/WASM deferral for alpha.
+- Post-plan issues and change requests should be captured in [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) before they are promoted into roadmap versions or active implementation plans. Conversation-derived feedback must not be added to the intake log until the maintainer approves whether it is an issue or change request.
 
 ## Verified Commands
 
@@ -91,6 +96,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `pnpm run test`
 - `pnpm exec playwright install chromium`
 - `pnpm run test:browser`
+- Browser tests via `scripts/serve-static.mjs` on `127.0.0.1:4174` with `GETHEN_BASE_URL=http://127.0.0.1:4174` because `127.0.0.1:4173` was already in use locally.
 - `pnpm run bench`
 - `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
@@ -130,3 +136,5 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-07 | Added initial Angular standalone adapter wrapper | `packages/gethen-angular/src/gethen-grid.component.ts`, `packages/gethen-angular/src/gethen-grid.component.test.ts` |
 | 2026-08-07 | Added Angular-backed browser demo and adapter integration tests | `apps/angular-demo/`, `tests/browser/renderer-prototypes.spec.ts` |
 | 2026-08-07 | Prepared local `0.0.0-alpha.1` release candidate verification notes | [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md), package manifests |
+| 2026-08-08 | Split app demo/prototype source into separate HTML, CSS, and TypeScript files and added workspace build configs for TypeScript-backed app demos | `apps/core-demo/`, `apps/angular-demo/`, `apps/renderer-prototype/`, `apps/renderer-canvas-prototype/` |
+| 2026-08-08 | Added issue/change-request intake process for future real-use feedback | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
