@@ -1,4 +1,13 @@
 import { expect, test } from "@playwright/test";
+import type { Locator } from "@playwright/test";
+
+async function pasteText(locator: Locator, text: string): Promise<void> {
+  await locator.evaluate((element, pastedText) => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", pastedText);
+    element.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, clipboardData }));
+  }, text);
+}
 
 test("virtualized DOM prototype renders visible cells", async ({ page }) => {
   await page.goto("/apps/renderer-prototype/index.html");
@@ -18,6 +27,23 @@ test("core demo mounts the virtualized DOM renderer", async ({ page }) => {
   await expect(page.locator("#renderedCells")).not.toHaveText("0");
 });
 
+test("core demo applies Alpha 2 view metadata and application classes", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+
+  await expect(grid).toHaveAttribute("aria-colcount", "50");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveClass(
+    /gethen-numeric-column/
+  );
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("1");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="3"]')).toHaveClass(
+    /gethen-true-cell/
+  );
+  await expect(page.locator('[aria-rowindex="2"][aria-colindex="1"]')).toHaveClass(
+    /gethen-alternate-row/
+  );
+});
+
 test("core demo keeps virtualized cells visible after vertical scrolling", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
   const grid = page.getByRole("grid");
@@ -27,6 +53,7 @@ test("core demo keeps virtualized cells visible after vertical scrolling", async
   });
 
   await expect(page.locator('[aria-rowindex="1001"][aria-colindex="1"]')).toBeVisible();
+  await expect(page.locator('[aria-rowindex="1001"][aria-colindex="1"]')).toHaveText("1,001");
 });
 
 test("core demo supports keyboard active-cell navigation", async ({ page }) => {
@@ -38,6 +65,32 @@ test("core demo supports keyboard active-cell navigation", async ({ page }) => {
   await page.keyboard.press("ArrowDown");
 
   await expect(page.locator("#activeCell")).toHaveText("row-2 / c1");
+});
+
+test("core demo extends and collapses a rectangular selection range", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+
+  await grid.focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowDown");
+
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(4);
+  await expect(page.locator('[aria-rowindex="2"][aria-colindex="2"]')).toHaveAttribute(
+    "id",
+    "gethen-active-cell"
+  );
+
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(1);
+  await expect(page.locator('[aria-rowindex="2"][aria-colindex="3"]')).toHaveAttribute(
+    "id",
+    "gethen-active-cell"
+  );
+
+  await page.locator('[aria-rowindex="1"][aria-colindex="1"]').click();
+  await page.locator('[aria-rowindex="2"][aria-colindex="2"]').click({ modifiers: ["Shift"] });
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(4);
 });
 
 test("core demo commits text edits with typed change events", async ({ page }) => {
@@ -101,11 +154,42 @@ test("core demo toggles boolean cells", async ({ page }) => {
   await expect(page.locator("#lastChange")).toHaveText("row-1 / c2: true -> false");
 });
 
+test("core demo commits typed tabular paste as one validated range", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+
+  await page.locator('[aria-rowindex="1"][aria-colindex="1"]').click();
+  await pasteText(grid, "123\tpasted\tfalse");
+
+  await expect(page.locator("#lastPaste")).toHaveText("3 cells committed");
+  await expect(page.locator("#lastChange")).toHaveText("row-1 / c2: true -> false");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("123");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveText("pasted");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="3"]')).toHaveText("false");
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(3);
+});
+
+test("core demo rejects an invalid paste without partial changes", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+
+  await page.locator('[aria-rowindex="1"][aria-colindex="1"]').click();
+  await pasteText(grid, "not-a-number\tshould-not-commit");
+
+  await expect(page.locator("#lastPaste")).toHaveText("1 cells rejected");
+  await expect(page.locator("#lastChange")).toHaveText("none");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("1");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveText("R1 Column 2");
+});
+
 test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
   await page.goto("/apps/angular-demo/index.html");
   await expect(page.locator("gethen-angular-demo")).toBeVisible();
   await expect(page.getByRole("grid")).toBeVisible();
   await expect(page.locator("#rowCount")).toHaveText("50000");
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="3"]')).toHaveClass(
+    /demo-approved-cell/
+  );
 });
 
 test("Angular demo relays selection and edit events", async ({ page }) => {
@@ -123,4 +207,29 @@ test("Angular demo relays selection and edit events", async ({ page }) => {
   await page.keyboard.press("Enter");
 
   await expect(page.locator("#lastChange")).toHaveText("row-2 / c1: R2 Column 2 -> angular edited");
+});
+
+test("Angular demo relays range selection events", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html");
+  const grid = page.getByRole("grid");
+
+  await grid.focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowDown");
+
+  await expect(page.locator("#selectedRange")).toHaveText("R1:C1–R2:C2");
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(4);
+});
+
+test("Angular demo passes clipboard options and paste results through the adapter", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html");
+  const grid = page.getByRole("grid");
+
+  await page.locator('[aria-rowindex="1"][aria-colindex="2"]').click();
+  await pasteText(grid, "adapter paste");
+
+  await expect(page.locator("#pasteStatus")).toHaveText("1 cells committed");
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c1: R1 Column 2 -> adapter paste"
+  );
 });

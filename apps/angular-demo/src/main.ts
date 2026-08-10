@@ -2,11 +2,21 @@ import "@angular/compiler";
 import { Component, signal } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { GethenGridComponent } from "@thefoolspath/gethen-angular";
-import type { GethenGridCellChange, GethenGridSelection } from "@thefoolspath/gethen-angular";
-import type { GridRow } from "@thefoolspath/gethen-core";
-import type { CellValue, ColumnId, GridColumn } from "@thefoolspath/gethen-protocol";
+import type {
+  GethenGridCellChange,
+  GethenGridPasteResult,
+  GethenGridSelection,
+  GethenGridSelectionRange
+} from "@thefoolspath/gethen-angular";
+import type {
+  GridClipboardOptions,
+  GridColumnView,
+  GridRow,
+  GridStylingOptions
+} from "@thefoolspath/gethen-core";
+import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
-const columns: readonly GridColumn[] = Array.from({ length: 32 }, (_, columnIndex) => ({
+const columns: readonly GridColumnView[] = Array.from({ length: 32 }, (_, columnIndex) => ({
   id: `c${columnIndex}`,
   title: `Column ${columnIndex + 1}`,
   dataType: columnIndex === 2 ? "boolean" : columnIndex % 5 === 0 ? "number" : "text"
@@ -42,6 +52,17 @@ export class DemoAppComponent {
   protected readonly rows = rows;
   protected readonly activeCell = signal("row-1 / c0");
   protected readonly lastChange = signal("None");
+  protected readonly selectedRange = signal("R1:C1–R1:C1");
+  protected readonly pasteStatus = signal("None");
+  protected readonly styling: GridStylingOptions = {
+    getCellClass: ({ column, value }) =>
+      column.id === "c2" && value === true ? "demo-approved-cell" : undefined
+  };
+  protected readonly clipboard: GridClipboardOptions = {
+    enabled: true,
+    pasteMode: "direct-and-dialog",
+    validateBeforeCommit: true
+  };
 
   protected handleSelection(selection: GethenGridSelection): void {
     this.activeCell.set(`${selection.rowId} / ${selection.columnId}`);
@@ -50,6 +71,21 @@ export class DemoAppComponent {
   protected handleCellChange(change: GethenGridCellChange): void {
     this.lastChange.set(
       `${change.rowId} / ${change.columnId}: ${String(change.oldValue)} -> ${String(change.newValue)}`
+    );
+  }
+
+  protected handleSelectionRange(selection: GethenGridSelectionRange): void {
+    this.selectedRange.set(
+      `R${selection.startRowIndex + 1}:C${selection.startColumnIndex + 1}`
+      + `–R${selection.endRowIndex + 1}:C${selection.endColumnIndex + 1}`
+    );
+  }
+
+  protected handlePaste(result: GethenGridPasteResult): void {
+    this.pasteStatus.set(
+      result.committed
+        ? `${result.changes.length} cells committed`
+        : `${result.errors.length} cells rejected`
     );
   }
 }

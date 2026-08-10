@@ -1,6 +1,6 @@
 # Issue And Change Request Log
 
-Last reviewed: 2026-08-08.
+Last reviewed: 2026-08-10.
 
 Status: Active intake log.
 
@@ -53,9 +53,9 @@ Example: `CR-20260808-001`.
 
 | ID | Type | Summary | Source | Impact | Status | Target | Links |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| CR-20260808-001 | Change request | Add a lightweight process for future issues and CRs discovered during real use. | Maintainer feedback | Medium | Planned | Documentation/process | [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md) |
-| CR-20260808-002 | Change request | Plan developer-friendly customization for application-owned CSS classes, conditional row/column/cell styling, DTO column mapping, hidden key fields, and row-level edit/insert/save events. | Maintainer planning feedback | High | Planned | Developer API/customization | [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md); [../product/ROADMAP.md](../product/ROADMAP.md) |
-| CR-20260808-003 | Change request | Plan optional Excel/MySQL Workbench-style clipboard paste with blank-cell support, pre-commit data type validation, and per-cell error reporting. | Maintainer planning feedback | High | Planned | Clipboard/edit validation | [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md); [../product/ROADMAP.md](../product/ROADMAP.md) |
+| CR-20260808-001 | Change request | Add a lightweight process for future issues and CRs discovered during real use. | Maintainer feedback | Medium | Done | Documentation/process | [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md) |
+| CR-20260808-002 | Change request | Plan developer-friendly customization for application-owned CSS classes, conditional row/column/cell styling, DTO column mapping, hidden key fields, and row-level edit/insert/save events. | Maintainer planning feedback | High | Done | Developer API/customization | [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md); [../product/ROADMAP.md](../product/ROADMAP.md) |
+| CR-20260808-003 | Change request | Plan optional Excel/MySQL Workbench-style clipboard paste with blank-cell support, pre-commit data type validation, and per-cell error reporting. | Maintainer planning feedback | High | Done | Clipboard/edit validation | [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md); [../product/ROADMAP.md](../product/ROADMAP.md) |
 | ISSUE-20260808-001 | Issue | Virtualized DOM grid renders no visible cells after vertical scrolling in the core renderer. | Maintainer hands-on feedback; Chrome QA on `apps/core-demo/index.html` | High | Done | Core renderer | `packages/core/src/virtual-dom-grid.ts`; `tests/browser/renderer-prototypes.spec.ts` |
 | ISSUE-20260808-002 | Issue | Mouse-based editing is incomplete: click selects a cell, but double-click does not enter edit mode. | Maintainer hands-on feedback; Chrome QA on `apps/core-demo/index.html` | High | Done | Core renderer editing UX | `packages/core/src/virtual-dom-grid.ts`; `tests/browser/renderer-prototypes.spec.ts` |
 | ISSUE-20260808-003 | Issue | Type-to-edit is not supported after selecting a text or number cell. | Maintainer hands-on feedback; Chrome QA on `apps/core-demo/index.html` | Medium | Done | Core renderer editing UX | `packages/core/src/virtual-dom-grid.ts`; `tests/browser/renderer-prototypes.spec.ts` |

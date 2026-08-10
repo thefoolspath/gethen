@@ -4,5 +4,7 @@ export {
 
 export type {
   GethenGridCellChange,
-  GethenGridSelection
+  GethenGridPasteResult,
+  GethenGridSelection,
+  GethenGridSelectionRange
 } from "./gethen-grid.component.js";

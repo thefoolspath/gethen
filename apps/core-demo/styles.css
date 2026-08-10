@@ -41,7 +41,7 @@ p {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -67,4 +67,17 @@ p {
 .gridHost {
   min-height: 0;
   height: calc(100vh - 88px);
+}
+
+.gethen-numeric-column {
+  font-variant-numeric: tabular-nums;
+}
+
+.gethen-alternate-row {
+  --gethen-background: #f8fafc;
+}
+
+.gethen-true-cell {
+  color: #166534 !important;
+  font-weight: 700;
 }

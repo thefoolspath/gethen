@@ -1,6 +1,10 @@
-import type { CellChangeEvent, GridColumn } from "@thefoolspath/gethen-protocol";
+import type { CellChangeEvent } from "@thefoolspath/gethen-protocol";
 
 import type { GridRow } from "./client-grid-engine.js";
+import type { GridClipboardOptions, GridPasteResult } from "./grid-clipboard.js";
+import { prepareGridPaste } from "./grid-clipboard.js";
+import type { GridColumnView, GridStylingOptions, VirtualDomGridTheme } from "./grid-customization.js";
+import { getVisibleColumns } from "./grid-customization.js";
 import { createVirtualDomGridCell } from "./virtual-dom-grid-cell.js";
 import { clamp, coerceValue, isTypeToEditKey } from "./virtual-dom-grid-values.js";
 import { calculateVirtualViewport } from "./viewport.js";
@@ -17,16 +21,30 @@ export interface VirtualDomGridSelection {
   readonly columnId: string;
 }
 
-export interface VirtualDomGridOptions {
-  readonly columns: readonly GridColumn[];
-  readonly rows: readonly GridRow[];
+export interface VirtualDomGridSelectionRange {
+  readonly anchor: VirtualDomGridSelection;
+  readonly focus: VirtualDomGridSelection;
+  readonly startRowIndex: number;
+  readonly endRowIndex: number;
+  readonly startColumnIndex: number;
+  readonly endColumnIndex: number;
+}
+
+export interface VirtualDomGridOptions<TRow extends GridRow = GridRow> {
+  readonly columns: readonly GridColumnView<TRow>[];
+  readonly rows: readonly TRow[];
   readonly rowHeight?: number;
   readonly columnWidth?: number;
   readonly overscanRows?: number;
   readonly overscanColumns?: number;
+  readonly styling?: GridStylingOptions<TRow>;
+  readonly theme?: VirtualDomGridTheme;
+  readonly clipboard?: GridClipboardOptions<TRow>;
   readonly onRender?: (metrics: VirtualDomGridRenderMetrics) => void;
   readonly onSelectionChange?: (selection: VirtualDomGridSelection) => void;
+  readonly onSelectionRangeChange?: (selection: VirtualDomGridSelectionRange) => void;
   readonly onCellChange?: (change: CellChangeEvent) => void;
+  readonly onPaste?: (result: GridPasteResult) => void;
 }
 
 export interface VirtualDomGrid {
@@ -35,7 +53,10 @@ export interface VirtualDomGrid {
   render(): void;
 }
 
-export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomGridOptions): VirtualDomGrid {
+export function mountVirtualDomGrid<TRow extends GridRow>(
+  container: HTMLElement,
+  options: VirtualDomGridOptions<TRow>
+): VirtualDomGrid {
   const grid = document.createElement("div");
   const spacer = document.createElement("div");
   const viewport = document.createElement("div");
@@ -43,11 +64,16 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
   const columnWidth = options.columnWidth ?? 132;
   const overscanRows = options.overscanRows ?? 6;
   const overscanColumns = options.overscanColumns ?? 2;
+  const columns = getVisibleColumns(options.columns);
   const rows = options.rows.map((row) => ({
-    id: row.id,
+    ...row,
     cells: { ...row.cells }
-  }));
+  })) as TRow[];
   const activeCell = {
+    rowIndex: 0,
+    columnIndex: 0
+  };
+  const anchorCell = {
     rowIndex: 0,
     columnIndex: 0
   };
@@ -57,16 +83,17 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
   grid.setAttribute("role", "grid");
   grid.setAttribute("tabindex", "0");
   grid.setAttribute("aria-rowcount", String(rows.length));
-  grid.setAttribute("aria-colcount", String(options.columns.length));
+  grid.setAttribute("aria-colcount", String(columns.length));
   grid.setAttribute("aria-activedescendant", "gethen-active-cell");
   grid.style.position = "relative";
   grid.style.overflow = "auto";
   grid.style.width = "100%";
   grid.style.height = "100%";
+  applyTheme(grid, options.theme);
 
   spacer.style.position = "absolute";
   spacer.style.inset = "0 auto auto 0";
-  spacer.style.width = `${options.columns.length * columnWidth}px`;
+  spacer.style.width = `${columns.length * columnWidth}px`;
   spacer.style.height = `${rows.length * rowHeight}px`;
 
   viewport.style.position = "absolute";
@@ -80,7 +107,7 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     const started = performance.now();
     const virtualViewport = calculateVirtualViewport({
       rowCount: rows.length,
-      columnCount: options.columns.length,
+      columnCount: columns.length,
       rowHeight,
       columnWidth,
       viewportHeight: grid.clientHeight,
@@ -100,7 +127,8 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
       firstRenderedRow: virtualViewport.firstRow,
       firstRenderedColumn: virtualViewport.firstColumn,
       commitEdit: handleEditorCommit,
-      cancelEdit: handleEditorCancel
+      cancelEdit: handleEditorCancel,
+      styling: options.styling
     };
 
     for (let rowIndex = virtualViewport.firstRow; rowIndex <= virtualViewport.lastRow; rowIndex += 1) {
@@ -110,12 +138,14 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
         continue;
       }
 
+      const rowClass = options.styling?.getRowClass?.({ row, rowId: row.id, rowIndex });
+
       for (
         let columnIndex = virtualViewport.firstColumn;
         columnIndex <= virtualViewport.lastColumn;
         columnIndex += 1
       ) {
-        const column = options.columns[columnIndex];
+        const column = columns[columnIndex];
 
         if (!column) {
           continue;
@@ -128,7 +158,9 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
             column,
             rowIndex,
             columnIndex,
+            rowClass,
             rowIndex === activeCell.rowIndex && columnIndex === activeCell.columnIndex,
+            isCellSelected(rowIndex, columnIndex),
             editState?.rowIndex === rowIndex && editState.columnIndex === columnIndex,
             editState?.draftValue ?? ""
           )
@@ -151,17 +183,49 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     animationFrame = requestAnimationFrame(render);
   }
 
-  function setActiveCell(rowIndex: number, columnIndex: number): void {
-    activeCell.rowIndex = clamp(rowIndex, 0, Math.max(0, rows.length - 1));
-    activeCell.columnIndex = clamp(columnIndex, 0, Math.max(0, options.columns.length - 1));
+  function setActiveCell(rowIndex: number, columnIndex: number, extendRange = false): void {
+    const nextRowIndex = clamp(rowIndex, 0, Math.max(0, rows.length - 1));
+    const nextColumnIndex = clamp(columnIndex, 0, Math.max(0, columns.length - 1));
+
+    if (!extendRange) {
+      anchorCell.rowIndex = nextRowIndex;
+      anchorCell.columnIndex = nextColumnIndex;
+    }
+
+    activeCell.rowIndex = nextRowIndex;
+    activeCell.columnIndex = nextColumnIndex;
     scrollActiveCellIntoView();
-    options.onSelectionChange?.({
-      rowIndex: activeCell.rowIndex,
-      columnIndex: activeCell.columnIndex,
-      rowId: rows[activeCell.rowIndex]?.id ?? "",
-      columnId: options.columns[activeCell.columnIndex]?.id ?? ""
-    });
+    const focus = getSelectionAt(activeCell.rowIndex, activeCell.columnIndex);
+    options.onSelectionChange?.(focus);
+    options.onSelectionRangeChange?.(createSelectionRange(focus));
     render();
+  }
+
+  function getSelectionAt(rowIndex: number, columnIndex: number): VirtualDomGridSelection {
+    return {
+      rowIndex,
+      columnIndex,
+      rowId: rows[rowIndex]?.id ?? "",
+      columnId: columns[columnIndex]?.id ?? ""
+    };
+  }
+
+  function createSelectionRange(focus: VirtualDomGridSelection): VirtualDomGridSelectionRange {
+    return {
+      anchor: getSelectionAt(anchorCell.rowIndex, anchorCell.columnIndex),
+      focus,
+      startRowIndex: Math.min(anchorCell.rowIndex, activeCell.rowIndex),
+      endRowIndex: Math.max(anchorCell.rowIndex, activeCell.rowIndex),
+      startColumnIndex: Math.min(anchorCell.columnIndex, activeCell.columnIndex),
+      endColumnIndex: Math.max(anchorCell.columnIndex, activeCell.columnIndex)
+    };
+  }
+
+  function isCellSelected(rowIndex: number, columnIndex: number): boolean {
+    return rowIndex >= Math.min(anchorCell.rowIndex, activeCell.rowIndex)
+      && rowIndex <= Math.max(anchorCell.rowIndex, activeCell.rowIndex)
+      && columnIndex >= Math.min(anchorCell.columnIndex, activeCell.columnIndex)
+      && columnIndex <= Math.max(anchorCell.columnIndex, activeCell.columnIndex);
   }
 
   function scrollActiveCellIntoView(): void {
@@ -190,30 +254,30 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex + 1, activeCell.columnIndex);
+      setActiveCell(activeCell.rowIndex + 1, activeCell.columnIndex, event.shiftKey);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex - 1, activeCell.columnIndex);
+      setActiveCell(activeCell.rowIndex - 1, activeCell.columnIndex, event.shiftKey);
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex, activeCell.columnIndex + 1);
+      setActiveCell(activeCell.rowIndex, activeCell.columnIndex + 1, event.shiftKey);
     } else if (event.key === "ArrowLeft") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex, activeCell.columnIndex - 1);
+      setActiveCell(activeCell.rowIndex, activeCell.columnIndex - 1, event.shiftKey);
     } else if (event.key === "Home") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex, 0);
+      setActiveCell(activeCell.rowIndex, 0, event.shiftKey);
     } else if (event.key === "End") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex, options.columns.length - 1);
+      setActiveCell(activeCell.rowIndex, columns.length - 1, event.shiftKey);
     } else if (event.key === "Enter") {
       event.preventDefault();
       startEdit();
-    } else if (event.key === " " && options.columns[activeCell.columnIndex]?.dataType === "boolean") {
+    } else if (event.key === " " && columns[activeCell.columnIndex]?.dataType === "boolean") {
       event.preventDefault();
       toggleBooleanCell();
     } else if (isTypeToEditKey(event)) {
-      const column = options.columns[activeCell.columnIndex];
+      const column = columns[activeCell.columnIndex];
 
       if (column && !column.readonly && column.dataType !== "boolean") {
         event.preventDefault();
@@ -235,10 +299,7 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
 
     if (Number.isInteger(rowIndex) && Number.isInteger(columnIndex)) {
       grid.focus();
-
-      if (rowIndex !== activeCell.rowIndex || columnIndex !== activeCell.columnIndex) {
-        setActiveCell(rowIndex, columnIndex);
-      }
+      setActiveCell(rowIndex, columnIndex, event.shiftKey);
 
       if (event.detail === 2) {
         startEdit();
@@ -246,8 +307,56 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     }
   }
 
+  function handlePaste(event: ClipboardEvent): void {
+    const pasteMode = options.clipboard?.pasteMode ?? "direct-and-dialog";
+
+    if (!options.clipboard?.enabled || pasteMode === "dialog") {
+      return;
+    }
+
+    event.preventDefault();
+    const startRowIndex = activeCell.rowIndex;
+    const startColumnIndex = activeCell.columnIndex;
+    const result = prepareGridPaste({
+      text: event.clipboardData?.getData("text/plain") ?? "",
+      startRowIndex,
+      startColumnIndex,
+      rows,
+      columns,
+      clipboard: options.clipboard
+    });
+
+    if (result.committed) {
+      for (const change of result.changes) {
+        const row = rows[change.rowIndex];
+
+        if (!row) {
+          continue;
+        }
+
+        (row.cells as Record<string, CellChangeEvent["newValue"]>)[change.columnId] = change.newValue;
+        options.onCellChange?.({
+          rowId: change.rowId,
+          columnId: change.columnId,
+          oldValue: change.oldValue,
+          newValue: change.newValue
+        });
+      }
+
+      anchorCell.rowIndex = startRowIndex;
+      anchorCell.columnIndex = startColumnIndex;
+      setActiveCell(
+        startRowIndex + result.rowCount - 1,
+        startColumnIndex + result.columnCount - 1,
+        true
+      );
+    }
+
+    options.onPaste?.(result);
+  }
+
   function startEdit(initialDraftValue?: string): void {
-    const column = options.columns[activeCell.columnIndex];
+    const column = columns[activeCell.columnIndex];
     const row = rows[activeCell.rowIndex];
 
     if (!column || !row || column.readonly) {
@@ -291,7 +400,7 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
   }
 
   function toggleBooleanCell(): void {
-    const column = options.columns[activeCell.columnIndex];
+    const column = columns[activeCell.columnIndex];
     const row = rows[activeCell.rowIndex];
 
     if (!column || !row || column.readonly) {
@@ -303,7 +412,7 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
   }
 
   function commitValue(rowIndex: number, columnIndex: number, rawValue: string | boolean): void {
-    const column = options.columns[columnIndex];
+    const column = columns[columnIndex];
     const row = rows[rowIndex];
 
     if (!column || !row || column.readonly) {
@@ -313,7 +422,7 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     const oldValue = row.cells[column.id] ?? null;
     const newValue = coerceValue(rawValue, column.dataType);
 
-    row.cells[column.id] = newValue;
+    (row.cells as Record<string, CellChangeEvent["newValue"]>)[column.id] = newValue;
     options.onCellChange?.({
       rowId: row.id,
       columnId: column.id,
@@ -325,6 +434,7 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
   grid.addEventListener("scroll", scheduleRender);
   grid.addEventListener("keydown", handleKeyDown);
   grid.addEventListener("click", handleClick);
+  grid.addEventListener("paste", handlePaste);
   window.addEventListener("resize", scheduleRender);
   render();
 
@@ -338,9 +448,30 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
       grid.removeEventListener("scroll", scheduleRender);
       grid.removeEventListener("keydown", handleKeyDown);
       grid.removeEventListener("click", handleClick);
+      grid.removeEventListener("paste", handlePaste);
       window.removeEventListener("resize", scheduleRender);
       container.replaceChildren();
     },
     render
   };
+}
+
+function applyTheme(grid: HTMLElement, theme: VirtualDomGridTheme | undefined): void {
+  const variables: ReadonlyArray<readonly [string, string | undefined]> = [
+    ["--gethen-background", theme?.background],
+    ["--gethen-text-color", theme?.textColor],
+    ["--gethen-grid-line-color", theme?.gridLineColor],
+    ["--gethen-active-cell-border", theme?.activeCellBorder],
+    ["--gethen-active-cell-background", theme?.activeCellBackground],
+    ["--gethen-selection-background", theme?.selectionBackground],
+    ["--gethen-cell-padding", theme?.cellPadding],
+    ["--gethen-font-family", theme?.fontFamily],
+    ["--gethen-font-size", theme?.fontSize]
+  ];
+
+  for (const [name, value] of variables) {
+    if (value !== undefined) {
+      grid.style.setProperty(name, value);
+    }
+  }
 }

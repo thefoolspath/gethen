@@ -1,29 +1,37 @@
-import type { GridColumn } from "@thefoolspath/gethen-protocol";
-
 import type { GridRow } from "./client-grid-engine.js";
+import type { GridClassValue, GridColumnView, GridStylingOptions } from "./grid-customization.js";
+import { resolveGridClassNames } from "./grid-customization.js";
 
-export interface VirtualDomGridCellInput {
+export interface VirtualDomGridCellInput<TRow extends GridRow = GridRow> {
   readonly rowHeight: number;
   readonly columnWidth: number;
   readonly firstRenderedRow: number;
   readonly firstRenderedColumn: number;
   readonly commitEdit: (value: string) => void;
   readonly cancelEdit: () => void;
+  readonly styling: GridStylingOptions<TRow> | undefined;
 }
 
-export function createVirtualDomGridCell(
-  input: VirtualDomGridCellInput,
-  row: GridRow,
-  column: GridColumn,
+export function createVirtualDomGridCell<TRow extends GridRow>(
+  input: VirtualDomGridCellInput<TRow>,
+  row: TRow,
+  column: GridColumnView<TRow>,
   rowIndex: number,
   columnIndex: number,
+  rowClass: GridClassValue,
   active: boolean,
+  selected: boolean,
   editing: boolean,
   draftValue: string
 ): HTMLElement {
   const cell = document.createElement("div");
-  configureCellAccessibility(cell, columnIndex, rowIndex, active);
-  configureCellPosition(cell, input, rowIndex, columnIndex);
+  configureCellAccessibility(cell, columnIndex, rowIndex, active, selected);
+  configureCellPosition(cell, input, column, rowIndex, columnIndex);
+  configureCellClasses(cell, input.styling, rowClass, row, column, rowIndex, columnIndex);
+
+  if (selected) {
+    applySelectedCellStyles(cell);
+  }
 
   if (active) {
     applyActiveCellStyles(cell);
@@ -32,30 +40,64 @@ export function createVirtualDomGridCell(
   if (editing) {
     cell.replaceChildren(createCellEditor(draftValue, input.commitEdit, input.cancelEdit));
   } else {
-    cell.textContent = String(row.cells[column.id] ?? "");
+    const value = row.cells[column.id];
+    cell.textContent = column.formatter?.({
+      row,
+      rowId: row.id,
+      rowIndex,
+      column,
+      columnIndex,
+      value
+    }) ?? String(value ?? "");
   }
 
   return cell;
+}
+
+function configureCellClasses<TRow extends GridRow>(
+  cell: HTMLElement,
+  styling: GridStylingOptions<TRow> | undefined,
+  rowClass: GridClassValue,
+  row: TRow,
+  column: GridColumnView<TRow>,
+  rowIndex: number,
+  columnIndex: number
+): void {
+  const cellClass = styling?.getCellClass?.({
+    row,
+    rowId: row.id,
+    rowIndex,
+    column,
+    columnIndex,
+    value: row.cells[column.id]
+  });
+  cell.classList.add(...resolveGridClassNames(column.className, rowClass, cellClass));
 }
 
 function configureCellAccessibility(
   cell: HTMLElement,
   columnIndex: number,
   rowIndex: number,
-  active: boolean
+  active: boolean,
+  selected: boolean
 ): void {
   cell.id = active ? "gethen-active-cell" : "";
   cell.setAttribute("role", columnIndex === 0 ? "rowheader" : "gridcell");
   cell.setAttribute("aria-rowindex", String(rowIndex + 1));
   cell.setAttribute("aria-colindex", String(columnIndex + 1));
-  cell.setAttribute("aria-selected", active ? "true" : "false");
+  cell.setAttribute("aria-selected", selected ? "true" : "false");
   cell.dataset.rowIndex = String(rowIndex);
   cell.dataset.columnIndex = String(columnIndex);
 }
 
-function configureCellPosition(
+function applySelectedCellStyles(cell: HTMLElement): void {
+  cell.style.background = "var(--gethen-selection-background, #e6f4ff)";
+}
+
+function configureCellPosition<TRow extends GridRow>(
   cell: HTMLElement,
-  input: VirtualDomGridCellInput,
+  input: VirtualDomGridCellInput<TRow>,
+  column: GridColumnView<TRow>,
   rowIndex: number,
   columnIndex: number
 ): void {
@@ -70,14 +112,20 @@ function configureCellPosition(
     textOverflow: "ellipsis",
     borderRight: "1px solid #e0e5ea",
     borderBottom: "1px solid #e0e5ea",
-    padding: "7px 10px"
+    borderColor: "var(--gethen-grid-line-color, #e0e5ea)",
+    padding: "var(--gethen-cell-padding, 7px 10px)",
+    color: "var(--gethen-text-color, inherit)",
+    background: "var(--gethen-background, transparent)",
+    fontFamily: "var(--gethen-font-family, inherit)",
+    fontSize: "var(--gethen-font-size, inherit)",
+    textAlign: column.align ?? "inherit"
   });
 }
 
 function applyActiveCellStyles(cell: HTMLElement): void {
   Object.assign(cell.style, {
-    border: "2px solid #176b87",
-    background: "#fff8df",
+    border: "2px solid var(--gethen-active-cell-border, #176b87)",
+    background: "var(--gethen-active-cell-background, #fff8df)",
     zIndex: "1"
   });
 }

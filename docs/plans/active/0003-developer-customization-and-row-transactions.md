@@ -1,8 +1,37 @@
 # Developer Customization And Row Transaction Plan
 
-Last reviewed: 2026-08-08.
+Last reviewed: 2026-08-10.
 
-Status: Proposed follow-up plan. No implementation has started.
+Status: Implemented and locally verified for the `0.0.0-alpha.2` release candidate. No package is published. Cross-hardware/full-frame-trace evidence remains deferred before external performance claims.
+
+## Implementation Progress
+
+- [x] Add core view metadata for hidden columns, alignment, application classes, and text formatters.
+- [x] Add typed row and cell class callbacks that run within the virtualized viewport.
+- [x] Add initial CSS-variable theme tokens.
+- [x] Pass styling and theme options through the Angular adapter.
+- [x] Add unit and browser regression coverage for the initial customization surface.
+- [x] Add DTO-to-column mapping with runtime metadata checks and one stable hidden key field.
+- [x] Add headless single-row edit, insert, cancel, and save transactions with changed-field payloads.
+- [x] Add rectangular range selection with Shift+keyboard and Shift+click interactions.
+- [x] Add opt-in direct clipboard paste and a pure preparation API for host-owned dialog previews, with all-or-nothing validation-before-commit.
+- [x] Add a repeat-iteration JavaScript baseline for customization and 1,000-cell clipboard preparation/validation.
+- [x] Measure initial callback and formatter render cost across repeated Chromium scroll positions.
+- [x] Capture a local DevTools-style frame trace across three independent Chromium processes per scenario.
+- [ ] Repeat trace evidence in headed/cross-hardware environments before external performance claims.
+
+## Completion Evidence
+
+- `pnpm run build` passed.
+- `pnpm run check` passed.
+- `pnpm run test` passed with 34 tests.
+- `pnpm run test:browser` passed with 17 Chromium tests.
+- `pnpm run bench` passed, including TypeScript, browser, Alpha 2, and GNU Rust stages.
+- Local CDP frame tracing recorded no task over 50 ms and no customization-on median regression; results remain too close to the 16.7 ms scheduling boundary for a cross-hardware claim.
+- Package dry-run inspection passed for protocol, core, and Angular at `0.0.0-alpha.2`.
+- No runtime dependency was added.
+- CR-20260808-002 and CR-20260808-003 are marked done in the intake log.
+- [Alpha 2 release notes](../../project/ALPHA_2_RELEASE_NOTES.md) record included and deferred behavior.
 
 ## Goal
 

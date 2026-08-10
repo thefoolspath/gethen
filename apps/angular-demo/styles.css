@@ -28,7 +28,7 @@ gethen-angular-demo {
 
 .demo-toolbar {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(120px, auto));
+  grid-template-columns: minmax(180px, 1fr) repeat(5, minmax(120px, auto));
   gap: 16px;
   align-items: center;
   padding: 14px 18px;
@@ -69,6 +69,11 @@ gethen-grid {
   min-height: 360px;
   border: 1px solid #cbd6e2;
   background: #ffffff;
+}
+
+.demo-approved-cell {
+  color: #166534 !important;
+  font-weight: 700;
 }
 
 @media (max-width: 760px) {
