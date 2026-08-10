@@ -18,6 +18,7 @@ function run(command, args) {
 run("node", ["benchmarks/typescript-reference/reference-operations.mjs"]);
 run("node", ["benchmarks/typescript-reference/core-engine-operations.mjs"]);
 run("node", ["benchmarks/typescript-reference/alpha2-customization-clipboard.mjs"]);
+run("node", ["benchmarks/engine-bakeoff/measure-worker-boundary.mjs"]);
 run("node", ["benchmarks/renderer-prototype/measure-renderers.mjs"]);
 run("node", ["benchmarks/renderer-prototype/measure-alpha2-customization.mjs"]);
 run("node", ["benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs"]);

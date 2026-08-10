@@ -9,3 +9,7 @@ Current benchmark targets:
 - `renderer-canvas-prototype/`: manual measurement notes for the Canvas 2D renderer prototype.
 - `renderer-prototype/`: manual measurement notes for the virtualized DOM renderer prototype.
 - `typescript-reference/`: dependency-free Node benchmark for TypeScript-compatible reference operations.
+## Alpha 3 Worker Boundary
+
+- `engine-bakeoff/measure-worker-boundary.mjs` measures startup, transferable-buffer copy, and TypeScript Worker round-trip distributions.
+- The Rust/WASM Worker candidate remains an explicit Alpha 4 task; Alpha 3 results cannot select the engine.

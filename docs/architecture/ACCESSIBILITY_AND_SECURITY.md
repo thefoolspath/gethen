@@ -1,10 +1,10 @@
 # Accessibility And Security Architecture
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-08-10.
 
 Initial alpha note: the virtualized DOM renderer represents the active cell with `aria-activedescendant`, cell `aria-selected`, and row/column indexes. Full screen-reader validation remains required before release confidence.
 
-Status: Proposed.
+Status: Alpha 3 keyboard, ARIA, trusted-extension, and untrusted-input boundaries are implemented as described below. Manual NVDA/Chrome validation remains open.
 
 ## Accessibility
 
@@ -33,4 +33,6 @@ Initial Alpha 2 range selection keeps one active descendant while setting `aria-
 
 Initial Alpha 2 direct paste is disabled by default and reads `text/plain` only. The complete tabular payload is parsed and validated before mutation; any bounds, type, nullability, readonly, or developer-validation error rejects the whole paste. Formula-looking and HTML-looking text remains inert cell data.
 
-Future custom renderers should be treated as application code supplied by the host app.
+Alpha 3 custom renderers and editors are trusted application code supplied by the host app. They receive DOM hosts and may execute application logic; they must never be populated from protocol callbacks or untrusted cell content. Built-in JSON editing parses only to validate syntax and stores inert Protocol v1 text. Angular template/component registrations are resolved only from host-provided registries, while Core remains framework-neutral.
+
+Multiple frozen panes retain one logical active descendant, normalized row/column indexes, and virtualized `aria-selected` state. Automated keyboard/browser coverage exists for layout and editing, but no WCAG or screen-reader certification is claimed.

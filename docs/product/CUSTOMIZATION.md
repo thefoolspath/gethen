@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-10.
 
-Status: Initial Alpha 2 view-customization and rectangular range-selection surfaces implemented. Row transactions and clipboard behavior remain planned.
+Status: Alpha 2 customization plus Alpha 3 editing extensions, history, and layout surfaces are implemented locally. Manual NVDA/Chrome verification remains open.
 
 ## Core API
 
@@ -115,8 +115,20 @@ Pasted formulas, HTML, and other rich content are not executed. Formula-looking 
 
 ## Angular Adapter
 
-`GethenGridComponent` accepts `styling` and `theme` inputs and passes them to core. The adapter does not duplicate class resolution, formatting, or range-selection logic.
+`GethenGridComponent` accepts `styling`, `theme`, layout, history, and registry inputs and passes normalized behavior to core. `GethenAngularRendererRegistry` supports Angular templates or components; `GethenAngularEditorRegistry` supports editor components implementing the typed lifecycle. Columns select registrations with `angularRenderer` and `angularEditor` keys. Core imports no Angular code.
+
+## Alpha 3 Editors And Trusted Extensions
+
+Built-in editor definitions support `text`, `number`, `boolean`, `date`, `datetime`, `select`, and `json`. Nullable values commit as `null`; readonly columns cannot activate an editor. JSON is parsed only for validation and remains an inert string in Protocol v1 cell values.
+
+`GridCellRenderer` exposes `mount`, `update`, and `destroy`. `GridCellEditor` exposes `mount`, `update`, `focus`, `getValue`, `validate`, `commit`, `cancel`, and `destroy`. Renderer/editor factories are trusted application code, while cell values and clipboard content remain untrusted data. The editor state machine reports activation, editing, validation, commit, failure, cancellation, scroll suspension, and unmount outcomes.
+
+## History And Layout
+
+`GridHistoryOptions` bounds history by entry count and retained bytes. Cell edits, all-or-nothing paste commits, and saved row transactions create local history entries. Undo emits inverse changes as new local events; it does not replay or reverse a prior network request. A new record clears the redo branch.
+
+`GridLayoutState` contains ordered column IDs, per-column widths, and counts for frozen top rows and leading columns. The grid normalizes stale/missing columns, provides resize/reorder/freeze/apply methods, and emits normalized layout events. The host owns persistence to local storage or a server.
 
 ## Security And Deferred APIs
 
-Formatters return text and are assigned through `textContent`; cell values and formatter output are not interpreted as HTML. Custom renderers, custom editors, raw HTML formatters, renderer-owned row action controls, async server reconciliation helpers, and a renderer-owned paste dialog remain outside the implemented slices.
+Formatters return text and are assigned through `textContent`; cell values and formatter output are not interpreted as HTML. Raw HTML formatters, renderer-owned row action controls, automatic network replay, and a renderer-owned paste dialog remain outside the implemented slices.

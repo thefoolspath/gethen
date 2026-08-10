@@ -142,6 +142,20 @@ test("core demo starts editing with the first typed character", async ({ page })
   await expect(page.locator("#lastChange")).toHaveText("row-1 / c1: R1 Column 2 -> typed edit");
 });
 
+test("Alpha 3 commits with Tab and advances the logical active cell", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+  await grid.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("tab committed");
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c1: R1 Column 2 -> tab committed"
+  );
+  await expect(page.locator("#activeCell")).toHaveText("row-1 / c2");
+});
+
 test("core demo toggles boolean cells", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
   const grid = page.getByRole("grid");
@@ -180,6 +194,92 @@ test("core demo rejects an invalid paste without partial changes", async ({ page
   await expect(page.locator("#lastChange")).toHaveText("none");
   await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("1");
   await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveText("R1 Column 2");
+});
+
+test("Alpha 3 layout resizes, reorders, and freezes multiple panes", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?alpha3=on");
+  const grid = page.getByRole("grid");
+  const firstCell = page.locator('[aria-rowindex="1"][aria-colindex="1"]');
+
+  await page.locator("#resizeColumn").click();
+  await expect(firstCell).toHaveCSS("width", "220px");
+
+  await page.locator("#reorderColumn").click();
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText(
+    "Custom: R1 Column 2"
+  );
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveAttribute(
+    "id",
+    "gethen-active-cell"
+  );
+  await expect(page.locator("#activeCell")).toHaveText("row-1 / c0");
+
+  await page.locator("#freezePanes").click();
+  await expect(page.locator("#layoutStatus")).toHaveText("freeze: 2 x 2");
+  const before = await page.locator('[aria-rowindex="1"][aria-colindex="1"]').boundingBox();
+  await grid.evaluate((element) => {
+    element.scrollTop = 1000;
+    element.scrollLeft = 500;
+  });
+  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toBeVisible();
+  const after = await page.locator('[aria-rowindex="1"][aria-colindex="1"]').boundingBox();
+  expect(after?.x).toBeCloseTo(before?.x ?? 0, 0);
+  expect(after?.y).toBeCloseTo(before?.y ?? 0, 0);
+});
+
+test("Alpha 3 JSON editor validates, commits, and reports lifecycle state", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?alpha3=on");
+  const cell = page.locator('[aria-rowindex="1"][aria-colindex="4"]');
+  await cell.dblclick();
+  const editor = page.locator("textarea[data-gethen-editor='true']");
+  await editor.fill("{invalid");
+  await editor.press("Enter");
+  await expect(editor).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#editorStatus")).toHaveText("editing");
+
+  await editor.fill('{"status":"ok"}');
+  await editor.press("Enter");
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator("#lastChange")).toContainText('-> {"status":"ok"}');
+  await expect(page.locator("#editorStatus")).toHaveText("inactive");
+});
+
+test("Alpha 3 history emits inverse changes and supports redo", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+  await grid.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("history value");
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#historyStatus")).toHaveText("1 undo / 0 redo");
+
+  await page.locator("#undo").click();
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c1: history value -> R1 Column 2"
+  );
+  await page.locator("#redo").click();
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c1: R1 Column 2 -> history value"
+  );
+});
+
+test("Alpha 3 custom editor lifecycle validates and commits trusted host code", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?alpha3=on");
+  await page.locator('[aria-rowindex="1"][aria-colindex="7"]').dblclick();
+  const editor = page.locator("[data-custom-editor='true']");
+  await expect(editor).toBeFocused();
+  await editor.fill("invalid");
+  await editor.press("Enter");
+  await expect(page.locator("#editorStatus")).toHaveText("failed");
+  await expect(editor).toBeVisible();
+
+  await editor.fill("custom:accepted");
+  await editor.press("Enter");
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c6: R1 Column 7 -> custom:accepted"
+  );
 });
 
 test("Angular demo mounts the adapter-backed grid", async ({ page }) => {

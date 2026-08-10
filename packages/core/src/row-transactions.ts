@@ -1,3 +1,6 @@
+import type { GridHistory, GridHistoryOptions } from "./grid-history.js";
+import { createGridHistory } from "./grid-history.js";
+
 export type RowSaveMode = "edit" | "insert";
 
 export interface RowSaveEvent<TRow extends object> {
@@ -13,16 +16,30 @@ export interface RowTransactionState<TRow extends object> extends RowSaveEvent<T
 export interface RowTransactionManagerOptions<TRow extends object> {
   readonly rows: readonly TRow[];
   readonly getRowId: (row: TRow) => string;
+  readonly history?: GridHistoryOptions | false;
+  readonly onHistoryChange?: (change: RowHistoryChange<TRow>) => void;
+}
+
+export interface RowHistoryChange<TRow extends object> {
+  readonly rowId: string;
+  readonly oldRow: TRow | null;
+  readonly newRow: TRow | null;
 }
 
 export class RowTransactionManager<TRow extends object> {
   readonly #getRowId: (row: TRow) => string;
+  readonly #history: GridHistory<RowHistoryChange<TRow>> | undefined;
+  readonly #onHistoryChange: ((change: RowHistoryChange<TRow>) => void) | undefined;
   #rows: TRow[];
   #rowIndexById: Map<string, number>;
   #transaction: RowTransactionState<TRow> | null = null;
 
   constructor(options: RowTransactionManagerOptions<TRow>) {
     this.#getRowId = options.getRowId;
+    this.#history = options.history === false
+      ? undefined
+      : createGridHistory<RowHistoryChange<TRow>>(options.history);
+    this.#onHistoryChange = options.onHistoryChange;
     this.#rows = options.rows.map(cloneRow);
     this.#rowIndexById = indexRows(this.#rows, this.#getRowId);
   }
@@ -127,8 +144,49 @@ export class RowTransactionManager<TRow extends object> {
     }
 
     const event = cloneTransaction(transaction);
+    this.#history?.record({
+      kind: "row-transaction",
+      changes: [{
+        rowId: transaction.rowId,
+        oldRow: transaction.originalRow ? cloneRow(transaction.originalRow) : null,
+        newRow: cloneRow(savedRow)
+      }]
+    });
     this.#transaction = null;
     return event;
+  }
+
+  undo(): readonly RowHistoryChange<TRow>[] {
+    return this.applyHistory(this.#history?.undo(invertRowHistoryChange) ?? []);
+  }
+
+  redo(): readonly RowHistoryChange<TRow>[] {
+    return this.applyHistory(this.#history?.redo() ?? []);
+  }
+
+  private applyHistory(changes: readonly RowHistoryChange<TRow>[]): readonly RowHistoryChange<TRow>[] {
+    if (this.#transaction) {
+      throw new Error("Finish or cancel the active row transaction before using history.");
+    }
+    for (const change of changes) {
+      const rowIndex = this.#rowIndexById.get(change.rowId);
+      if (change.newRow === null) {
+        if (rowIndex !== undefined) {
+          this.#rows = [...this.#rows.slice(0, rowIndex), ...this.#rows.slice(rowIndex + 1)];
+        }
+      } else if (rowIndex === undefined) {
+        this.#rows = [...this.#rows, cloneRow(change.newRow)];
+      } else {
+        this.#rows = [
+          ...this.#rows.slice(0, rowIndex),
+          cloneRow(change.newRow),
+          ...this.#rows.slice(rowIndex + 1)
+        ];
+      }
+      this.#rowIndexById = indexRows(this.#rows, this.#getRowId);
+      this.#onHistoryChange?.(cloneRowHistoryChange(change));
+    }
+    return changes.map(cloneRowHistoryChange);
   }
 
   private assertNoTransaction(): void {
@@ -144,6 +202,16 @@ export class RowTransactionManager<TRow extends object> {
 
     return this.#transaction;
   }
+}
+
+export function invertRowHistoryChange<TRow extends object>(
+  change: RowHistoryChange<TRow>
+): RowHistoryChange<TRow> {
+  return {
+    rowId: change.rowId,
+    oldRow: change.newRow ? cloneRow(change.newRow) : null,
+    newRow: change.oldRow ? cloneRow(change.oldRow) : null
+  };
 }
 
 export function createRowTransactionManager<TRow extends object>(
@@ -165,6 +233,16 @@ function cloneTransaction<TRow extends object>(
     row: cloneRow(transaction.row),
     ...(transaction.originalRow ? { originalRow: cloneRow(transaction.originalRow) } : {}),
     changes: { ...transaction.changes }
+  };
+}
+
+function cloneRowHistoryChange<TRow extends object>(
+  change: RowHistoryChange<TRow>
+): RowHistoryChange<TRow> {
+  return {
+    rowId: change.rowId,
+    oldRow: change.oldRow ? cloneRow(change.oldRow) : null,
+    newRow: change.newRow ? cloneRow(change.newRow) : null
   };
 }
 

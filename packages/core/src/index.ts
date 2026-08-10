@@ -28,8 +28,32 @@ export {
 
 export {
   RowTransactionManager,
-  createRowTransactionManager
+  createRowTransactionManager,
+  invertRowHistoryChange
 } from "./row-transactions.js";
+
+export {
+  GridEditorStateMachine,
+  createGridEditorStateMachine,
+  parseBuiltInEditorValue,
+  resolveBuiltInEditor
+} from "./grid-editing.js";
+
+export {
+  GridHistory,
+  createGridHistory,
+  invertCellChange
+} from "./grid-history.js";
+
+export {
+  applyGridLayoutState,
+  createGridLayoutState,
+  freezeGridPanes,
+  getGridColumnOffsets,
+  getGridLayoutWidth,
+  reorderGridColumn,
+  resizeGridColumn
+} from "./grid-layout.js";
 
 export {
   mountVirtualDomGrid
@@ -38,6 +62,7 @@ export {
 export type {
   CellClassContext,
   CellFormatContext,
+  GridCellContext,
   GridClassValue,
   GridColumnAlignment,
   GridColumnView,
@@ -69,10 +94,44 @@ export type {
 
 export type {
   RowSaveEvent,
+  RowHistoryChange,
   RowSaveMode,
   RowTransactionManagerOptions,
   RowTransactionState
 } from "./row-transactions.js";
+
+export type {
+  GridBuiltInEditorDefinition,
+  GridBuiltInEditorKind,
+  GridCellEditor,
+  GridCellEditorFactory,
+  GridCellRenderer,
+  GridCellRendererFactory,
+  GridEditorActivation,
+  GridEditorContext,
+  GridEditorExitReason,
+  GridEditorPhase,
+  GridEditorSnapshot,
+  GridEditorValue,
+  GridSelectOption,
+  GridValidationResult
+} from "./grid-editing.js";
+
+export type {
+  GridHistoryEntry,
+  GridHistoryEvent,
+  GridHistoryKind,
+  GridHistoryOptions,
+  GridHistorySnapshot
+} from "./grid-history.js";
+
+export type {
+  ApplyGridLayoutStateOptions,
+  CreateGridLayoutStateOptions,
+  GridColumnLayoutState,
+  GridLayoutEvent,
+  GridLayoutState
+} from "./grid-layout.js";
 
 export type {
   ClientDataSourceOptions,

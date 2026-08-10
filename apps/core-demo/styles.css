@@ -27,6 +27,17 @@ body {
   background: #f6f7f9;
 }
 
+.alpha3-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 6px;
+}
+
+.alpha3-controls button {
+  min-height: 32px;
+}
+
 h1 {
   margin: 0 0 4px;
   font-size: 20px;
@@ -41,7 +52,7 @@ p {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
   gap: 8px;
   margin: 0;
 }

@@ -77,3 +77,42 @@ describe("RowTransactionManager", () => {
     expect(() => manager.beginEdit("order-2")).toThrow(/active row transaction/);
   });
 });
+
+describe("RowTransactionManager history", () => {
+  it("undoes and redoes saved edits as new local changes", () => {
+    const events: unknown[] = [];
+    const manager = createRowTransactionManager({
+      rows: [{ id: "r1", name: "Ada" }],
+      getRowId: (row) => row.id,
+      onHistoryChange: (change) => events.push(change)
+    });
+    manager.beginEdit("r1");
+    manager.updateField("name", "Grace");
+    manager.save();
+
+    expect(manager.undo()).toEqual([{
+      rowId: "r1",
+      oldRow: { id: "r1", name: "Grace" },
+      newRow: { id: "r1", name: "Ada" }
+    }]);
+    expect(manager.getRow("r1")?.name).toBe("Ada");
+    expect(manager.redo()).toEqual([{
+      rowId: "r1",
+      oldRow: { id: "r1", name: "Ada" },
+      newRow: { id: "r1", name: "Grace" }
+    }]);
+    expect(manager.getRow("r1")?.name).toBe("Grace");
+    expect(events).toHaveLength(2);
+  });
+
+  it("undoes an insert by removing the locally inserted row", () => {
+    const manager = createRowTransactionManager({
+      rows: [{ id: "r1", name: "Ada" }],
+      getRowId: (row) => row.id
+    });
+    manager.beginInsert({ id: "r2", name: "Grace" });
+    manager.save();
+    manager.undo();
+    expect(manager.getRows()).toEqual([{ id: "r1", name: "Ada" }]);
+  });
+});

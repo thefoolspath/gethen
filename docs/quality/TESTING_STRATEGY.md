@@ -1,8 +1,8 @@
 # Testing Strategy
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-08-10.
 
-Status: Proposed. No tests exist yet.
+Status: Implemented test harnesses exist for unit, contract, adapter, Chromium browser, benchmark, and Rust research checks. Manual assistive-technology and expanded cross-browser gates remain open.
 
 ## Required Test Layers
 
@@ -27,4 +27,11 @@ Status: Proposed. No tests exist yet.
 
 ## Verified Commands
 
-No test commands are verified yet because no test tooling exists.
+- `pnpm run check`
+- `pnpm run build`
+- `pnpm run test`
+- `pnpm run test:browser`
+- `pnpm run bench`
+- `node benchmarks/engine-bakeoff/measure-worker-boundary.mjs`
+
+Current Chromium coverage includes virtualization, editing activation/commit/cancel paths, rectangular selection, validated paste, variable layout, multiple frozen panes, bounded-history interaction, trusted custom editors/renderers, Angular passthrough, and adapter lifecycle smoke checks. Manual NVDA/Chrome remains a release gate and must not be represented as automated coverage.

@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-10.
 
-Gethen has a locally verified `0.0.0-alpha.2` release candidate, package scaffolding, demos, tests, benchmarks, CI configuration, and documentation. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
+Gethen has a locally verified `0.0.0-alpha.2` release candidate and an automated `0.0.0-alpha.3` implementation awaiting manual NVDA/Chrome verification. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
 
 ## Source-Of-Truth Hierarchy
 
@@ -24,7 +24,7 @@ Gethen has a locally verified `0.0.0-alpha.2` release candidate, package scaffol
 - Active plans: [plans/active/0001-alpha-1-vertical-slice.md](plans/active/0001-alpha-1-vertical-slice.md), [plans/active/0002-feedback-and-change-control.md](plans/active/0002-feedback-and-change-control.md), [plans/active/0004-alpha-3-onward-execution-plan.md](plans/active/0004-alpha-3-onward-execution-plan.md)
 - Completed plans: [plans/completed/0003-developer-customization-and-row-transactions.md](plans/completed/0003-developer-customization-and-row-transactions.md)
 - Quality: [quality/TESTING_STRATEGY.md](quality/TESTING_STRATEGY.md), [quality/PERFORMANCE_BUDGET.md](quality/PERFORMANCE_BUDGET.md), [quality/BENCHMARK_PLAN.md](quality/BENCHMARK_PLAN.md)
-- Project management: [project/PROJECT_STATE.md](project/PROJECT_STATE.md), [project/ISSUE_AND_CHANGE_REQUESTS.md](project/ISSUE_AND_CHANGE_REQUESTS.md), [project/ALPHA_1_RELEASE_NOTES.md](project/ALPHA_1_RELEASE_NOTES.md), [project/ALPHA_2_RELEASE_NOTES.md](project/ALPHA_2_RELEASE_NOTES.md), [project/CURRENT_STATE_ASSESSMENT.md](project/CURRENT_STATE_ASSESSMENT.md), [project/DOCUMENTATION_INVENTORY.md](project/DOCUMENTATION_INVENTORY.md), [project/MIGRATION_REPORT.md](project/MIGRATION_REPORT.md), [project/RISK_REGISTER.md](project/RISK_REGISTER.md), [project/RELEASE_STRATEGY.md](project/RELEASE_STRATEGY.md)
+- Project management: [project/PROJECT_STATE.md](project/PROJECT_STATE.md), [project/ISSUE_AND_CHANGE_REQUESTS.md](project/ISSUE_AND_CHANGE_REQUESTS.md), [project/ALPHA_1_RELEASE_NOTES.md](project/ALPHA_1_RELEASE_NOTES.md), [project/ALPHA_2_RELEASE_NOTES.md](project/ALPHA_2_RELEASE_NOTES.md), [project/ALPHA_3_RELEASE_NOTES.md](project/ALPHA_3_RELEASE_NOTES.md), [project/CURRENT_STATE_ASSESSMENT.md](project/CURRENT_STATE_ASSESSMENT.md), [project/DOCUMENTATION_INVENTORY.md](project/DOCUMENTATION_INVENTORY.md), [project/MIGRATION_REPORT.md](project/MIGRATION_REPORT.md), [project/RISK_REGISTER.md](project/RISK_REGISTER.md), [project/RELEASE_STRATEGY.md](project/RELEASE_STRATEGY.md)
 - Archive: [archive/planning-2026-08-03](archive/planning-2026-08-03)
 
 ## Major Decision State

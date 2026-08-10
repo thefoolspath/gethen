@@ -44,7 +44,7 @@ Deliver a production-quality, desktop-first Gethen data-grid and spreadsheet eco
 - [x] Inspect protocol, core, and Angular package contents with local dry-run packs.
 - [x] Keep packages unpublished.
 - [x] Move the Alpha 2 implementation plan to completed after the implementation commit.
-- [ ] Commit accepted roadmap documentation separately from Alpha 2 implementation.
+- [x] Commit accepted roadmap documentation separately from Alpha 2 implementation.
 
 ## `0.0.0-alpha.3` - Editing, History, And Layout
 
@@ -57,16 +57,16 @@ Deliver a production-quality, desktop-first Gethen data-grid and spreadsheet eco
 
 ### Work
 
-- [ ] Implement editor states: idle, activating, editing, validating, committing, cancelling, failed, and disposed.
-- [ ] Normalize Enter, Escape, Tab, double-click, type-to-edit, scroll, validation, commit, and unmount transitions.
-- [ ] Implement host-trusted custom renderer/editor lifecycle: mount, update, focus, get value, validate, commit, cancel, destroy.
-- [ ] Add Angular template/component registries without importing Angular from core.
-- [ ] Implement bounded undo/redo for cell edits, row transactions, and paste commits.
-- [ ] Emit an inverse change as a new transaction after an acknowledged save; never replay a previous network request automatically.
-- [ ] Implement column resize/reorder and multiple frozen top rows/leading columns.
-- [ ] Preserve focus, selection, editing, ARIA state, and virtualization across frozen panes.
-- [ ] Normalize, serialize, and apply layout snapshots; host applications own persistence.
-- [ ] Add TypeScript Worker and Rust/WASM Worker benchmark harness scaffolding.
+- [x] Implement editor states: idle, activating, editing, validating, committing, cancelling, failed, and disposed.
+- [x] Normalize Enter, Escape, Tab, double-click, type-to-edit, scroll, validation, commit, and unmount transitions.
+- [x] Implement host-trusted custom renderer/editor lifecycle: mount, update, focus, get value, validate, commit, cancel, destroy.
+- [x] Add Angular template/component registries without importing Angular from core.
+- [x] Implement bounded undo/redo for cell edits, row transactions, and paste commits.
+- [x] Emit an inverse change as a new transaction after an acknowledged save; never replay a previous network request automatically.
+- [x] Implement column resize/reorder and multiple frozen top rows/leading columns.
+- [x] Preserve focus, selection, editing, ARIA state, and virtualization across frozen panes.
+- [x] Normalize, serialize, and apply layout snapshots; host applications own persistence.
+- [x] Add TypeScript Worker and Rust/WASM Worker benchmark harness scaffolding.
 
 ### Exit Gate
 
@@ -75,6 +75,8 @@ Deliver a production-quality, desktop-first Gethen data-grid and spreadsheet eco
 - Layout round-trips are deterministic.
 - Resize/reorder/frozen panes work with hidden columns, range selection, clipboard, and Angular.
 - Keyboard-only and NVDA/Chrome checks pass for the included layout/editor surface.
+
+Automated Alpha 3 gates are implemented. Manual NVDA/Chrome verification remains open because NVDA is not installed in the current environment; Alpha 3 cannot be declared a completed local release candidate until that manual gate is recorded.
 
 ## `0.0.0-alpha.4` - Data Shaping And Engine Bake-Off
 

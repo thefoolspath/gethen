@@ -8,7 +8,7 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has initial workspace/tooling scaffolding, research prototypes, separated app demo source files, and a locally verified `0.0.0-alpha.2` release candidate. No packages are published.
+Gethen now has a locally verified `0.0.0-alpha.2` release candidate plus the automated implementation for `0.0.0-alpha.3`. Alpha 3 manual NVDA/Chrome verification remains open. No packages are published.
 
 The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
@@ -20,7 +20,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Framework-neutral core demo.
 - Initial Angular standalone adapter and Angular browser demo. The adapter component keeps its template and CSS in separate source files.
 - App demos and renderer prototypes keep HTML, CSS, and TypeScript source separated, with TypeScript compiled to app-local `dist/` output during workspace builds.
-- Local `0.0.0-alpha.2` package metadata for protocol, core, and Angular packages.
+- Local `0.0.0-alpha.3` package metadata for protocol, core, Angular, demos, and prototypes.
 - Initial Alpha 2 view customization: hidden rendered columns, alignment, application-owned column/row/cell classes, text-only formatters, CSS-variable theme tokens, and Angular adapter passthrough.
 - Initial Alpha 2 rectangular range selection with Shift+keyboard and Shift+click interactions, normalized range events, virtualized `aria-selected` state, and Angular event passthrough.
 - Initial Alpha 2 explicit DTO mapping with stable hidden key fields, runtime metadata validation, and typed source-row retention.
@@ -29,6 +29,11 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Preliminary repeat-iteration Alpha 2 customization and 1,000-cell clipboard preparation/validation baseline in `benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`.
 - Preliminary repeated-scroll Chromium comparison for customization off/on in `benchmarks/renderer-prototype/measure-alpha2-customization.mjs`; medians were 5.0 ms and 5.3 ms respectively in the first local run.
 - Local DevTools-style CDP trace across three independent Chromium processes per customization scenario: median frame intervals were 16.817 ms off and 16.529 ms on, with no top-level task over 50 ms. Cross-hardware evidence remains open.
+- Alpha 3 editor state machine and built-in text, number, boolean, date, datetime, select, and JSON editors with nullable, readonly, validation, Tab, scroll, and unmount semantics.
+- Alpha 3 trusted `GridCellRenderer`/`GridCellEditor` lifecycle plus Angular template/component renderer and component editor registries; Core imports no Angular code.
+- Alpha 3 bounded cell/paste/row history with inverse local events and no automatic network replay.
+- Alpha 3 host-persisted `GridLayoutState`, variable widths/order, and multiple virtualized frozen top rows/leading columns.
+- Alpha 3 TypeScript Worker transferable-column bake-off harness scaffold; Rust/WASM Worker implementation remains Alpha 4 work.
 
 ## Present Repository Assets
 
@@ -47,6 +52,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Package asset copy helper: `scripts/copy-package-assets.mjs`.
 - Alpha.1 local release notes: [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md).
 - Alpha.2 local release notes: [ALPHA_2_RELEASE_NOTES.md](ALPHA_2_RELEASE_NOTES.md).
+- Alpha.3 local candidate notes: [ALPHA_3_RELEASE_NOTES.md](ALPHA_3_RELEASE_NOTES.md).
 - Issue and change-request intake log for post-plan feedback: [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md).
 - Research scaffold: dependency-free virtualized DOM renderer prototype in `apps/renderer-prototype/`.
 - Research scaffold: dependency-free Canvas 2D renderer prototype in `apps/renderer-canvas-prototype/`.
@@ -69,7 +75,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 
 - TypeScript as public API and control layer.
 - Optional Rust compute behind an internal contract.
-- Worker and WASM integration only if benchmarks justify them.
+- TypeScript Worker and Rust/WASM Worker candidates are accepted for the Alpha 4 bake-off; only the measured winner ships, with Rust selected for a difference of at most 10%.
 - Virtualized DOM as the default renderer recommendation, pending Canvas comparison and accessibility evidence.
 - Row-oriented public data with conditional internal columnar or typed-vector representation.
 - JSON Schema as protocol source of truth.
@@ -84,11 +90,11 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Milestone 3 minimal TypeScript reference engine is initially complete.
 - Renderer strategy is accepted for alpha as virtualized DOM; Canvas is deferred.
 - Rust language boundary is accepted for alpha as TypeScript public/control layer with Rust research-only.
-- Worker/WASM production integration is deferred for alpha.
+- The Alpha 3 worker-boundary harness exists; equivalent TypeScript Worker and Rust/WASM Worker candidates remain active Alpha 4 work.
 - Milestones 6-9 are initially complete. Server-side DataSource is deferred for alpha.
 - Milestone 11 first framework adapter is complete for alpha.1 with Angular as selected adapter and browser-tested demo path.
 - Milestone 12 second adapter is deferred from alpha.1; React remains a follow-up candidate.
-- Local release verification has passed for `0.0.0-alpha.2`; publishing remains blocked until explicit maintainer approval and PR review to `main`.
+- Local release verification has passed for `0.0.0-alpha.2`. Alpha 3 automated checks are implemented, but manual NVDA/Chrome verification is still a blocker. Publishing remains prohibited under the accepted local-only plan.
 - Virtualized DOM and Canvas renderer prototype scaffolds exist; measured benchmark results are still open.
 - Preliminary TypeScript reference operation benchmark exists; repeat runs and Rust comparison are still open.
 - Preliminary Rust GNU native benchmark exists; default MSVC release execution is blocked by local MSVC linker configuration: `LINK : fatal error LNK1104: cannot open file 'msvcrt.lib'`.
@@ -117,6 +123,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `node benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`
 - `node benchmarks/renderer-prototype/measure-alpha2-customization.mjs`
 - `node benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`
+- `node benchmarks/engine-bakeoff/measure-worker-boundary.mjs`
 - `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`
@@ -171,3 +178,4 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-10 | Completed local `0.0.0-alpha.2` release-candidate verification and package inspection without publishing | [ALPHA_2_RELEASE_NOTES.md](ALPHA_2_RELEASE_NOTES.md), package manifests, full verified command suite |
 | 2026-08-10 | Added three-process local Chromium CDP frame tracing with frame intervals, long-task counts, and point-in-time heap movement | `benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`, [../research/findings/2026-08-10-alpha2-customization-clipboard.md](../research/findings/2026-08-10-alpha2-customization-clipboard.md) |
 | 2026-08-10 | Closed the Alpha 2 plan and accepted the sequential Alpha 3 through local unpublished 1.0 execution plan, including mandatory formula/pivot/server scope, Protocol v2 replacement, the engine bake-off, and .NET preview | [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md), [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md), [../product/ROADMAP.md](../product/ROADMAP.md), [../product/SCOPE.md](../product/SCOPE.md), [RISK_REGISTER.md](RISK_REGISTER.md) |
+| 2026-08-10 | Implemented the automated Alpha 3 editing, trusted extension, bounded history, layout/frozen-pane, Angular registry, and worker-boundary scope; manual NVDA/Chrome remains open | `packages/core/src/grid-editing.ts`, `packages/core/src/grid-history.ts`, `packages/core/src/grid-layout.ts`, `packages/gethen-angular/src/gethen-angular-registry.ts`, `benchmarks/engine-bakeoff/`, [ALPHA_3_RELEASE_NOTES.md](ALPHA_3_RELEASE_NOTES.md) |
