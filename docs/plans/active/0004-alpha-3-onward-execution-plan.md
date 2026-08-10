@@ -89,14 +89,16 @@ Automated Alpha 3 gates are implemented. Manual NVDA/Chrome verification remains
 
 ### Work
 
-- [ ] Implement the canonical pipeline: filter, stable multi-sort, group, aggregate, flatten, viewport.
-- [ ] Define null, text, number, boolean, date, and JSON comparison semantics.
-- [ ] Give synthetic rows stable IDs, explicit provenance, readonly defaults, keyboard behavior, and ARIA expansion state.
-- [ ] Define one compact columnar buffer schema and one batched worker contract.
+- [x] Implement the canonical pipeline: filter, stable multi-sort, group, aggregate, flatten, viewport.
+- [x] Define null, text, number, boolean, date, and JSON comparison semantics.
+- [x] Give synthetic rows stable IDs, explicit provenance, and readonly defaults. Keyboard behavior and ARIA expansion state remain part of the rendered group-row slice.
+- [x] Define one compact columnar buffer schema and one batched worker contract.
 - [ ] Implement equivalent TypeScript Worker and Rust/WASM Worker kernels for ingestion, transfer, sort, filter, group, aggregate, and representative formula/pivot workloads.
 - [ ] Use identical fixtures, algorithms, optimization intent, cancellation, and progress behavior.
 - [ ] Measure cold/warm startup, end-to-end latency, peak/retained memory, transfer, bundle cost, and disposal.
 - [ ] Select the production engine at the Alpha 4 exit gate; retain the loser only as a test/benchmark oracle.
+
+The first Alpha 4 checkpoint now includes the portable pipeline, transferable mixed-type buffer, TypeScript Worker, dependency-free Rust/WASM numeric kernels, a Rust/WASM shaping candidate, browser parity coverage, and immediate cancellation rejection. The current 100,000-row numeric boundary measurement is diagnostic only; it does not satisfy the full engine-selection gate.
 
 ### Exit Gate
 

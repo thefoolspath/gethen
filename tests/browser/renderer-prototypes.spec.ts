@@ -282,6 +282,24 @@ test("Alpha 3 custom editor lifecycle validates and commits trusted host code", 
   );
 });
 
+test("Alpha 4 TypeScript Worker shapes transferable columnar data", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  await page.locator("#runWorker").click();
+  await expect(page.locator("#workerStatus")).toHaveText("50 filtered / 52 view rows");
+});
+
+test("Alpha 4 Rust/WASM Worker runs the shared numeric boundary", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  await page.locator("#runWasmWorker").click();
+  await expect(page.locator("#wasmStatus")).toHaveText("parity: 50 rows / sum 3775");
+});
+
+test("Alpha 4 TypeScript and Rust/WASM shaping candidates return full parity", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  await page.locator("#runEngineParity").click();
+  await expect(page.locator("#wasmStatus")).toHaveText("full parity: 52 view rows");
+});
+
 test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
   await page.goto("/apps/angular-demo/index.html");
   await expect(page.locator("gethen-angular-demo")).toBeVisible();

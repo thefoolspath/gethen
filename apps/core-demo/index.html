@@ -30,6 +30,8 @@
           <div><dt>Layout</dt><dd id="layoutStatus">default</dd></div>
           <div><dt>History</dt><dd id="historyStatus">0 undo / 0 redo</dd></div>
           <div><dt>Editor</dt><dd id="editorStatus">inactive</dd></div>
+          <div><dt>Worker</dt><dd id="workerStatus">idle</dd></div>
+          <div><dt>WASM Worker</dt><dd id="wasmStatus">idle</dd></div>
         </dl>
         <div class="alpha3-controls" aria-label="Alpha 3 controls">
           <button id="resizeColumn" type="button">Resize first column</button>
@@ -37,6 +39,9 @@
           <button id="freezePanes" type="button">Freeze 2 x 2</button>
           <button id="undo" type="button">Undo</button>
           <button id="redo" type="button">Redo</button>
+          <button id="runWorker" type="button">Run worker shaping</button>
+          <button id="runWasmWorker" type="button">Run Rust/WASM kernel</button>
+          <button id="runEngineParity" type="button">Run engine parity</button>
         </div>
       </header>
       <section id="gridHost" class="gridHost" aria-label="Gethen core demo grid"></section>

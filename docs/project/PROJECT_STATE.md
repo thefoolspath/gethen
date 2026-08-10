@@ -8,7 +8,7 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has a locally verified `0.0.0-alpha.2` release candidate plus the automated implementation for `0.0.0-alpha.3`. Alpha 3 manual NVDA/Chrome verification remains open. No packages are published.
+Gethen now has a locally verified `0.0.0-alpha.2` release candidate, the automated implementation for `0.0.0-alpha.3`, and an in-progress Alpha 4 data-shaping/engine checkpoint. Alpha 3 manual NVDA/Chrome verification remains open. No packages are published.
 
 The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
@@ -33,7 +33,9 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Alpha 3 trusted `GridCellRenderer`/`GridCellEditor` lifecycle plus Angular template/component renderer and component editor registries; Core imports no Angular code.
 - Alpha 3 bounded cell/paste/row history with inverse local events and no automatic network replay.
 - Alpha 3 host-persisted `GridLayoutState`, variable widths/order, and multiple virtualized frozen top rows/leading columns.
-- Alpha 3 TypeScript Worker transferable-column bake-off harness scaffold; Rust/WASM Worker implementation remains Alpha 4 work.
+- Alpha 4 canonical filter/sort/group/aggregate/flatten/viewport pipeline with deterministic mixed-type comparisons, stable readonly synthetic group rows, and client-only custom reducers.
+- Alpha 4 transferable mixed-type columnar schema and shared worker contract with progress and cancellation messages.
+- Alpha 4 TypeScript Worker and dependency-free Rust/WASM Worker candidates, shared numeric formula/pivot-style kernels, browser parity smoke coverage, and a diagnostic 100,000-row numeric boundary comparison. Full end-to-end selection evidence remains open.
 
 ## Present Repository Assets
 
@@ -90,7 +92,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Milestone 3 minimal TypeScript reference engine is initially complete.
 - Renderer strategy is accepted for alpha as virtualized DOM; Canvas is deferred.
 - Rust language boundary is accepted for alpha as TypeScript public/control layer with Rust research-only.
-- The Alpha 3 worker-boundary harness exists; equivalent TypeScript Worker and Rust/WASM Worker candidates remain active Alpha 4 work.
+- The Alpha 4 shaping pipeline and both Worker candidates exist. Full 1M/500K end-to-end fixtures, browser memory/bundle evidence, rendered group-row accessibility, and the production-engine selection remain active work.
 - Milestones 6-9 are initially complete. Server-side DataSource is deferred for alpha.
 - Milestone 11 first framework adapter is complete for alpha.1 with Angular as selected adapter and browser-tested demo path.
 - Milestone 12 second adapter is deferred from alpha.1; React remains a follow-up candidate.
@@ -124,6 +126,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `node benchmarks/renderer-prototype/measure-alpha2-customization.mjs`
 - `node benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`
 - `node benchmarks/engine-bakeoff/measure-worker-boundary.mjs`
+- `cargo +stable-x86_64-pc-windows-gnu test --manifest-path crates/gethen-engine/Cargo.toml`
+- `cargo build --manifest-path crates/gethen-engine/Cargo.toml --release --target wasm32-unknown-unknown`
 - `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`
@@ -179,3 +183,4 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-10 | Added three-process local Chromium CDP frame tracing with frame intervals, long-task counts, and point-in-time heap movement | `benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`, [../research/findings/2026-08-10-alpha2-customization-clipboard.md](../research/findings/2026-08-10-alpha2-customization-clipboard.md) |
 | 2026-08-10 | Closed the Alpha 2 plan and accepted the sequential Alpha 3 through local unpublished 1.0 execution plan, including mandatory formula/pivot/server scope, Protocol v2 replacement, the engine bake-off, and .NET preview | [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md), [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md), [../product/ROADMAP.md](../product/ROADMAP.md), [../product/SCOPE.md](../product/SCOPE.md), [RISK_REGISTER.md](RISK_REGISTER.md) |
 | 2026-08-10 | Implemented the automated Alpha 3 editing, trusted extension, bounded history, layout/frozen-pane, Angular registry, and worker-boundary scope; manual NVDA/Chrome remains open | `packages/core/src/grid-editing.ts`, `packages/core/src/grid-history.ts`, `packages/core/src/grid-layout.ts`, `packages/gethen-angular/src/gethen-angular-registry.ts`, `benchmarks/engine-bakeoff/`, [ALPHA_3_RELEASE_NOTES.md](ALPHA_3_RELEASE_NOTES.md) |
+| 2026-08-10 | Added the first Alpha 4 checkpoint: canonical shaping, mixed-type columnar worker contract, TypeScript and Rust/WASM candidates, browser parity, cancellation, and diagnostic numeric boundary evidence; engine selection remains open | `packages/core/src/grid-data-shaping.ts`, `packages/core/src/grid-engine-contract.ts`, `crates/gethen-engine/src/lib.rs`, `benchmarks/engine-bakeoff/`, [../research/findings/2026-08-10-alpha4-worker-boundary-checkpoint.md](../research/findings/2026-08-10-alpha4-worker-boundary-checkpoint.md) |

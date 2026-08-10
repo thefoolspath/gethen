@@ -56,6 +56,44 @@ export {
 } from "./grid-layout.js";
 
 export {
+  aggregateGridRows,
+  compareGridValues,
+  shapeGridData,
+  stableMultiSort
+} from "./grid-data-shaping.js";
+
+export {
+  createGridColumnarBuffer,
+  createGridWorkerShapeDefinition,
+  decodeGridColumnarBuffer,
+  executeGridEngineShapeRequest,
+  getGridColumnarTransferables
+} from "./grid-engine-contract.js";
+
+export {
+  TypeScriptWorkerGridEngine,
+  createTypeScriptWorkerGridEngine
+} from "./typescript-worker-grid-engine.js";
+
+export {
+  RustWasmKernels,
+  loadRustWasmKernels
+} from "./rust-wasm-kernels.js";
+
+export {
+  RustWasmWorkerEngine,
+  createRustWasmWorkerEngine
+} from "./rust-wasm-worker-engine.js";
+
+export { createRustWasmWorkerGridEngine } from "./rust-wasm-worker-grid-engine.js";
+
+export {
+  typescriptFilterAggregate,
+  typescriptFormulaSumProduct,
+  typescriptGroupSum
+} from "./typescript-kernels.js";
+
+export {
   mountVirtualDomGrid
 } from "./virtual-dom-grid.js";
 
@@ -132,6 +170,60 @@ export type {
   GridLayoutEvent,
   GridLayoutState
 } from "./grid-layout.js";
+
+export type {
+  GridAggregateDescriptor,
+  GridBuiltInAggregate,
+  GridComparisonType,
+  GridCustomReducerContext,
+  GridDataShapingOptions,
+  GridDataShapingResult,
+  GridFilterDescriptor,
+  GridFilterOperator,
+  GridGroupDescriptor,
+  GridGroupProvenance,
+  GridGroupRow,
+  GridNullPlacement,
+  GridShapedRow,
+  GridSortDescriptor,
+  GridSortDirection,
+  GridSourceViewRow
+} from "./grid-data-shaping.js";
+
+export type {
+  GridColumnarBooleanColumn,
+  GridColumnarBuffer,
+  GridColumnarColumn,
+  GridColumnarInputColumn,
+  GridColumnarNumericColumn,
+  GridColumnarSchemaColumn,
+  GridColumnarStorage,
+  GridColumnarTextColumn,
+  GridEngineCancelRequest,
+  GridEngineProgressStage,
+  GridEngineShapeRequest,
+  GridEngineWorkerRequest,
+  GridEngineWorkerResponse,
+  GridPortableAggregateDescriptor,
+  GridWorkerShapeDefinition
+} from "./grid-engine-contract.js";
+
+export type {
+  GridWorkerExecutionOptions,
+  TypeScriptWorkerGridEngineOptions
+} from "./typescript-worker-grid-engine.js";
+
+export type {
+  RustWasmFilterAggregateResult,
+  RustWasmKernelExports
+} from "./rust-wasm-kernels.js";
+
+export type {
+  RustWasmWorkerCallOptions,
+  RustWasmWorkerEngineOptions,
+  RustWasmWorkerRequest,
+  RustWasmWorkerResponse
+} from "./rust-wasm-worker-engine.js";
 
 export type {
   ClientDataSourceOptions,

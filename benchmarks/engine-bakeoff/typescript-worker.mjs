@@ -9,8 +9,12 @@ parentPort.on("message", ({ id, buffer }) => {
   let sum = 0;
   let aboveThreshold = 0;
   for (const value of values) {
-    sum += value;
-    if (value > 250_000) aboveThreshold += 1;
+    if (value > 250_000) {
+      sum += value;
+      aboveThreshold += 1;
+    }
   }
   parentPort.postMessage({ id, sum, aboveThreshold });
 });
+
+parentPort.postMessage({ type: "ready" });
