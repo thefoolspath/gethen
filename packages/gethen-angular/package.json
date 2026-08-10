@@ -11,7 +11,7 @@
     "!dist/**/*.test.*"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node ../../scripts/copy-package-assets.mjs src dist html css",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config ../../vitest.config.ts --passWithNoTests"
   },

@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-08-08.
+Last updated: 2026-08-10.
 
 ## Purpose
 
@@ -16,9 +16,9 @@ The repository currently contains product, architecture, research, ADR, quality,
 
 - Initial protocol schemas and inferred TypeScript protocol contracts.
 - Initial TypeScript client grid engine and client DataSource.
-- Initial virtualized DOM renderer with viewport virtualization, selection, keyboard navigation, text/number editing, boolean toggling, and typed change events.
+- Initial virtualized DOM renderer with viewport virtualization, selection, keyboard navigation, text/number editing, boolean toggling, typed change events, and renderer cell/value helpers split out from the mount orchestration.
 - Framework-neutral core demo.
-- Initial Angular standalone adapter and Angular browser demo.
+- Initial Angular standalone adapter and Angular browser demo. The adapter component keeps its template and CSS in separate source files.
 - App demos and renderer prototypes keep HTML, CSS, and TypeScript source separated, with TypeScript compiled to app-local `dist/` output during workspace builds.
 - Local `0.0.0-alpha.1` package metadata for protocol, core, and Angular packages.
 
@@ -32,10 +32,11 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Package skeletons for `@thefoolspath/gethen-protocol`, `@thefoolspath/gethen-core`, and `@thefoolspath/gethen-angular`.
 - Initial protocol schemas, inferred TypeScript contracts, and Ajv contract tests in `packages/protocol/src/`.
 - Initial TypeScript reference engine in `packages/core/src/client-grid-engine.ts`.
-- Initial virtualized DOM renderer slice, selection/navigation, editing, framework-neutral core demo, and client DataSource in `packages/core/src/` and `apps/core-demo/`.
-- Initial Angular standalone adapter component in `packages/gethen-angular/src/gethen-grid.component.ts`.
+- Initial virtualized DOM renderer slice, selection/navigation, editing, framework-neutral core demo, and client DataSource in `packages/core/src/` and `apps/core-demo/`; renderer cell DOM creation and value coercion helpers are split into focused modules.
+- Initial Angular standalone adapter component in `packages/gethen-angular/src/gethen-grid.component.ts`, with separate `gethen-grid.component.html` and `gethen-grid.component.css` assets copied to package `dist/` during build.
 - Angular-backed browser demo in `apps/angular-demo/`.
 - App demo/prototype source split: `apps/core-demo/src/main.ts`, `apps/angular-demo/src/main.html`, `apps/angular-demo/src/main.ts`, `apps/renderer-prototype/src/prototype.ts`, and `apps/renderer-canvas-prototype/src/prototype.ts`, with app-local TypeScript package configs where needed.
+- Package asset copy helper: `scripts/copy-package-assets.mjs`.
 - Alpha.1 local release notes: [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md).
 - Issue and change-request intake log for post-plan feedback: [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md).
 - Research scaffold: dependency-free virtualized DOM renderer prototype in `apps/renderer-prototype/`.
@@ -146,3 +147,4 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-08 | Added alpha.2 planning for optional Excel/MySQL Workbench-style clipboard paste, blank-cell handling, and validation-before-commit with per-cell errors | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
 | 2026-08-08 | Fixed core renderer cells disappearing after vertical scrolling and added browser regression coverage | `packages/core/src/virtual-dom-grid.ts`, `tests/browser/renderer-prototypes.spec.ts`, [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
 | 2026-08-08 | Fixed double-click editing, type-to-edit, and browser-test port conflicts with browser regression coverage | `packages/core/src/virtual-dom-grid.ts`, `scripts/run-browser-tests.mjs`, `tests/browser/renderer-prototypes.spec.ts`, [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
+| 2026-08-10 | Refactored package renderer and adapter source for clearer separation of responsibilities and split Angular template/CSS assets from TypeScript | `packages/core/src/virtual-dom-grid.ts`, `packages/core/src/virtual-dom-grid-cell.ts`, `packages/core/src/virtual-dom-grid-values.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, `packages/gethen-angular/src/gethen-grid.component.html`, `packages/gethen-angular/src/gethen-grid.component.css`, `scripts/copy-package-assets.mjs` |

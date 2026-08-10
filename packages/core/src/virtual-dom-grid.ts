@@ -1,6 +1,8 @@
-import type { CellChangeEvent, CellValue, GridColumn } from "@thefoolspath/gethen-protocol";
+import type { CellChangeEvent, GridColumn } from "@thefoolspath/gethen-protocol";
 
 import type { GridRow } from "./client-grid-engine.js";
+import { createVirtualDomGridCell } from "./virtual-dom-grid-cell.js";
+import { clamp, coerceValue, isTypeToEditKey } from "./virtual-dom-grid-values.js";
 import { calculateVirtualViewport } from "./viewport.js";
 
 export interface VirtualDomGridRenderMetrics {
@@ -92,6 +94,14 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
 
     viewport.replaceChildren();
     viewport.style.transform = `translate(${virtualViewport.columnOffset}px, ${virtualViewport.rowOffset}px)`;
+    const cellInput = {
+      rowHeight,
+      columnWidth,
+      firstRenderedRow: virtualViewport.firstRow,
+      firstRenderedColumn: virtualViewport.firstColumn,
+      commitEdit: handleEditorCommit,
+      cancelEdit: handleEditorCancel
+    };
 
     for (let rowIndex = virtualViewport.firstRow; rowIndex <= virtualViewport.lastRow; rowIndex += 1) {
       const row = rows[rowIndex];
@@ -112,20 +122,15 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
         }
 
         fragment.appendChild(
-          createCell(
+          createVirtualDomGridCell(
+            cellInput,
             row,
             column,
             rowIndex,
             columnIndex,
-            rowHeight,
-            columnWidth,
-            virtualViewport.firstRow,
-            virtualViewport.firstColumn,
             rowIndex === activeCell.rowIndex && columnIndex === activeCell.columnIndex,
             editState?.rowIndex === rowIndex && editState.columnIndex === columnIndex,
-            editState?.draftValue ?? "",
-            handleEditorCommit,
-            handleEditorCancel
+            editState?.draftValue ?? ""
           )
         );
       }
@@ -338,93 +343,4 @@ export function mountVirtualDomGrid(container: HTMLElement, options: VirtualDomG
     },
     render
   };
-}
-
-function createCell(
-  row: GridRow,
-  column: GridColumn,
-  rowIndex: number,
-  columnIndex: number,
-  rowHeight: number,
-  columnWidth: number,
-  firstRenderedRow: number,
-  firstRenderedColumn: number,
-  active: boolean,
-  editing: boolean,
-  draftValue: string,
-  commitEdit: (value: string) => void,
-  cancelEdit: () => void
-): HTMLElement {
-  const cell = document.createElement("div");
-  cell.id = active ? "gethen-active-cell" : "";
-  cell.setAttribute("role", columnIndex === 0 ? "rowheader" : "gridcell");
-  cell.setAttribute("aria-rowindex", String(rowIndex + 1));
-  cell.setAttribute("aria-colindex", String(columnIndex + 1));
-  cell.setAttribute("aria-selected", active ? "true" : "false");
-  cell.dataset.rowIndex = String(rowIndex);
-  cell.dataset.columnIndex = String(columnIndex);
-  cell.style.position = "absolute";
-  cell.style.left = `${(columnIndex - firstRenderedColumn) * columnWidth}px`;
-  cell.style.top = `${(rowIndex - firstRenderedRow) * rowHeight}px`;
-  cell.style.width = `${columnWidth}px`;
-  cell.style.height = `${rowHeight}px`;
-  cell.style.overflow = "hidden";
-  cell.style.whiteSpace = "nowrap";
-  cell.style.textOverflow = "ellipsis";
-  cell.style.borderRight = "1px solid #e0e5ea";
-  cell.style.borderBottom = "1px solid #e0e5ea";
-  cell.style.padding = "7px 10px";
-
-  if (active) {
-    cell.style.border = "2px solid #176b87";
-    cell.style.background = "#fff8df";
-    cell.style.zIndex = "1";
-  }
-
-  if (editing) {
-    const input = document.createElement("input");
-    input.dataset.gethenEditor = "true";
-    input.value = draftValue;
-    input.style.width = "100%";
-    input.style.height = "100%";
-    input.style.border = "0";
-    input.style.padding = "0";
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        event.stopPropagation();
-        commitEdit(input.value);
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        cancelEdit();
-      }
-    });
-    cell.replaceChildren(input);
-  } else {
-    cell.textContent = String(row.cells[column.id] ?? "");
-  }
-
-  return cell;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function isTypeToEditKey(event: KeyboardEvent): boolean {
-  return event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && !event.isComposing;
-}
-
-function coerceValue(value: string | boolean, dataType: GridColumn["dataType"]): CellValue {
-  if (dataType === "boolean") {
-    return value === true;
-  }
-
-  if (dataType === "number") {
-    const numberValue = Number(value);
-    return Number.isFinite(numberValue) ? numberValue : null;
-  }
-
-  return String(value);
 }

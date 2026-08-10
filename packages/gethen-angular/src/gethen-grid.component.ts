@@ -17,21 +17,8 @@ export type GethenGridSelection = VirtualDomGridSelection;
 @Component({
   selector: "gethen-grid",
   standalone: true,
-  template: '<div #host class="gethen-grid-host"></div>',
-  styles: [
-    `
-      :host {
-        display: block;
-        min-height: 0;
-      }
-
-      .gethen-grid-host {
-        width: 100%;
-        height: 100%;
-        min-height: 240px;
-      }
-    `
-  ]
+  templateUrl: new URL("./gethen-grid.component.html", import.meta.url).href,
+  styleUrls: [new URL("./gethen-grid.component.css", import.meta.url).href]
 })
 export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input({ required: true }) columns: readonly GridColumn[] = [];
