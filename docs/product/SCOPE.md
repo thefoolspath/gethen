@@ -1,10 +1,10 @@
 # Product Scope
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-08-10.
 
 ## Current Implementation Status
 
-No production implementation exists yet.
+A local `0.0.0-alpha.2` release candidate is implemented and verified. No package is published. See [../project/PROJECT_STATE.md](../project/PROJECT_STATE.md) for current evidence.
 
 ## Smallest Credible Alpha
 
@@ -22,7 +22,7 @@ A credible `0.0.0-alpha.1` should let a developer:
 10. Run a reproducible benchmark.
 11. Use at least one framework adapter or framework-neutral demo.
 
-## Alpha In Scope
+## Frontend Foundation Alpha In Scope
 
 - Minimal protocol and TypeScript contracts.
 - Framework-neutral core.
@@ -34,20 +34,31 @@ A credible `0.0.0-alpha.1` should let a developer:
 - At least one adapter or core demo.
 - Benchmark and test harness.
 
-## Conditional Alpha Scope
+## Conditional Frontend Foundation Scope
 
 - Rust/WASM: only if benchmark thresholds are met.
 - Web Worker: only if main-thread latency requires it or compute benchmark validates it.
 - Canvas: only if renderer research/prototype supports it over virtualized DOM.
 - Angular adapter: only if it does not compromise the first complete vertical slice.
-- Server-side DataSource: include only if the first alpha remains complete and testable.
+- Server-side DataSource: deferred from the frontend foundation and planned as the evidence-gated `alpha.7` slice.
 
-## Out Of Scope For Alpha
+## Extended Frontend Alpha
 
-Formula engine, pivot tables, grouping, aggregation, range selection, full Excel clipboard, undo/redo, custom editors, column resize/reorder/freeze, XLSX import/export, charts, collaboration, comments, multiple sheets, tree data, master/detail, and C# backend packages.
+The accepted roadmap uses `0.0.0-alpha.3` through `0.0.0-alpha.6` for required frontend expansion before beta:
+
+- `alpha.3`: full editor lifecycle and built-ins, public custom renderer/editor lifecycle, bounded data undo/redo, column resize/reorder, and multiple frozen rows/columns.
+- `alpha.4`: deterministic client-side sort/filter/group/aggregate behavior.
+- `alpha.5`: a safe Gethen formula engine with per-cell/computed-column formulas, structured references, dependency graph, incremental worker recalculation, and formula UI.
+- `alpha.6`: a readonly-first pivot engine, virtualized pivot grid, developer configuration API, and accessible field-builder UI.
+
+These entries are accepted product scope but remain unimplemented until their source, tests, documentation, and benchmark evidence exist. Their detailed gates are in [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md).
+
+## Out Of Scope Through Extended Frontend Alpha
+
+Full Excel clipboard compatibility, merged cells, XLSX import/export, charts, collaboration, comments, multiple sheets, tree data, master/detail, full Excel formula compatibility, and pivot write-back.
 
 ## Planned Beyond Frontend Alpha
 
-Backend integration libraries are part of the intended project direction, but they should be implemented after the frontend core, DataSource contract, and server-side protocol are stable enough to avoid locking the project to one backend stack too early.
+Protocol v2 and a server DataSource are required in Alpha 7, including complete-dataset range, sort, filter, group, aggregate and pivot semantics. Server formulas before 1.0 are limited to allowlisted backend-computed fields.
 
-Candidate backend packages include C#/.NET helpers for ASP.NET Core, LINQ, and EF Core. These packages should wrap the language-neutral Gethen protocol with safe server-side query translation, field allowlists, bounded page sizes, cancellation, stale-response protection, and update handling. They must not require the browser to send arbitrary LINQ, SQL, or unrestricted expressions.
+Alpha 8 requires local .NET 10/EF Core 10 previews for `Gethen.Protocol`, `Gethen.Linq`, `Gethen.EntityFrameworkCore`, and `Gethen.AspNetCore`, with MySQL, SQL Server, and PostgreSQL integration evidence. npm and NuGet publishing, React, portable server formulas, pivot write-back, and an expanded browser-support matrix remain post-1.0 work requiring separate approval.

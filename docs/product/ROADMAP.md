@@ -1,8 +1,8 @@
 # Product Roadmap
 
-Last reviewed: 2026-08-08.
+Last reviewed: 2026-08-10.
 
-Status: In progress. A local `0.0.0-alpha.1` release candidate exists; no package is published.
+Status: A local `0.0.0-alpha.2` release candidate is implemented and verified; no package is published. The accepted Alpha 3 through local 1.0 plan is active.
 
 ## Roadmap Principles
 
@@ -19,14 +19,28 @@ Status: In progress. A local `0.0.0-alpha.1` release candidate exists; no packag
 | Pre-alpha research gate | Validate risky choices before production implementation | Virtualized DOM prototype, minimal Canvas comparison prototype, TypeScript baseline operations, dependency license review, first adapter decision | Renderer benchmark, TypeScript operation benchmark, Rust native benchmark only as research, license evaluation |
 | `0.0.0-alpha.1` | Smallest credible frontend grid vertical slice | Typed columns, developer-provided rows, virtualized grid, visible row/column viewport, single active cell, keyboard navigation, basic text/number/boolean editing, typed change event, client-side DataSource, one adapter or framework-neutral demo | Initial render, scroll stability, input latency, edit activation, client range/update baseline, package smoke benchmark |
 | `0.0.0-alpha.2` | Interaction basics and developer customization | Optional second adapter, range selection, optional clipboard copy/paste basics with Excel/MySQL Workbench-style blank-cell handling, validation primitives with per-cell paste errors, improved column/cell metadata, class-based conditional row/column/cell styling, theme tokens, DTO-to-column mapping, hidden key fields, row edit/insert/save planning | Keyboard interaction benchmark, clipboard payload sanity checks, paste validation cost, adapter mount/unmount tests, accessibility smoke tests, conditional styling callback cost |
-| `0.0.0-alpha.3` | Spreadsheet-like layout controls | Undo/redo, column resize, column reorder, frozen columns/rows if still in scope, improved editor lifecycle | Layout reflow benchmark, resize/reorder interaction timing, memory leak checks after repeated edits |
-| `0.0.0-alpha.4` | Data shaping | Grouping, aggregation, sort/filter hardening, large dataset client-side behavior | Sort/filter/group/aggregate benchmark, Worker feasibility benchmark if main-thread long tasks appear |
-| `0.0.0-alpha.5` | Formula foundation | Formula model, dependency graph prototype, formula engine prototype, recalculation lifecycle | Formula recalculation benchmark, dependency graph memory benchmark, circular reference behavior research |
-| `0.0.0-alpha.6` | Pivot prototype | Pivot model prototype, pivot data source flow, integration with grouping/aggregation/formula foundations | Pivot generation benchmark, aggregation stress tests, UI responsiveness checks |
-| Post-frontend alpha | Server-side DataSource and protocol hardening | Server range request/response flow, cancellation, stale-response discard, loading/error/retry states, bounded block cache, protocol examples | Server request payload benchmark, cache behavior benchmark, stale response tests, protocol schema validation |
-| Post-frontend backend libraries | Backend ecosystem integrations | `Gethen.AspNetCore`, `Gethen.Linq`, `Gethen.EntityFrameworkCore`; safe allowlisted query mapping for range/sort/filter/update | EF Core query translation research, SQL shape review, query complexity limits, cancellation tests, large table benchmarks |
-| `0.1.0-beta.1` | API feedback and hardening | Public API cleanup, compatibility policy draft, documentation, accessibility validation, package contents review | Full benchmark suite, browser matrix smoke tests, bundle/package size review, license review |
-| `1.0.0` | Stable release | Stable API, compatibility guarantees, documented extension points, release process, security posture | Release benchmark baseline, regression thresholds, long-running stability checks |
+| `0.0.0-alpha.3` | Editing, history, and layout | Full editor state machine and built-ins, public renderer/editor lifecycle, bounded data undo/redo, resize/reorder, multiple frozen top rows and leading columns, host-persisted layout state | Layout round-trip, history byte bounds, pane interaction/accessibility, repeated edit/undo disposal, TypeScript Worker versus Rust/WASM Worker harness |
+| `0.0.0-alpha.4` | Data shaping and engine bake-off | Deterministic filter -> stable multi-sort -> group -> aggregate pipeline, typed synthetic rows, custom client reducer, equivalent TypeScript Worker and Rust/WASM Worker candidates | Ingestion, transfer, shaping and representative formula/pivot kernels on shared fixtures; ship the winner and retain the other as parity oracle |
+| `0.0.0-alpha.5` | Gethen Formula Engine | Per-cell and computed-column formulas, structured references, typed AST/dependency graph, safe functions, incremental worker recalculation, formula bar/editor | Parsing/cycle/invalidation/property tests, cancellation/progress, graph memory and full reference-workload evidence; no Excel-compatibility claim |
+| `0.0.0-alpha.6` | Pivot and field builder | Typed pivot definition, stable generated rows/columns, readonly virtualized results, developer API, drag-and-drop and keyboard field builder, cardinality limits | Golden fixtures, shaping parity, dynamic-column layout/accessibility, low/medium/high-cardinality responsiveness and memory |
+| `0.0.0-alpha.7` | Protocol v2 and server DataSource | JSON Schema Protocol v2 replaces v1; bounded range/sort/filter/group/aggregate/pivot/update requests; cancellation, stale discard, retry, structured errors and bounded cache | Generated-contract parity, schema/adversarial tests, complete-dataset server semantics, cache/request churn and cancellation evidence |
+| `0.0.0-alpha.8` | .NET backend preview | Frontend alpha.8 plus independently versioned NuGet alpha.1 packages: `Gethen.Protocol`, `Gethen.Linq`, `Gethen.EntityFrameworkCore`, `Gethen.AspNetCore`; .NET 10/EF Core 10; MySQL, SQL Server and PostgreSQL | Generated SQL/query-plan review, provider integration matrix, allowlist/limit validation, cancellation, pagination and optimistic concurrency |
+| `0.1.0-beta.1` | Feature complete and API hardening | Freeze Core, Protocol v2 and Angular; no new features; production-quality Formula, Pivot, Server DataSource and extension lifecycle; local artifacts only | Full tests/benchmarks, package/license/bundle/SSR checks, memory disposal, current stable Chrome/Edge and manual NVDA/Chrome gates |
+| Local `1.0.0` | Stable local release candidate | Every scoped feature usable and documented, Semantic Versioning and deprecation policy, local npm/NuGet artifacts and release notes; no publishing | 1M x 50 reference workload or accepted 500K fallback, regression thresholds, long-running stability and all release blockers satisfied |
+
+## Current Version Progress
+
+The local `0.0.0-alpha.2` release candidate was completed on 2026-08-10. It includes hidden rendered columns, alignment, application-owned column/row/cell classes, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping with hidden stable keys, headless row transactions, opt-in all-or-nothing direct clipboard paste, validation primitives, host-dialog preparation, and Angular adapter passthrough. Preliminary repeat-iteration JavaScript and Chromium render-timing baselines exist. Renderer-owned row/paste-dialog controls and a second adapter are deliberately omitted; cross-hardware/full-frame-trace evidence remains required before external performance claims.
+
+Implementation from `0.0.0-alpha.3` onward is active and follows [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md). Versions are completed sequentially. Features inside the stable scope may not be relabeled as prototypes or deferred merely to pass a release gate.
+
+## Version Exit Discipline
+
+- Alpha 2 is closed. Start Alpha 3 only after its implementation and roadmap documentation commits are separated.
+- Each later alpha must preserve stable row/column identity, SSR-safe imports, virtualization correctness, keyboard operation, and untrusted-input boundaries.
+- Formula and pivot capabilities are mandatory before beta; their semantics, memory behavior, accessibility, and security gates must pass before they can be called complete.
+- A conditional feature may be deferred without blocking a release only when the reason, downstream impact, replacement milestone, and documentation updates are recorded.
+- Beta freezes new feature scope. `1.0.0` requires compatibility, security, accessibility, performance, packaging, and release-process evidence rather than additional feature breadth.
 
 ## Research And Benchmark Timing
 
@@ -122,14 +136,13 @@ Decision rule:
 | --- | --- | --- |
 | Angular adapter | Selected for alpha.1 | Included after the core API became stable enough for the first adapter path. |
 | React adapter | Deferred from alpha.1 | Add only after the Angular-backed alpha path is verified or when adapter bandwidth allows. |
-| Server-side DataSource | Conditional for alpha, planned after frontend | Include only if it does not threaten the first complete frontend vertical slice. |
-| Developer customization, row transactions, and optional clipboard paste | Planned follow-up | Track in [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md); start with class-based styling, DTO metadata, row save payloads, and opt-in paste validation before custom renderers/editors. |
-| Rust/WASM | Conditional | Add only if benchmark results justify boundary and maintenance cost. |
-| Web Worker | Conditional | Add if compute or rendering creates measured UI long tasks. |
+| Server-side DataSource | Planned for `alpha.7` after extended frontend alpha | Start only after frontend range, sort, filter, identity, and error semantics are stable enough to harden the protocol. |
+| Developer customization, row transactions, and optional clipboard paste | Implemented in Alpha 2 | Completion evidence is recorded in [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md). |
+| Rust/WASM and TypeScript Worker engines | Accepted Alpha 4 bake-off | Implement against the same boundary and fixtures; ship the end-to-end winner and retain the other as a test/benchmark oracle. If results differ by no more than 10%, select Rust. |
 | Canvas renderer | Conditional | Add only if renderer research proves value over virtualized DOM. |
-| Backend C# packages | Planned, deferred | Implement after frontend core, DataSource contract, and protocol are stable. |
-| Formula engine | Deferred | Start after core interaction and data shaping are credible. |
-| Pivot engine | Deferred | Start after grouping, aggregation, and formula foundations exist. |
+| Backend C# packages | Required preview for `alpha.8` | Start after Protocol v2; remain local and independently versioned from frontend packages. |
+| Formula engine | Required for `alpha.5` | Implement the bounded Gethen grammar and worker lifecycle; do not claim Excel compatibility. |
+| Pivot engine and field builder | Required for `alpha.6` | Reuse Alpha 4 grouping/aggregation, keep output readonly by default, and provide pointer plus keyboard configuration paths. |
 | Collaboration/comments/charts/XLSX import-export | Out of early alpha | Revisit after core grid stability. |
 
 ## Benchmark Report Requirements

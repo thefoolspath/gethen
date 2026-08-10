@@ -36,8 +36,11 @@ Use more than one run. Do not rely on arithmetic mean alone.
 
 ## Decision Gates
 
-- Rust/WASM should not proceed unless end-to-end results justify added build, package, and maintenance cost.
+- Alpha 4 implements equivalent TypeScript Worker and Rust/WASM Worker candidates with the same columnar schema, algorithms, fixtures, batching, and boundary.
+- Select the end-to-end production winner at Alpha 4 exit and keep the other implementation as a parity oracle. If the measured difference is no more than 10%, select Rust.
+- Benchmark ingestion, transfer, sort, filter, group, aggregate, and representative formula/pivot kernels. Include boundary, startup, bundle, peak memory, and retained-memory costs rather than compute time alone.
 - Canvas should not be accepted unless it materially outperforms virtualized DOM for the alpha budget without blocking accessibility.
+- Apply the 1,000,000-row primary gate and the documented 500,000-row fallback/blocking rule from [PERFORMANCE_BUDGET.md](PERFORMANCE_BUDGET.md).
 
 ## Verified Alpha 2 Commands
 

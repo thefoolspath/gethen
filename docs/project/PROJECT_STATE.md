@@ -8,7 +8,7 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has initial workspace/tooling scaffolding, research prototypes, separated app demo source files, and a local `0.0.0-alpha.1` release-candidate vertical-slice grid implementation. No packages are published.
+Gethen now has initial workspace/tooling scaffolding, research prototypes, separated app demo source files, and a locally verified `0.0.0-alpha.2` release candidate. No packages are published.
 
 The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
@@ -20,7 +20,15 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Framework-neutral core demo.
 - Initial Angular standalone adapter and Angular browser demo. The adapter component keeps its template and CSS in separate source files.
 - App demos and renderer prototypes keep HTML, CSS, and TypeScript source separated, with TypeScript compiled to app-local `dist/` output during workspace builds.
-- Local `0.0.0-alpha.1` package metadata for protocol, core, and Angular packages.
+- Local `0.0.0-alpha.2` package metadata for protocol, core, and Angular packages.
+- Initial Alpha 2 view customization: hidden rendered columns, alignment, application-owned column/row/cell classes, text-only formatters, CSS-variable theme tokens, and Angular adapter passthrough.
+- Initial Alpha 2 rectangular range selection with Shift+keyboard and Shift+click interactions, normalized range events, virtualized `aria-selected` state, and Angular event passthrough.
+- Initial Alpha 2 explicit DTO mapping with stable hidden key fields, runtime metadata validation, and typed source-row retention.
+- Initial Alpha 2 headless row transaction manager with edit, insert, cancel, dirty-field tracking, stable-identity protection, and row-only save payloads.
+- Initial Alpha 2 opt-in direct TSV clipboard paste with typed parsing, nullable blank handling, developer validation, all-or-nothing commit, per-cell errors, pasted-range selection, host-dialog preparation, and Angular passthrough.
+- Preliminary repeat-iteration Alpha 2 customization and 1,000-cell clipboard preparation/validation baseline in `benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`.
+- Preliminary repeated-scroll Chromium comparison for customization off/on in `benchmarks/renderer-prototype/measure-alpha2-customization.mjs`; medians were 5.0 ms and 5.3 ms respectively in the first local run.
+- Local DevTools-style CDP trace across three independent Chromium processes per customization scenario: median frame intervals were 16.817 ms off and 16.529 ms on, with no top-level task over 50 ms. Cross-hardware evidence remains open.
 
 ## Present Repository Assets
 
@@ -38,6 +46,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - App demo/prototype source split: `apps/core-demo/src/main.ts`, `apps/angular-demo/src/main.html`, `apps/angular-demo/src/main.ts`, `apps/renderer-prototype/src/prototype.ts`, and `apps/renderer-canvas-prototype/src/prototype.ts`, with app-local TypeScript package configs where needed.
 - Package asset copy helper: `scripts/copy-package-assets.mjs`.
 - Alpha.1 local release notes: [ALPHA_1_RELEASE_NOTES.md](ALPHA_1_RELEASE_NOTES.md).
+- Alpha.2 local release notes: [ALPHA_2_RELEASE_NOTES.md](ALPHA_2_RELEASE_NOTES.md).
 - Issue and change-request intake log for post-plan feedback: [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md).
 - Research scaffold: dependency-free virtualized DOM renderer prototype in `apps/renderer-prototype/`.
 - Research scaffold: dependency-free Canvas 2D renderer prototype in `apps/renderer-canvas-prototype/`.
@@ -49,7 +58,9 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Documentation entry point: [../README.md](../README.md).
 - Active plan: [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md).
 - Active feedback/control plan: [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md).
-- Proposed developer customization and row transaction plan: [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md).
+- Completed Alpha 2 developer customization and row transaction plan: [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md).
+- Active Alpha 3 through local 1.0 execution plan: [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md).
+- Initial customization API guide: [../product/CUSTOMIZATION.md](../product/CUSTOMIZATION.md).
 - Pre-alpha research gate tracker: [../research/PRE_ALPHA_RESEARCH_GATE.md](../research/PRE_ALPHA_RESEARCH_GATE.md).
 - Proposed ADRs: [../adr/README.md](../adr/README.md).
 - Provisional quality documents: [../quality/PERFORMANCE_BUDGET.md](../quality/PERFORMANCE_BUDGET.md), [../quality/BENCHMARK_PLAN.md](../quality/BENCHMARK_PLAN.md), and [../quality/TESTING_STRATEGY.md](../quality/TESTING_STRATEGY.md).
@@ -77,16 +88,17 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Milestones 6-9 are initially complete. Server-side DataSource is deferred for alpha.
 - Milestone 11 first framework adapter is complete for alpha.1 with Angular as selected adapter and browser-tested demo path.
 - Milestone 12 second adapter is deferred from alpha.1; React remains a follow-up candidate.
-- Milestone 13 local release verification has passed for alpha.1; publishing remains blocked until explicit maintainer approval and PR review to `main`.
+- Local release verification has passed for `0.0.0-alpha.2`; publishing remains blocked until explicit maintainer approval and PR review to `main`.
 - Virtualized DOM and Canvas renderer prototype scaffolds exist; measured benchmark results are still open.
 - Preliminary TypeScript reference operation benchmark exists; repeat runs and Rust comparison are still open.
 - Preliminary Rust GNU native benchmark exists; default MSVC release execution is blocked by local MSVC linker configuration: `LINK : fatal error LNK1104: cannot open file 'msvcrt.lib'`.
 - First alpha adapter path is selected as Angular first; React is deferred until after Angular-backed alpha path or later reassessment.
-- Initial dependency/license candidate review is complete; installed package metadata was verified for the alpha.1 dependency set.
+- Initial dependency/license candidate review is complete; Alpha 2 adds no runtime dependency, so the verified permissive Alpha 1 dependency set is unchanged.
 - Accepted ADRs for alpha: ADR-0001 TypeScript public/control layer with Rust research-only, ADR-0002 virtualized DOM renderer for alpha, and ADR-0003 Worker/WASM deferral for alpha.
 - Post-plan issues and change requests should be captured in [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) before they are promoted into roadmap versions or active implementation plans. Conversation-derived feedback must not be added to the intake log until the maintainer approves whether it is an issue or change request.
 - The first hands-on issues are fixed with browser regression coverage: deep vertical scrolling, double-click editing, type-to-edit, and automatic browser-test port allocation.
-- Developer-friendly customization is now planned as follow-up work: application-owned CSS classes, conditional row/column/cell styling, theme tokens, DTO-to-column mapping with hidden key fields, row-level edit/insert/save events, and optional spreadsheet-style clipboard paste with blank-cell handling and pre-commit per-cell validation. Custom renderers, custom editors, raw HTML formatters, framework-specific per-cell component mounting, XLSX import/export, and rich clipboard content remain deferred.
+- The local Alpha 2 release candidate is implemented and verified. Application-owned classes, conditional styling, alignment, hidden columns, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping, headless row transactions, opt-in validated direct clipboard paste, host-dialog preparation, and Angular passthrough are included. JavaScript, repeated-render, and local CDP frame-trace baselines exist. Headed/cross-hardware evidence remains required before external performance claims. Renderer-owned row/paste-dialog controls, a second adapter, custom renderers/editors, raw HTML formatters, XLSX import/export, and rich clipboard content are deliberately omitted or deferred.
+- Work from `0.0.0-alpha.3` onward is now active under the accepted execution plan. Implementation remains sequential: editor/history/layout, data shaping and engine bake-off, formulas, pivot, Protocol v2/server DataSource, .NET preview, beta hardening, and a local unpublished `1.0.0` release candidate.
 
 ## Verified Commands
 
@@ -102,6 +114,9 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `pnpm run test:browser`
 - `pnpm run test:browser` with automatic allocation of an available loopback port, including when `127.0.0.1:4173` is already in use.
 - `pnpm run bench`
+- `node benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`
+- `node benchmarks/renderer-prototype/measure-alpha2-customization.mjs`
+- `node benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`
 - `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`
@@ -143,8 +158,16 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-08 | Split app demo/prototype source into separate HTML, CSS, and TypeScript files and added workspace build configs for TypeScript-backed app demos | `apps/core-demo/`, `apps/angular-demo/`, `apps/renderer-prototype/`, `apps/renderer-canvas-prototype/` |
 | 2026-08-08 | Added issue/change-request intake process for future real-use feedback | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
 | 2026-08-08 | Captured first hands-on issue intake entries from Chrome QA | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md) |
-| 2026-08-08 | Added follow-up planning for developer customization, DTO column mapping, and row-level edit/insert/save transactions | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
-| 2026-08-08 | Added alpha.2 planning for optional Excel/MySQL Workbench-style clipboard paste, blank-cell handling, and validation-before-commit with per-cell errors | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/active/0003-developer-customization-and-row-transactions.md](../plans/active/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
+| 2026-08-08 | Added follow-up planning for developer customization, DTO column mapping, and row-level edit/insert/save transactions | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
+| 2026-08-08 | Added alpha.2 planning for optional Excel/MySQL Workbench-style clipboard paste, blank-cell handling, and validation-before-commit with per-cell errors | [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md), [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md), [../product/ROADMAP.md](../product/ROADMAP.md) |
 | 2026-08-08 | Fixed core renderer cells disappearing after vertical scrolling and added browser regression coverage | `packages/core/src/virtual-dom-grid.ts`, `tests/browser/renderer-prototypes.spec.ts`, [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
 | 2026-08-08 | Fixed double-click editing, type-to-edit, and browser-test port conflicts with browser regression coverage | `packages/core/src/virtual-dom-grid.ts`, `scripts/run-browser-tests.mjs`, `tests/browser/renderer-prototypes.spec.ts`, [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
 | 2026-08-10 | Refactored package renderer and adapter source for clearer separation of responsibilities and split Angular template/CSS assets from TypeScript | `packages/core/src/virtual-dom-grid.ts`, `packages/core/src/virtual-dom-grid-cell.ts`, `packages/core/src/virtual-dom-grid-values.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, `packages/gethen-angular/src/gethen-grid.component.html`, `packages/gethen-angular/src/gethen-grid.component.css`, `scripts/copy-package-assets.mjs` |
+| 2026-08-10 | Started Alpha 2 with typed view metadata, hidden rendered columns, conditional application classes, text formatters, theme tokens, Angular passthrough, and regression coverage | `packages/core/src/grid-customization.ts`, `packages/core/src/virtual-dom-grid.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, [../product/CUSTOMIZATION.md](../product/CUSTOMIZATION.md), [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md) |
+| 2026-08-10 | Added Alpha 2 rectangular range selection with keyboard and pointer extension, normalized range events, ARIA state, Angular passthrough, and browser coverage | `packages/core/src/virtual-dom-grid.ts`, `packages/core/src/virtual-dom-grid-cell.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, `tests/browser/renderer-prototypes.spec.ts` |
+| 2026-08-10 | Added Alpha 2 DTO mapping and headless row transactions with stable identity, runtime metadata checks, dirty-field tracking, row save payloads, and unit coverage | `packages/core/src/grid-model.ts`, `packages/core/src/row-transactions.ts`, `packages/core/src/grid-model.test.ts`, `packages/core/src/row-transactions.test.ts` |
+| 2026-08-10 | Added Alpha 2 opt-in validated direct clipboard paste, per-cell errors, all-or-nothing commit, pasted-range selection, host-dialog preparation, Angular passthrough, and regression coverage | `packages/core/src/grid-clipboard.ts`, `packages/core/src/virtual-dom-grid.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, `tests/browser/renderer-prototypes.spec.ts` |
+| 2026-08-10 | Added preliminary repeat-iteration Alpha 2 customization, clipboard preparation/validation, and Chromium render-timing baselines | `benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`, `benchmarks/renderer-prototype/measure-alpha2-customization.mjs`, [../research/findings/2026-08-10-alpha2-customization-clipboard.md](../research/findings/2026-08-10-alpha2-customization-clipboard.md) |
+| 2026-08-10 | Completed local `0.0.0-alpha.2` release-candidate verification and package inspection without publishing | [ALPHA_2_RELEASE_NOTES.md](ALPHA_2_RELEASE_NOTES.md), package manifests, full verified command suite |
+| 2026-08-10 | Added three-process local Chromium CDP frame tracing with frame intervals, long-task counts, and point-in-time heap movement | `benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`, [../research/findings/2026-08-10-alpha2-customization-clipboard.md](../research/findings/2026-08-10-alpha2-customization-clipboard.md) |
+| 2026-08-10 | Closed the Alpha 2 plan and accepted the sequential Alpha 3 through local unpublished 1.0 execution plan, including mandatory formula/pivot/server scope, Protocol v2 replacement, the engine bake-off, and .NET preview | [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md), [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md), [../product/ROADMAP.md](../product/ROADMAP.md), [../product/SCOPE.md](../product/SCOPE.md), [RISK_REGISTER.md](RISK_REGISTER.md) |

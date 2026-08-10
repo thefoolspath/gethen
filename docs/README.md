@@ -1,8 +1,8 @@
 # Gethen Documentation
 
-Last reviewed: 2026-08-08.
+Last reviewed: 2026-08-10.
 
-Gethen has an initial local alpha vertical slice, package scaffolding, demos, tests, benchmarks, CI configuration, and documentation. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
+Gethen has a locally verified `0.0.0-alpha.2` release candidate, package scaffolding, demos, tests, benchmarks, CI configuration, and documentation. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
 
 ## Source-Of-Truth Hierarchy
 
@@ -17,13 +17,14 @@ Gethen has an initial local alpha vertical slice, package scaffolding, demos, te
 
 ## Documentation Map
 
-- Product: [product/VISION.md](product/VISION.md), [product/SCOPE.md](product/SCOPE.md), [product/ROADMAP.md](product/ROADMAP.md)
+- Product: [product/VISION.md](product/VISION.md), [product/SCOPE.md](product/SCOPE.md), [product/ROADMAP.md](product/ROADMAP.md), [product/CUSTOMIZATION.md](product/CUSTOMIZATION.md)
 - Architecture: [architecture/SYSTEM_OVERVIEW.md](architecture/SYSTEM_OVERVIEW.md), [architecture/PACKAGE_BOUNDARIES.md](architecture/PACKAGE_BOUNDARIES.md), [architecture/RUST_WASM_BOUNDARY.md](architecture/RUST_WASM_BOUNDARY.md), [architecture/DATA_MODEL.md](architecture/DATA_MODEL.md), [architecture/PROTOCOL_V1.md](architecture/PROTOCOL_V1.md), [architecture/DATA_SOURCE.md](architecture/DATA_SOURCE.md), [architecture/ACCESSIBILITY_AND_SECURITY.md](architecture/ACCESSIBILITY_AND_SECURITY.md)
 - Research: [research/PRE_ALPHA_RESEARCH_GATE.md](research/PRE_ALPHA_RESEARCH_GATE.md), [research/RENDERER_EVALUATION.md](research/RENDERER_EVALUATION.md), [research/WORKER_WASM_EVALUATION.md](research/WORKER_WASM_EVALUATION.md), [research/COLUMNAR_DATA_EVALUATION.md](research/COLUMNAR_DATA_EVALUATION.md), [research/FRAMEWORK_ADAPTER_EVALUATION.md](research/FRAMEWORK_ADAPTER_EVALUATION.md), [research/DEPENDENCY_LICENSE_EVALUATION.md](research/DEPENDENCY_LICENSE_EVALUATION.md), [research/CODEX_REPOSITORY_INSTRUCTIONS.md](research/CODEX_REPOSITORY_INSTRUCTIONS.md), [research/sources/README.md](research/sources/README.md), [research/findings/README.md](research/findings/README.md), [research/project-fit/README.md](research/project-fit/README.md)
 - ADRs: [adr/README.md](adr/README.md)
-- Active plans: [plans/active/0001-alpha-1-vertical-slice.md](plans/active/0001-alpha-1-vertical-slice.md), [plans/active/0002-feedback-and-change-control.md](plans/active/0002-feedback-and-change-control.md)
+- Active plans: [plans/active/0001-alpha-1-vertical-slice.md](plans/active/0001-alpha-1-vertical-slice.md), [plans/active/0002-feedback-and-change-control.md](plans/active/0002-feedback-and-change-control.md), [plans/active/0004-alpha-3-onward-execution-plan.md](plans/active/0004-alpha-3-onward-execution-plan.md)
+- Completed plans: [plans/completed/0003-developer-customization-and-row-transactions.md](plans/completed/0003-developer-customization-and-row-transactions.md)
 - Quality: [quality/TESTING_STRATEGY.md](quality/TESTING_STRATEGY.md), [quality/PERFORMANCE_BUDGET.md](quality/PERFORMANCE_BUDGET.md), [quality/BENCHMARK_PLAN.md](quality/BENCHMARK_PLAN.md)
-- Project management: [project/PROJECT_STATE.md](project/PROJECT_STATE.md), [project/ISSUE_AND_CHANGE_REQUESTS.md](project/ISSUE_AND_CHANGE_REQUESTS.md), [project/CURRENT_STATE_ASSESSMENT.md](project/CURRENT_STATE_ASSESSMENT.md), [project/DOCUMENTATION_INVENTORY.md](project/DOCUMENTATION_INVENTORY.md), [project/MIGRATION_REPORT.md](project/MIGRATION_REPORT.md), [project/RISK_REGISTER.md](project/RISK_REGISTER.md), [project/RELEASE_STRATEGY.md](project/RELEASE_STRATEGY.md)
+- Project management: [project/PROJECT_STATE.md](project/PROJECT_STATE.md), [project/ISSUE_AND_CHANGE_REQUESTS.md](project/ISSUE_AND_CHANGE_REQUESTS.md), [project/ALPHA_1_RELEASE_NOTES.md](project/ALPHA_1_RELEASE_NOTES.md), [project/ALPHA_2_RELEASE_NOTES.md](project/ALPHA_2_RELEASE_NOTES.md), [project/CURRENT_STATE_ASSESSMENT.md](project/CURRENT_STATE_ASSESSMENT.md), [project/DOCUMENTATION_INVENTORY.md](project/DOCUMENTATION_INVENTORY.md), [project/MIGRATION_REPORT.md](project/MIGRATION_REPORT.md), [project/RISK_REGISTER.md](project/RISK_REGISTER.md), [project/RELEASE_STRATEGY.md](project/RELEASE_STRATEGY.md)
 - Archive: [archive/planning-2026-08-03](archive/planning-2026-08-03)
 
 ## Major Decision State

@@ -14,4 +14,16 @@ Status: Provisional. Initial local renderer, engine, customization, clipboard, a
 | Worker transfer | 100,000 rows transformed to candidate payload | clone/transfer time and retained memory | measured only | unbounded memory growth | benchmark harness | MDN transfer docs |
 | Bundle size | first adapter package | minified+compressed size | measured only | unexplained growth | package analysis | Needs package |
 
+## Local 1.0 Reference Workload
+
+- Primary capacity: 1,000,000 rows by 50 mixed-type columns, with viewport-only rendering and full-dataset computation.
+- Formula capacity: up to 1,000,000 formula cells.
+- Main-thread interaction p95: under 100 ms, with no repeated task over 50 ms.
+- Scroll median frame interval: no more than 16.7 ms.
+- Worker cancellation acknowledgement: under 100 ms.
+- Ingestion must expose progress and cancellation without freezing the UI.
+- Reports include cold/warm distributions, median, p75/p95, peak and retained memory, bundle size, and startup cost.
+
+If neither TypeScript Worker nor Rust/WASM Worker passes all feature gates at 1,000,000 rows, the documented client capacity may fall back to 500,000 rows and every feature gate must be rerun at that size. Failure at 500,000 rows blocks beta and local 1.0.
+
 Do not use these targets as marketing claims. They are alpha gates to be replaced by measured values.
