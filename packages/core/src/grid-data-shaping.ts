@@ -108,9 +108,16 @@ export function shapeGridData(options: GridDataShapingOptions): GridDataShapingR
   const sorted = stableMultiSort(filtered, options.sort ?? []);
   const groups = options.group ?? [];
   const expanded = options.expandedGroupIds ?? "all";
-  const shaped = groups.length === 0
-    ? sorted.map(toSourceViewRow)
-    : flattenGroups(
+  if (groups.length === 0) {
+    const viewport = normalizeViewport(options.viewport, sorted.length);
+    return {
+      sourceRowCount: options.rows.length,
+      filteredRowCount: filtered.length,
+      totalViewRowCount: sorted.length,
+      rows: sorted.slice(viewport.start, viewport.start + viewport.count).map(toSourceViewRow)
+    };
+  }
+  const shaped = flattenGroups(
         createGroupNodes(sorted, groups, options.aggregate ?? [], 0),
         expanded
       );

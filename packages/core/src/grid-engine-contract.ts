@@ -127,11 +127,16 @@ export function createGridColumnarBuffer(
   };
 }
 
-export function decodeGridColumnarBuffer(buffer: GridColumnarBuffer): readonly GridRow[] {
+export function decodeGridColumnarBuffer(
+  buffer: GridColumnarBuffer,
+  includedColumnIds?: ReadonlySet<string>
+): readonly GridRow[] {
   if (buffer.rowIds.length !== buffer.rowCount) {
     throw new Error("Columnar rowIds length does not match rowCount.");
   }
-  const decodedColumns = buffer.columns.map((column) => decodeColumn(column, buffer.rowCount));
+  const decodedColumns = buffer.columns
+    .filter((column) => !includedColumnIds || includedColumnIds.has(column.columnId))
+    .map((column) => decodeColumn(column, buffer.rowCount));
   return buffer.rowIds.map((id, rowIndex) => ({
     id,
     cells: Object.fromEntries(decodedColumns.map(({ columnId, values }) => [columnId, values[rowIndex]!]))
@@ -160,8 +165,9 @@ export function createGridWorkerShapeDefinition(
 }
 
 export function executeGridEngineShapeRequest(request: GridEngineShapeRequest): GridDataShapingResult {
-  return shapeGridData({
-    rows: decodeGridColumnarBuffer(request.data),
+  const computationColumnIds = getComputationColumnIds(request.definition);
+  const result = shapeGridData({
+    rows: decodeGridColumnarBuffer(request.data, computationColumnIds),
     filter: request.definition.filter,
     sort: request.definition.sort,
     group: request.definition.group,
@@ -171,6 +177,22 @@ export function executeGridEngineShapeRequest(request: GridEngineShapeRequest): 
       : new Set(request.definition.expandedGroupIds),
     ...(request.definition.viewport ? { viewport: request.definition.viewport } : {})
   });
+  const rowIndexes = new Map(request.data.rowIds.map((id, index) => [id, index]));
+  return {
+    ...result,
+    rows: result.rows.map((row) => {
+      if (row.kind !== "source") return row;
+      const rowIndex = rowIndexes.get(row.sourceRowId);
+      if (rowIndex === undefined) throw new Error(`Source row '${row.sourceRowId}' is missing from the columnar buffer.`);
+      return {
+        ...row,
+        cells: Object.fromEntries(request.data.columns.map((column) => [
+          column.columnId,
+          readColumnValue(column, rowIndex)
+        ]))
+      };
+    })
+  };
 }
 
 export function getGridColumnarTransferables(buffer: GridColumnarBuffer): readonly ArrayBuffer[] {
@@ -276,6 +298,24 @@ function decodeColumn(
         : decoder.decode(column.bytes.subarray(column.offsets[index]!, column.offsets[index + 1]!))
     )
   };
+}
+
+function readColumnValue(column: GridColumnarColumn, rowIndex: number): CellValue {
+  if (column.validity[rowIndex] === 0) return null;
+  if (column.storage === "float64") return column.values[rowIndex]!;
+  if (column.storage === "boolean") return column.values[rowIndex] === 1;
+  return new TextDecoder("utf-8", { fatal: true }).decode(
+    column.bytes.subarray(column.offsets[rowIndex]!, column.offsets[rowIndex + 1]!)
+  );
+}
+
+function getComputationColumnIds(definition: GridWorkerShapeDefinition): ReadonlySet<string> {
+  return new Set([
+    ...definition.filter.map((descriptor) => descriptor.columnId),
+    ...definition.sort.map((descriptor) => descriptor.columnId),
+    ...definition.group.map((descriptor) => descriptor.columnId),
+    ...definition.aggregate.flatMap((descriptor) => descriptor.columnId ? [descriptor.columnId] : [])
+  ]);
 }
 
 function assertColumnarInput(
