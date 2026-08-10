@@ -19,3 +19,7 @@ The result justifies continuing the Rust/WASM candidate, but cannot select it. I
 ## Next Gate
 
 Run both candidates against identical end-to-end 1,000,000-row by 50-column fixtures. If both fail, repeat the complete gate at 500,000 rows. Apply the accepted rule only after that evidence: when end-to-end performance differs by no more than 10%, select Rust; otherwise select the faster passing candidate.
+
+## Capacity Diagnostic
+
+`node --max-old-space-size=2048 benchmarks/engine-bakeoff/measure-columnar-capacity.mjs` passed locally with 1,000,000 rows, 50 numeric columns, filter, stable sort, and a 100-row viewport. The measured compute time was approximately 851 ms, RSS approximately 931 MB, heap used approximately 330 MB, and array buffers approximately 450 MB. This confirms that bounded viewport hydration avoids the earlier 50-column row-object amplification. It remains diagnostic because mixed storage, grouping, Worker transfer, formula, pivot, and browser retained-memory evidence are still open.
