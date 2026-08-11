@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
 Status: Implemented test harnesses exist for unit, contract, adapter, Chromium browser, benchmark, and Rust research checks. Manual assistive-technology and expanded cross-browser gates remain open.
 
@@ -34,4 +34,4 @@ Status: Implemented test harnesses exist for unit, contract, adapter, Chromium b
 - `pnpm run bench`
 - `node benchmarks/engine-bakeoff/measure-worker-boundary.mjs`
 
-Current Chromium coverage includes virtualization, editing activation/commit/cancel paths, rectangular selection, validated paste, variable layout, multiple frozen panes, bounded-history interaction, trusted custom editors/renderers, Angular passthrough, and adapter lifecycle smoke checks. Manual NVDA/Chrome remains a release gate and must not be represented as automated coverage.
+Current Chromium coverage includes virtualization, column headers, row numbers, empty-state focus safety, pinned summaries, client status, editing activation/commit/cancel paths, rectangular selection, validated paste, variable layout, multiple frozen panes, bounded-history interaction, trusted custom editors/renderers, Angular passthrough, and adapter lifecycle smoke checks. Manual visual QA passed at 1280 x 720 and 1440 x 900 on 2026-08-11. Manual NVDA/Chrome and representative-user walkthroughs remain open and must not be represented as automated coverage.

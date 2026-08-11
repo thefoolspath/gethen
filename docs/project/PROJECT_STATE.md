@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-08-10.
+Last updated: 2026-08-11.
 
 ## Purpose
 
@@ -8,7 +8,7 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has a locally verified `0.0.0-alpha.2` release candidate, the automated implementation for `0.0.0-alpha.3`, and an in-progress Alpha 4 data-shaping/engine checkpoint. Alpha 3 manual NVDA/Chrome verification remains open. No packages are published.
+Gethen now has a locally verified `0.0.0-alpha.2` release candidate, the automated implementation for `0.0.0-alpha.3`, an in-progress Alpha 4 data-shaping/engine checkpoint, and the implemented Alpha 4 grid-shell/default-theme foundation. Alpha 3 and grid-shell manual NVDA/Chrome verification remain open. No packages are published.
 
 The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
@@ -36,6 +36,10 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Alpha 4 canonical filter/sort/group/aggregate/flatten/viewport pipeline with deterministic mixed-type comparisons, stable readonly synthetic group rows, and client-only custom reducers.
 - Alpha 4 transferable mixed-type columnar schema and shared worker contract with progress and cancellation messages.
 - Alpha 4 TypeScript Worker and dependency-free Rust/WASM Worker candidates, shared numeric formula/pivot-style kernels, browser parity smoke coverage, and a diagnostic 100,000-row numeric boundary comparison. Full end-to-end selection evidence remains open.
+- Alpha 4 grid shell with visible column headers, dedicated row-number gutter, correct body/header ARIA offsets, focus-safe empty state, readonly pinned bottom rows, client status bar, and host/aggregate-backed summary rows.
+- Dependency-free modern-enterprise light default theme with comfortable default density, compact/spacious presets, expanded shell/state tokens, header class/callback customization, labelled built-in editors, and readonly cell semantics.
+- Core and Angular grid-shell passthrough plus Chromium coverage and manual visual QA at 1280 x 720 and 1440 x 900. Representative-user walkthroughs and manual NVDA/Chrome remain open.
+- Initial shell-enabled local performance evidence: 4.7 ms customization-on repeated-scroll median; three-process trace median-of-medians 16.599 ms, median p95 18.559 ms, and zero tasks over 50 ms. Cross-hardware evidence remains open.
 
 ## Present Repository Assets
 
@@ -68,6 +72,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Active feedback/control plan: [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md).
 - Completed Alpha 2 developer customization and row transaction plan: [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md).
 - Active Alpha 3 through local 1.0 execution plan: [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md).
+- Active Alpha 4 grid-shell visual UX plan: [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md).
 - Initial customization API guide: [../product/CUSTOMIZATION.md](../product/CUSTOMIZATION.md).
 - Pre-alpha research gate tracker: [../research/PRE_ALPHA_RESEARCH_GATE.md](../research/PRE_ALPHA_RESEARCH_GATE.md).
 - Proposed ADRs: [../adr/README.md](../adr/README.md).
@@ -107,6 +112,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - The first hands-on issues are fixed with browser regression coverage: deep vertical scrolling, double-click editing, type-to-edit, and automatic browser-test port allocation.
 - The local Alpha 2 release candidate is implemented and verified. Application-owned classes, conditional styling, alignment, hidden columns, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping, headless row transactions, opt-in validated direct clipboard paste, host-dialog preparation, and Angular passthrough are included. JavaScript, repeated-render, and local CDP frame-trace baselines exist. Headed/cross-hardware evidence remains required before external performance claims. Renderer-owned row/paste-dialog controls, a second adapter, custom renderers/editors, raw HTML formatters, XLSX import/export, and rich clipboard content are deliberately omitted or deferred.
 - Work from `0.0.0-alpha.3` onward is now active under the accepted execution plan. Implementation remains sequential: editor/history/layout, data shaping and engine bake-off, formulas, pivot, Protocol v2/server DataSource, .NET preview, beta hardening, and a local unpublished `1.0.0` release candidate.
+- The Alpha 4 grid-shell foundation is implemented. ISSUE-20260811-001 through ISSUE-20260811-003 and CR-20260811-001 are done; CR-20260811-002 remains active because Alpha 7 must extend the status surface with server loading/error/retry and known/unknown total semantics. User walkthroughs and manual NVDA/Chrome evidence remain open and no validated-usability claim is made.
 
 ## Verified Commands
 
@@ -182,5 +188,6 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-10 | Completed local `0.0.0-alpha.2` release-candidate verification and package inspection without publishing | [ALPHA_2_RELEASE_NOTES.md](ALPHA_2_RELEASE_NOTES.md), package manifests, full verified command suite |
 | 2026-08-10 | Added three-process local Chromium CDP frame tracing with frame intervals, long-task counts, and point-in-time heap movement | `benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`, [../research/findings/2026-08-10-alpha2-customization-clipboard.md](../research/findings/2026-08-10-alpha2-customization-clipboard.md) |
 | 2026-08-10 | Closed the Alpha 2 plan and accepted the sequential Alpha 3 through local unpublished 1.0 execution plan, including mandatory formula/pivot/server scope, Protocol v2 replacement, the engine bake-off, and .NET preview | [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md), [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md), [../product/ROADMAP.md](../product/ROADMAP.md), [../product/SCOPE.md](../product/SCOPE.md), [RISK_REGISTER.md](RISK_REGISTER.md) |
+| 2026-08-11 | Added source-grounded visual UX research and implemented the Alpha 4 grid-shell foundation: headers, row numbers, pinned summaries, client status, accessibility corrections, default theme/density, Angular passthrough, tests, and two-viewport visual QA | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md), [../research/findings/2026-08-11-grid-visual-ux.md](../research/findings/2026-08-11-grid-visual-ux.md), [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) |
 | 2026-08-10 | Implemented the automated Alpha 3 editing, trusted extension, bounded history, layout/frozen-pane, Angular registry, and worker-boundary scope; manual NVDA/Chrome remains open | `packages/core/src/grid-editing.ts`, `packages/core/src/grid-history.ts`, `packages/core/src/grid-layout.ts`, `packages/gethen-angular/src/gethen-angular-registry.ts`, `benchmarks/engine-bakeoff/`, [ALPHA_3_RELEASE_NOTES.md](ALPHA_3_RELEASE_NOTES.md) |
 | 2026-08-10 | Added the first Alpha 4 checkpoint: canonical shaping, mixed-type columnar worker contract, TypeScript and Rust/WASM candidates, browser parity, cancellation, and diagnostic numeric boundary evidence; engine selection remains open | `packages/core/src/grid-data-shaping.ts`, `packages/core/src/grid-engine-contract.ts`, `crates/gethen-engine/src/lib.rs`, `benchmarks/engine-bakeoff/`, [../research/findings/2026-08-10-alpha4-worker-boundary-checkpoint.md](../research/findings/2026-08-10-alpha4-worker-boundary-checkpoint.md) |

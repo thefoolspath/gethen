@@ -1,6 +1,6 @@
 # Product Scope
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
 ## Current Implementation Status
 
@@ -47,7 +47,7 @@ A credible `0.0.0-alpha.1` should let a developer:
 The accepted roadmap uses `0.0.0-alpha.3` through `0.0.0-alpha.6` for required frontend expansion before beta:
 
 - `alpha.3`: full editor lifecycle and built-ins, public custom renderer/editor lifecycle, bounded data undo/redo, column resize/reorder, and multiple frozen rows/columns.
-- `alpha.4`: deterministic client-side sort/filter/group/aggregate behavior.
+- `alpha.4`: deterministic client-side sort/filter/group/aggregate behavior plus the pre-Alpha-5 grid-shell closure for headers, row numbers, pinned summaries, client status, accessibility corrections, and the dependency-free default visual system.
 - `alpha.5`: a safe Gethen formula engine with per-cell/computed-column formulas, structured references, dependency graph, incremental worker recalculation, and formula UI.
 - `alpha.6`: a readonly-first pivot engine, virtualized pivot grid, developer configuration API, and accessible field-builder UI.
 

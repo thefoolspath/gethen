@@ -1,10 +1,10 @@
 # Accessibility And Security Architecture
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
 Initial alpha note: the virtualized DOM renderer represents the active cell with `aria-activedescendant`, cell `aria-selected`, and row/column indexes. Full screen-reader validation remains required before release confidence.
 
-Status: Alpha 3 keyboard, ARIA, trusted-extension, and untrusted-input boundaries are implemented as described below. Manual NVDA/Chrome validation remains open.
+Status: Alpha 4 grid-shell ARIA corrections plus Alpha 3 keyboard, trusted-extension, and untrusted-input boundaries are implemented as described below. Manual NVDA/Chrome validation remains open.
 
 ## Accessibility
 
@@ -20,6 +20,8 @@ Minimum proposed alpha accessibility:
 - editor labels
 - row and column counts when available
 - readonly indication for non-editable cells
+
+The Alpha 4 shell renders column titles as `columnheader`, uses a dedicated row-number gutter for `rowheader`, offsets body row/column indexes for those headers, labels built-in editor controls, and marks readonly column cells. An empty grid removes the dangling `aria-activedescendant` and renders a visible empty state. Pinned summary cells are readonly and receive logical indexes after body rows.
 
 Do not claim WCAG or screen-reader compliance until tested.
 

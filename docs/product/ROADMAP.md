@@ -1,6 +1,6 @@
 # Product Roadmap
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
 Status: A local `0.0.0-alpha.2` release candidate is implemented and verified; no package is published. The accepted Alpha 3 through local 1.0 plan is active.
 
@@ -20,7 +20,7 @@ Status: A local `0.0.0-alpha.2` release candidate is implemented and verified; n
 | `0.0.0-alpha.1` | Smallest credible frontend grid vertical slice | Typed columns, developer-provided rows, virtualized grid, visible row/column viewport, single active cell, keyboard navigation, basic text/number/boolean editing, typed change event, client-side DataSource, one adapter or framework-neutral demo | Initial render, scroll stability, input latency, edit activation, client range/update baseline, package smoke benchmark |
 | `0.0.0-alpha.2` | Interaction basics and developer customization | Optional second adapter, range selection, optional clipboard copy/paste basics with Excel/MySQL Workbench-style blank-cell handling, validation primitives with per-cell paste errors, improved column/cell metadata, class-based conditional row/column/cell styling, theme tokens, DTO-to-column mapping, hidden key fields, row edit/insert/save planning | Keyboard interaction benchmark, clipboard payload sanity checks, paste validation cost, adapter mount/unmount tests, accessibility smoke tests, conditional styling callback cost |
 | `0.0.0-alpha.3` | Editing, history, and layout | Full editor state machine and built-ins, public renderer/editor lifecycle, bounded data undo/redo, resize/reorder, multiple frozen top rows and leading columns, host-persisted layout state | Layout round-trip, history byte bounds, pane interaction/accessibility, repeated edit/undo disposal, TypeScript Worker versus Rust/WASM Worker harness |
-| `0.0.0-alpha.4` | Data shaping and engine bake-off | Deterministic filter -> stable multi-sort -> group -> aggregate pipeline, typed synthetic rows, custom client reducer, equivalent TypeScript Worker and Rust/WASM Worker candidates | Ingestion, transfer, shaping and representative formula/pivot kernels on shared fixtures; ship the winner and retain the other as parity oracle |
+| `0.0.0-alpha.4` | Data shaping, engine bake-off, and grid-shell closure | Deterministic filter -> stable multi-sort -> group -> aggregate pipeline, typed synthetic rows, custom client reducer, equivalent TypeScript Worker and Rust/WASM Worker candidates; accepted header/accessibility corrections, row-number gutter, pinned bottom rows, client status bar, and dependency-free modern-enterprise default theme before Alpha 5 | Ingestion, transfer, shaping and representative formula/pivot kernels on shared fixtures; shell visual/accessibility/browser/performance evidence; ship the engine winner and retain the other as parity oracle |
 | `0.0.0-alpha.5` | Gethen Formula Engine | Per-cell and computed-column formulas, structured references, typed AST/dependency graph, safe functions, incremental worker recalculation, formula bar/editor | Parsing/cycle/invalidation/property tests, cancellation/progress, graph memory and full reference-workload evidence; no Excel-compatibility claim |
 | `0.0.0-alpha.6` | Pivot and field builder | Typed pivot definition, stable generated rows/columns, readonly virtualized results, developer API, drag-and-drop and keyboard field builder, cardinality limits | Golden fixtures, shaping parity, dynamic-column layout/accessibility, low/medium/high-cardinality responsiveness and memory |
 | `0.0.0-alpha.7` | Protocol v2 and server DataSource | JSON Schema Protocol v2 replaces v1; bounded range/sort/filter/group/aggregate/pivot/update requests; cancellation, stale discard, retry, structured errors and bounded cache | Generated-contract parity, schema/adversarial tests, complete-dataset server semantics, cache/request churn and cancellation evidence |
@@ -33,6 +33,8 @@ Status: A local `0.0.0-alpha.2` release candidate is implemented and verified; n
 The local `0.0.0-alpha.2` release candidate was completed on 2026-08-10. It includes hidden rendered columns, alignment, application-owned column/row/cell classes, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping with hidden stable keys, headless row transactions, opt-in all-or-nothing direct clipboard paste, validation primitives, host-dialog preparation, and Angular adapter passthrough. Preliminary repeat-iteration JavaScript and Chromium render-timing baselines exist. Renderer-owned row/paste-dialog controls and a second adapter are deliberately omitted; cross-hardware/full-frame-trace evidence remains required before external performance claims.
 
 Implementation from `0.0.0-alpha.3` onward is active and follows [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md). Versions are completed sequentially. Features inside the stable scope may not be relabeled as prototypes or deferred merely to pass a release gate.
+
+The accepted Alpha 4 grid-shell closure follows [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md). It corrects missing previously accepted header/accessibility behavior and adds CR-20260811-001/002 before formula and pivot UI build on the shell. Alpha 7 extends the same status surface with server loading, error, retry, and known/unknown total semantics.
 
 ## Version Exit Discipline
 
@@ -143,6 +145,7 @@ Decision rule:
 | Backend C# packages | Required preview for `alpha.8` | Start after Protocol v2; remain local and independently versioned from frontend packages. |
 | Formula engine | Required for `alpha.5` | Implement the bounded Gethen grammar and worker lifecycle; do not claim Excel compatibility. |
 | Pivot engine and field builder | Required for `alpha.6` | Reuse Alpha 4 grouping/aggregation, keep output readonly by default, and provide pointer plus keyboard configuration paths. |
+| Grid shell and default visual UX | Required Alpha 4 closure before Alpha 5 | Complete headers, row numbers, pinned summaries, client status, accessibility corrections, modern-enterprise defaults, and host customization without a runtime design-system dependency. |
 | Collaboration/comments/charts/XLSX import-export | Out of early alpha | Revisit after core grid stability. |
 
 ## Benchmark Report Requirements

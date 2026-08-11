@@ -1,8 +1,8 @@
 # Grid Customization
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
-Status: Alpha 2 customization plus Alpha 3 editing extensions, history, and layout surfaces are implemented locally. Manual NVDA/Chrome verification remains open.
+Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shell/default-theme closure are implemented locally. Manual NVDA/Chrome and representative-user validation remain open.
 
 ## Core API
 
@@ -14,6 +14,8 @@ Status: Alpha 2 customization plus Alpha 3 editing extensions, history, and layo
 - `formatter` converts a cell value to text. It does not render HTML.
 
 `GridStylingOptions` provides `getRowClass` and `getCellClass` callbacks. Callbacks run only for cells in the virtualized render window and receive stable row identity, visible indexes, column metadata, and the current value.
+
+Column definitions also accept `headerClassName`, while `GridStylingOptions.getHeaderClass` supplies a typed per-header callback. Header classes belong to the host application under the same rules as body classes.
 
 ```ts
 import { mountVirtualDomGrid } from "@thefoolspath/gethen-core";
@@ -47,7 +49,17 @@ Class names belong to the host application, so utility classes and design-system
 
 ## Theme Overrides
 
-`VirtualDomGridTheme` exposes initial color, typography, padding, grid-line, and active-cell tokens. The renderer maps supplied tokens to CSS custom properties on the grid root. Applications may also override these properties directly per grid container.
+`VirtualDomGridTheme` exposes color, typography, padding, grid-line, header, row-number, pinned-row, status, readonly, invalid, editor-focus, and shell-dimension tokens. The renderer maps supplied tokens to CSS custom properties on the grid root. Applications may also override these properties directly per grid container.
+
+The dependency-free default is a modern-enterprise light theme using system fonts. `density` accepts `compact`, `comfortable`, or `spacious`; `comfortable` is the default. Dark mode is not built in yet, but applications can override the complete token set per grid.
+
+## Grid Shell
+
+Column headers, a row-number gutter, and the client status bar are visible by default and can be disabled independently. Header and body columns share layout order, widths, hidden-column normalization, horizontal scrolling, and frozen-column behavior.
+
+`pinnedBottomRows` accepts host-provided rows. They are readonly, stay above the status bar, share column layout, and do not enter body row counts, shaping, editing, history, or paste. `createGridAggregatePinnedRow` converts Alpha 4 aggregate descriptors into a host-ready pinned row.
+
+The status bar derives the loaded body count and selection size. `totalRowCount` and `filteredRowCount` may provide authoritative shaping or server counts; `null` represents an unknown total and is displayed without guessing.
 
 ## Range Selection
 

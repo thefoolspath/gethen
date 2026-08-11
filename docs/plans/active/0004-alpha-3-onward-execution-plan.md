@@ -1,6 +1,6 @@
 # Alpha 3 Through Local 1.0 Execution Plan
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
 Status: Accepted roadmap execution plan. Alpha 2 is a locally verified release candidate; no package is published.
 
@@ -106,6 +106,10 @@ The first Alpha 4 checkpoint now includes the portable pipeline, transferable mi
 - Main-thread interaction remains responsive during full-dataset work.
 - The selected engine passes the accepted 1M target or the documented 500K fallback.
 - Synthetic rows cannot enter source-row save paths.
+
+### Grid-Shell UX Closure Before Alpha 5
+
+The accepted [grid-shell visual UX plan](0005-grid-shell-visual-ux-research-and-implementation.md) runs after the Alpha 4 shaping boundary is stable and before Alpha 5 begins. It must correct missing header and accessibility behavior, provide row numbers, readonly pinned bottom rows, a client status bar, and a dependency-free modern-enterprise default theme without weakening the engine-selection gate. Alpha 7 extends the same status surface for server loading, error, retry, and unknown totals.
 
 ## `0.0.0-alpha.5` - Gethen Formula Engine
 
