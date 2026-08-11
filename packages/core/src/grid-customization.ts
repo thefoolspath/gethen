@@ -9,6 +9,7 @@ import type {
 
 export type GridClassValue = string | readonly string[] | undefined;
 export type GridColumnAlignment = "left" | "center" | "right";
+export type GridDensity = "compact" | "comfortable" | "spacious";
 
 export interface GridColumnView<TRow extends GridRow = GridRow> extends GridColumn {
   readonly hidden?: boolean;
@@ -16,6 +17,7 @@ export interface GridColumnView<TRow extends GridRow = GridRow> extends GridColu
   readonly key?: boolean;
   readonly align?: GridColumnAlignment;
   readonly className?: GridClassValue;
+  readonly headerClassName?: GridClassValue;
   readonly formatter?: (context: CellFormatContext<TRow>) => string;
   readonly renderer?: GridCellRendererFactory<TRow>;
   readonly editor?: GridBuiltInEditorDefinition | GridCellEditorFactory<TRow>;
@@ -46,18 +48,39 @@ export interface RowClassContext<TRow extends GridRow = GridRow> {
 export interface GridStylingOptions<TRow extends GridRow = GridRow> {
   readonly getRowClass?: (context: RowClassContext<TRow>) => GridClassValue;
   readonly getCellClass?: (context: CellClassContext<TRow>) => GridClassValue;
+  readonly getHeaderClass?: (context: HeaderClassContext<TRow>) => GridClassValue;
+}
+
+export interface HeaderClassContext<TRow extends GridRow = GridRow> {
+  readonly column: GridColumnView<TRow>;
+  readonly columnIndex: number;
 }
 
 export interface VirtualDomGridTheme {
+  readonly density?: GridDensity;
   readonly background?: string;
   readonly textColor?: string;
   readonly gridLineColor?: string;
+  readonly headerBackground?: string;
+  readonly headerTextColor?: string;
+  readonly rowNumberBackground?: string;
+  readonly rowNumberTextColor?: string;
+  readonly pinnedRowBackground?: string;
+  readonly statusBackground?: string;
+  readonly statusTextColor?: string;
   readonly activeCellBorder?: string;
   readonly activeCellBackground?: string;
   readonly selectionBackground?: string;
+  readonly readonlyTextColor?: string;
+  readonly invalidColor?: string;
+  readonly editorFocusColor?: string;
   readonly cellPadding?: string;
   readonly fontFamily?: string;
   readonly fontSize?: string;
+  readonly headerHeight?: string;
+  readonly rowHeight?: string;
+  readonly rowNumberWidth?: string;
+  readonly statusHeight?: string;
 }
 
 export function resolveGridClassNames(...values: readonly GridClassValue[]): readonly string[] {

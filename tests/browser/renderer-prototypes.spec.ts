@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+
+function dataCell(page: Page, rowIndex: number, columnIndex: number): Locator {
+  return page.locator(`[data-row-index="${rowIndex}"][data-column-index="${columnIndex}"]`);
+}
 
 async function pasteText(locator: Locator, text: string): Promise<void> {
   await locator.evaluate((element, pastedText) => {
@@ -27,21 +31,41 @@ test("core demo mounts the virtualized DOM renderer", async ({ page }) => {
   await expect(page.locator("#renderedCells")).not.toHaveText("0");
 });
 
+test("core demo renders headers and a focus-safe empty state", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?empty=on");
+  const grid = page.getByRole("grid");
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toBeVisible();
+  await expect(page.locator('[data-gethen-empty-state="true"]')).toHaveText("No rows to display");
+  await expect(grid).not.toHaveAttribute("aria-activedescendant");
+  await expect(page.locator('[data-gethen-status-bar="true"]')).toHaveText("0 rows");
+});
+
 test("core demo applies Alpha 2 view metadata and application classes", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
   const grid = page.getByRole("grid");
 
-  await expect(grid).toHaveAttribute("aria-colcount", "50");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveClass(
+  await expect(grid).toHaveAttribute("aria-colcount", "51");
+  await expect(grid).toHaveAttribute("aria-rowcount", "100002");
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Row numbers" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toHaveClass(
+    /gethen-primary-header/
+  );
+  await expect(page.getByRole("columnheader", { name: "Column 3", exact: true })).toHaveClass(
+    /gethen-boolean-header/
+  );
+  await expect(dataCell(page, 0, 0)).toHaveClass(
     /gethen-numeric-column/
   );
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("1");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="3"]')).toHaveClass(
+  await expect(dataCell(page, 0, 0)).toHaveText("1");
+  await expect(dataCell(page, 0, 2)).toHaveClass(
     /gethen-true-cell/
   );
-  await expect(page.locator('[aria-rowindex="2"][aria-colindex="1"]')).toHaveClass(
+  await expect(dataCell(page, 1, 0)).toHaveClass(
     /gethen-alternate-row/
   );
+  await expect(page.locator('[data-gethen-status-bar="true"]')).toHaveText("100,000 rows");
+  await expect(page.locator('[data-gethen-pinned-bottom="true"]')).not.toHaveCount(0);
 });
 
 test("core demo keeps virtualized cells visible after vertical scrolling", async ({ page }) => {
@@ -49,11 +73,11 @@ test("core demo keeps virtualized cells visible after vertical scrolling", async
   const grid = page.getByRole("grid");
 
   await grid.evaluate((element) => {
-    element.scrollTop = 1000 * 32;
+    element.scrollTop = 1000 * 34 + 38;
   });
 
-  await expect(page.locator('[aria-rowindex="1001"][aria-colindex="1"]')).toBeVisible();
-  await expect(page.locator('[aria-rowindex="1001"][aria-colindex="1"]')).toHaveText("1,001");
+  await expect(dataCell(page, 1000, 0)).toBeVisible();
+  await expect(dataCell(page, 1000, 0)).toHaveText("1,001");
 });
 
 test("core demo supports keyboard active-cell navigation", async ({ page }) => {
@@ -76,20 +100,20 @@ test("core demo extends and collapses a rectangular selection range", async ({ p
   await page.keyboard.press("Shift+ArrowDown");
 
   await expect(page.locator('[aria-selected="true"]')).toHaveCount(4);
-  await expect(page.locator('[aria-rowindex="2"][aria-colindex="2"]')).toHaveAttribute(
+  await expect(dataCell(page, 1, 1)).toHaveAttribute(
     "id",
     "gethen-active-cell"
   );
 
   await page.keyboard.press("ArrowRight");
   await expect(page.locator('[aria-selected="true"]')).toHaveCount(1);
-  await expect(page.locator('[aria-rowindex="2"][aria-colindex="3"]')).toHaveAttribute(
+  await expect(dataCell(page, 1, 2)).toHaveAttribute(
     "id",
     "gethen-active-cell"
   );
 
-  await page.locator('[aria-rowindex="1"][aria-colindex="1"]').click();
-  await page.locator('[aria-rowindex="2"][aria-colindex="2"]').click({ modifiers: ["Shift"] });
+  await dataCell(page, 0, 0).click();
+  await dataCell(page, 1, 1).click({ modifiers: ["Shift"] });
   await expect(page.locator('[aria-selected="true"]')).toHaveCount(4);
 });
 
@@ -108,7 +132,7 @@ test("core demo commits text edits with typed change events", async ({ page }) =
 
 test("core demo starts editing a cell on double-click", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
-  const cell = page.locator('[aria-rowindex="1"][aria-colindex="2"]');
+  const cell = dataCell(page, 0, 1);
 
   await cell.dblclick();
   const editor = page.locator("[data-gethen-editor='true']");
@@ -121,7 +145,7 @@ test("core demo starts editing a cell on double-click", async ({ page }) => {
   );
   await expect(editor).toHaveCount(0);
 
-  await page.locator('[aria-rowindex="2"][aria-colindex="2"]').click();
+  await dataCell(page, 1, 1).click();
   await page.keyboard.type("typed after double-click");
   await page.keyboard.press("Enter");
 
@@ -172,14 +196,14 @@ test("core demo commits typed tabular paste as one validated range", async ({ pa
   await page.goto("/apps/core-demo/index.html");
   const grid = page.getByRole("grid");
 
-  await page.locator('[aria-rowindex="1"][aria-colindex="1"]').click();
+  await dataCell(page, 0, 0).click();
   await pasteText(grid, "123\tpasted\tfalse");
 
   await expect(page.locator("#lastPaste")).toHaveText("3 cells committed");
   await expect(page.locator("#lastChange")).toHaveText("row-1 / c2: true -> false");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("123");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveText("pasted");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="3"]')).toHaveText("false");
+  await expect(dataCell(page, 0, 0)).toHaveText("123");
+  await expect(dataCell(page, 0, 1)).toHaveText("pasted");
+  await expect(dataCell(page, 0, 2)).toHaveText("false");
   await expect(page.locator('[aria-selected="true"]')).toHaveCount(3);
 });
 
@@ -187,28 +211,28 @@ test("core demo rejects an invalid paste without partial changes", async ({ page
   await page.goto("/apps/core-demo/index.html");
   const grid = page.getByRole("grid");
 
-  await page.locator('[aria-rowindex="1"][aria-colindex="1"]').click();
+  await dataCell(page, 0, 0).click();
   await pasteText(grid, "not-a-number\tshould-not-commit");
 
   await expect(page.locator("#lastPaste")).toHaveText("1 cells rejected");
   await expect(page.locator("#lastChange")).toHaveText("none");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText("1");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveText("R1 Column 2");
+  await expect(dataCell(page, 0, 0)).toHaveText("1");
+  await expect(dataCell(page, 0, 1)).toHaveText("R1 Column 2");
 });
 
 test("Alpha 3 layout resizes, reorders, and freezes multiple panes", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html?alpha3=on");
   const grid = page.getByRole("grid");
-  const firstCell = page.locator('[aria-rowindex="1"][aria-colindex="1"]');
+  const firstCell = dataCell(page, 0, 0);
 
   await page.locator("#resizeColumn").click();
   await expect(firstCell).toHaveCSS("width", "220px");
 
   await page.locator("#reorderColumn").click();
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toHaveText(
+  await expect(dataCell(page, 0, 0)).toHaveText(
     "Custom: R1 Column 2"
   );
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="2"]')).toHaveAttribute(
+  await expect(dataCell(page, 0, 1)).toHaveAttribute(
     "id",
     "gethen-active-cell"
   );
@@ -216,20 +240,20 @@ test("Alpha 3 layout resizes, reorders, and freezes multiple panes", async ({ pa
 
   await page.locator("#freezePanes").click();
   await expect(page.locator("#layoutStatus")).toHaveText("freeze: 2 x 2");
-  const before = await page.locator('[aria-rowindex="1"][aria-colindex="1"]').boundingBox();
+  const before = await dataCell(page, 0, 0).boundingBox();
   await grid.evaluate((element) => {
     element.scrollTop = 1000;
     element.scrollLeft = 500;
   });
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="1"]')).toBeVisible();
-  const after = await page.locator('[aria-rowindex="1"][aria-colindex="1"]').boundingBox();
+  await expect(dataCell(page, 0, 0)).toBeVisible();
+  const after = await dataCell(page, 0, 0).boundingBox();
   expect(after?.x).toBeCloseTo(before?.x ?? 0, 0);
   expect(after?.y).toBeCloseTo(before?.y ?? 0, 0);
 });
 
 test("Alpha 3 JSON editor validates, commits, and reports lifecycle state", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html?alpha3=on");
-  const cell = page.locator('[aria-rowindex="1"][aria-colindex="4"]');
+  const cell = dataCell(page, 0, 3);
   await cell.dblclick();
   const editor = page.locator("textarea[data-gethen-editor='true']");
   await editor.fill("{invalid");
@@ -266,7 +290,7 @@ test("Alpha 3 history emits inverse changes and supports redo", async ({ page })
 
 test("Alpha 3 custom editor lifecycle validates and commits trusted host code", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html?alpha3=on");
-  await page.locator('[aria-rowindex="1"][aria-colindex="7"]').dblclick();
+  await dataCell(page, 0, 6).dblclick();
   const editor = page.locator("[data-custom-editor='true']");
   await expect(editor).toBeFocused();
   await editor.fill("invalid");
@@ -305,9 +329,10 @@ test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
   await expect(page.locator("gethen-angular-demo")).toBeVisible();
   await expect(page.getByRole("grid")).toBeVisible();
   await expect(page.locator("#rowCount")).toHaveText("50000");
-  await expect(page.locator('[aria-rowindex="1"][aria-colindex="3"]')).toHaveClass(
+  await expect(dataCell(page, 0, 2)).toHaveClass(
     /demo-approved-cell/
   );
+  await expect(page.locator('[data-gethen-pinned-bottom="true"]')).not.toHaveCount(0);
 });
 
 test("Angular demo relays selection and edit events", async ({ page }) => {
@@ -343,7 +368,7 @@ test("Angular demo passes clipboard options and paste results through the adapte
   await page.goto("/apps/angular-demo/index.html");
   const grid = page.getByRole("grid");
 
-  await page.locator('[aria-rowindex="1"][aria-colindex="2"]').click();
+  await dataCell(page, 0, 1).click();
   await pasteText(grid, "adapter paste");
 
   await expect(page.locator("#pasteStatus")).toHaveText("1 cells committed");

@@ -13,6 +13,8 @@ export interface VirtualDomGridCellInput<TRow extends GridRow = GridRow> {
   readonly top: number;
   readonly frozenRow: boolean;
   readonly frozenColumn: boolean;
+  readonly ariaRowOffset: number;
+  readonly ariaColumnOffset: number;
   readonly commitEdit: (
     value: CellValue,
     editor?: GridCellEditor<TRow>,
@@ -45,7 +47,7 @@ export function createVirtualDomGridCell<TRow extends GridRow>(
     columnIndex,
     value: row.cells[column.id]
   };
-  configureCellAccessibility(cell, columnIndex, rowIndex, active, selected);
+  configureCellAccessibility(cell, column, columnIndex, rowIndex, input, active, selected);
   configureCellPosition(cell, input, column);
   configureCellClasses(cell, input.styling, rowClass, row, column, rowIndex, columnIndex);
 
@@ -92,18 +94,23 @@ function configureCellClasses<TRow extends GridRow>(
   cell.classList.add(...resolveGridClassNames(column.className, rowClass, cellClass));
 }
 
-function configureCellAccessibility(
+function configureCellAccessibility<TRow extends GridRow>(
   cell: HTMLElement,
+  column: GridColumnView<TRow>,
   columnIndex: number,
   rowIndex: number,
+  input: Pick<VirtualDomGridCellInput, "ariaRowOffset" | "ariaColumnOffset">,
   active: boolean,
   selected: boolean
 ): void {
   cell.id = active ? "gethen-active-cell" : "";
-  cell.setAttribute("role", columnIndex === 0 ? "rowheader" : "gridcell");
-  cell.setAttribute("aria-rowindex", String(rowIndex + 1));
-  cell.setAttribute("aria-colindex", String(columnIndex + 1));
+  cell.setAttribute("role", "gridcell");
+  cell.setAttribute("aria-rowindex", String(rowIndex + 1 + input.ariaRowOffset));
+  cell.setAttribute("aria-colindex", String(columnIndex + 1 + input.ariaColumnOffset));
   cell.setAttribute("aria-selected", selected ? "true" : "false");
+  if (column.readonly) {
+    cell.setAttribute("aria-readonly", "true");
+  }
   cell.dataset.rowIndex = String(rowIndex);
   cell.dataset.columnIndex = String(columnIndex);
 }
@@ -130,7 +137,9 @@ function configureCellPosition<TRow extends GridRow>(
     borderBottom: "1px solid #e0e5ea",
     borderColor: "var(--gethen-grid-line-color, #e0e5ea)",
     padding: "var(--gethen-cell-padding, 7px 10px)",
-    color: "var(--gethen-text-color, inherit)",
+    color: column.readonly
+      ? "var(--gethen-readonly-text-color, #667085)"
+      : "var(--gethen-text-color, #17212b)",
     background: "var(--gethen-background, transparent)",
     fontFamily: "var(--gethen-font-family, inherit)",
     fontSize: "var(--gethen-font-size, inherit)",
@@ -177,6 +186,7 @@ function createCellEditor<TRow extends GridRow>(
       ? document.createElement("textarea")
       : document.createElement("input");
   control.dataset.gethenEditor = "true";
+  control.setAttribute("aria-label", `${context.column.title}, row ${context.rowIndex + 1}`);
   if (control instanceof HTMLInputElement) {
     control.type = definition.kind === "datetime"
       ? "datetime-local"
@@ -200,7 +210,14 @@ function createCellEditor<TRow extends GridRow>(
   } else {
     control.value = String(draftValue ?? "");
   }
-  Object.assign(control.style, { width: "100%", height: "100%", border: "0", padding: "0" });
+  Object.assign(control.style, {
+    width: "100%",
+    height: "100%",
+    border: "0",
+    padding: "0",
+    outline: "2px solid var(--gethen-editor-focus-color, #2563eb)",
+    outlineOffset: "-2px"
+  });
 
   const commit = (navigation?: "next" | "previous"): void => {
     const rawValue = control instanceof HTMLInputElement && definition.kind === "boolean"
@@ -210,6 +227,7 @@ function createCellEditor<TRow extends GridRow>(
     if ("error" in parsed) {
       control.setAttribute("aria-invalid", "true");
       control.title = parsed.error;
+      control.style.outlineColor = "var(--gethen-invalid-color, #b42318)";
       return;
     }
     input.commitEdit(parsed.value, undefined, navigation);

@@ -104,10 +104,21 @@ export type {
   GridClassValue,
   GridColumnAlignment,
   GridColumnView,
+  GridDensity,
   GridStylingOptions,
+  HeaderClassContext,
   RowClassContext,
   VirtualDomGridTheme
 } from "./grid-customization.js";
+export {
+  createGridAggregatePinnedRow,
+  formatGridStatus
+} from "./grid-shell.js";
+export type {
+  GridAggregatePinnedRowOptions,
+  GridRowNumberOptions,
+  GridStatusBarOptions
+} from "./grid-shell.js";
 
 export type {
   CreateGridModelOptions,

@@ -50,6 +50,10 @@ const rows: readonly GridRow[] = Array.from({ length: 50000 }, (_, rowIndex) => 
 export class DemoAppComponent {
   protected readonly columns = columns;
   protected readonly rows = rows;
+  protected readonly pinnedBottomRows: readonly GridRow[] = [{
+    id: "summary",
+    cells: { c0: rows.length, c1: "Rows loaded" }
+  }];
   protected readonly activeCell = signal("row-1 / c0");
   protected readonly lastChange = signal("None");
   protected readonly selectedRange = signal("R1:C1–R1:C1");

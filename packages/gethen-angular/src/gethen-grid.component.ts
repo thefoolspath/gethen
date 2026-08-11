@@ -20,7 +20,9 @@ import type {
   GridLayoutEvent,
   GridLayoutState,
   GridPasteResult,
+  GridRowNumberOptions,
   GridRow,
+  GridStatusBarOptions,
   GridStylingOptions,
   VirtualDomGrid,
   VirtualDomGridSelection,
@@ -56,6 +58,10 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() columnWidth = 132;
   @Input() styling: GridStylingOptions | undefined;
   @Input() theme: VirtualDomGridTheme | undefined;
+  @Input() showColumnHeaders = true;
+  @Input() rowNumbers: boolean | GridRowNumberOptions = true;
+  @Input() statusBar: false | GridStatusBarOptions = {};
+  @Input() pinnedBottomRows: readonly GridRow[] = [];
   @Input() clipboard: GridClipboardOptions | undefined;
   @Input() layoutState: GridLayoutState | undefined;
   @Input() frozenRowCount = 0;
@@ -140,6 +146,10 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
       columnWidth: this.columnWidth,
       ...(this.styling ? { styling: this.styling } : {}),
       ...(this.theme ? { theme: this.theme } : {}),
+      showColumnHeaders: this.showColumnHeaders,
+      rowNumbers: this.rowNumbers,
+      statusBar: this.statusBar,
+      pinnedBottomRows: this.pinnedBottomRows,
       ...(this.clipboard ? { clipboard: this.clipboard } : {}),
       ...(this.layoutState ? { layoutState: this.layoutState } : {}),
       frozenRowCount: this.frozenRowCount,

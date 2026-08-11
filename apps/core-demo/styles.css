@@ -10,12 +10,14 @@
 
 body {
   margin: 0;
+  overflow: hidden;
 }
 
 .shell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .toolbar {
@@ -77,7 +79,7 @@ p {
 
 .gridHost {
   min-height: 0;
-  height: calc(100vh - 88px);
+  height: auto;
 }
 
 .gethen-numeric-column {
@@ -91,4 +93,9 @@ p {
 .gethen-true-cell {
   color: #166534 !important;
   font-weight: 700;
+}
+
+.gethen-primary-header,
+.gethen-boolean-header {
+  color: #0f5d66 !important;
 }

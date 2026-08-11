@@ -1,5 +1,6 @@
 import {
   createGridColumnarBuffer,
+  createGridAggregatePinnedRow,
   createGridWorkerShapeDefinition,
   createRustWasmWorkerEngine,
   createRustWasmWorkerGridEngine,
@@ -10,14 +11,17 @@ import {
 import type { GridColumnView, GridRow } from "@thefoolspath/gethen-core";
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
-const customizationEnabled = new URLSearchParams(window.location.search).get("customization") !== "off";
-const alpha3DemoEnabled = new URLSearchParams(window.location.search).get("alpha3") === "on";
+const searchParams = new URLSearchParams(window.location.search);
+const customizationEnabled = searchParams.get("customization") !== "off";
+const alpha3DemoEnabled = searchParams.get("alpha3") === "on";
+const emptyDemoEnabled = searchParams.get("empty") === "on";
 const columns: readonly GridColumnView[] = [
   ...Array.from({ length: 50 }, (_, columnIndex): GridColumnView => ({
     id: `c${columnIndex}`,
     title: `Column ${columnIndex + 1}`,
     dataType: columnIndex === 2 ? "boolean" : columnIndex % 5 === 0 ? "number" : "text",
     align: columnIndex % 5 === 0 ? "right" : "left",
+    ...(customizationEnabled && columnIndex === 0 ? { headerClassName: "gethen-primary-header" } : {}),
     ...(customizationEnabled && columnIndex % 5 === 0
       ? {
           className: "gethen-numeric-column",
@@ -106,20 +110,37 @@ const rows: readonly GridRow[] = Array.from({ length: 100000 }, (_, rowIndex) =>
   };
 });
 
+const pinnedBottomRows = [createGridAggregatePinnedRow({
+  rows,
+  aggregates: [
+    { id: "c0", operation: "sum", columnId: "c0" },
+    { id: "c5", operation: "average", columnId: "c5" }
+  ],
+  labelColumnId: "c1",
+  label: "Total / average"
+})];
+const renderedRows = emptyDemoEnabled ? [] : rows;
+
 const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   columns,
-  rows,
+  rows: renderedRows,
+  pinnedBottomRows: emptyDemoEnabled ? [] : pinnedBottomRows,
+  statusBar: { totalRowCount: renderedRows.length },
   ...(customizationEnabled
     ? {
         styling: {
           getRowClass: ({ rowIndex }: { rowIndex: number }) =>
             rowIndex % 2 === 1 ? "gethen-alternate-row" : undefined,
+          getHeaderClass: ({ column }: { column: GridColumnView }) =>
+            column.id === "c2" ? "gethen-boolean-header" : undefined,
           getCellClass: ({ column, value }: { column: GridColumnView; value: CellValue | undefined }) =>
             column.id === "c2" && value === true ? "gethen-true-cell" : undefined
         },
         theme: {
+          density: "comfortable" as const,
           activeCellBorder: "#0f766e",
-          activeCellBackground: "#f0fdfa"
+          activeCellBackground: "#f0fdfa",
+          headerBackground: "#f0f4f7"
         }
       }
     : {}),
