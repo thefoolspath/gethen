@@ -1,10 +1,10 @@
 # System Overview
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-08-12.
 
 ## Implemented Architecture
 
-No production architecture is implemented yet. This repository currently contains documentation only.
+Initial protocol, Core, Angular, demo, renderer, client DataSource, shaping, and worker-candidate slices are implemented. See [../project/PROJECT_STATE.md](../project/PROJECT_STATE.md) for evidence and open gates.
 
 ## Proposed Target Architecture
 
@@ -28,7 +28,7 @@ Potential future compute path:
 Gethen Core -> Worker bridge -> Rust/WASM engine
 ```
 
-Potential future server-side integration path:
+Deferred Server 2.0 integration path:
 
 ```text
 Gethen Core DataSource
@@ -37,7 +37,7 @@ Gethen Core DataSource
 Language-neutral protocol
         |
         v
-Backend integration package
+Separately versioned C# project/solution area in this repository
         |
         +--> ASP.NET Core endpoint helpers
         +--> LINQ query translation helpers
@@ -49,6 +49,9 @@ Backend integration package
 - Keep framework-specific behavior outside core.
 - Keep expensive technology choices behind interfaces until benchmarks justify them.
 - Keep backend integrations outside frontend core and behind the language-neutral protocol.
+- Complete client-side 1.0 before implementing Server DataSource or backend packages.
+- Keep client data-operation descriptors serializable so Server 2.0 can add parity for range/paging, sort, filter, group, aggregate, formula, pivot, updates, and row transactions.
+- Keep browser UI callbacks outside portable contracts; future server execution uses named and allowlisted equivalents.
 - Use source code and tests as truth for implemented behavior once code exists.
 - Treat research notes as evidence, not decisions.
 - Treat ADRs as the record of proposed or accepted decisions.

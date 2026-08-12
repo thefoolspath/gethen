@@ -1,12 +1,14 @@
 # Protocol V1
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-08-12.
 
-Status: Initial alpha contracts implemented.
+Status: Initial alpha contracts implemented. These server-oriented v1 envelopes are not a stable client-side 1.0 wire-protocol commitment; server transport is deferred to the 2.0 workstream.
 
 ## Purpose
 
 Define a safe, language-neutral request/response contract for DataSource operations without assuming EF Core, SQL, C#, or a specific backend.
+
+Client-side 1.0 may continue to use shared primitive types and transport-neutral data-operation descriptors, but it does not ship or freeze a Server DataSource protocol. The dedicated 2.0 plan will decide whether these initial envelopes are migrated, replaced, or retained as compatibility fixtures.
 
 ## Proposed Source Of Truth
 
