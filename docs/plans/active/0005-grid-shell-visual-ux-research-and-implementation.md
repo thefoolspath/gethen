@@ -1,8 +1,8 @@
 # Grid Shell Visual UX Research And Implementation
 
-Last reviewed: 2026-08-11.
+Last reviewed: 2026-08-12.
 
-Status: Alpha 4 foundation implemented and locally verified. Manual NVDA/Chrome, representative-user walkthroughs, and the planned Alpha 7 server-status extension remain open.
+Status: Alpha 4 foundation implemented and locally verified. Manual NVDA/Chrome and representative-user walkthroughs remain open. The former Alpha 7 server-status extension is superseded by the Server 2.0 roadmap.
 
 ## Goal
 
@@ -33,9 +33,10 @@ Make an uncustomized Gethen grid visually coherent, understandable, and keyboard
 ## Version Integration
 
 - Alpha 4 closure: complete the shell foundation and retain the existing engine bake-off gates.
-- Alpha 5: use the same tokens and status conventions for formula bar/editor/errors.
-- Alpha 6: verify dynamic pivot headers and totals against the shell.
-- Alpha 7: add loading, error, retry, loaded/filtered/total and unknown-total server states.
+- Alpha 5: reuse the shell for the read-only Grid Table, column reordering, sorting, and configurable filtering controls.
+- Alpha 6: use the same tokens and status conventions for formula bar/editor/errors.
+- Alpha 7: verify dynamic pivot headers and totals against the shell.
+- Server 2.0: add loading, error, retry, loaded/filtered/total and unknown-total server states.
 - Beta 1: freeze the public shell/theme surface after visual, accessibility, package, and performance checks.
 
 ## Exit Gate

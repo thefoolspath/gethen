@@ -1,8 +1,8 @@
 # Alpha 3 Through Local 1.0 Execution Plan
 
-Last reviewed: 2026-08-11.
+Last reviewed: 2026-08-12.
 
-Status: Accepted roadmap execution plan. Alpha 2 is a locally verified release candidate; no package is published.
+Status: Accepted for Alpha 3 and Alpha 4. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). Alpha 2 is a locally verified release candidate; no package is published.
 
 ## Goal
 
@@ -15,10 +15,9 @@ Deliver a production-quality, desktop-first Gethen data-grid and spreadsheet eco
 - The virtualized DOM renderer remains the supported renderer.
 - Client computation targets 1,000,000 rows across all included features while rendering only the viewport. If both engine candidates fail the gate, the accepted fallback is 500,000 rows; failure at 500,000 blocks release.
 - TypeScript Worker and Rust/WASM Worker are the two compute candidates. Ship only the winner and retain the other as a parity oracle. If end-to-end results differ by no more than 10%, choose Rust.
-- Server mode supports whole-dataset range, sort, filter, group, aggregate, pivot, and updates before 1.0.
-- Server formulas before 1.0 are allowlisted backend-computed fields. Portable client/server formula execution is post-1.0.
-- Protocol v2 replaces v1 before beta.
-- The .NET preview targets `net10.0` and EF Core 10 with MySQL, SQL Server, and PostgreSQL verification.
+- Client-side execution is the only runtime scope through 1.0. Server mode and a server wire protocol move to 2.0.
+- Portable client data-operation descriptors must remain serializable so Server 2.0 can add parity without coupling Core to a backend runtime.
+- C# backend integration moves to the independently versioned Server 2.0 workstream in this repository; its internal package split will be planned later.
 - Chrome and Edge are release-blocking browsers. Firefox and Safari are best-effort smoke paths until after 1.0.
 - Desktop mouse/keyboard interaction is supported; full touch editing is not a 1.0 gate.
 - Manual NVDA with Chrome is an accessibility release gate.
@@ -26,11 +25,11 @@ Deliver a production-quality, desktop-first Gethen data-grid and spreadsheet eco
 
 ## Cross-Version Invariants
 
-- Logical row and column IDs survive viewport movement, sort, filter, grouping, layout changes, formulas, pivots, and server cache replacement.
+- Logical row and column IDs survive viewport movement, sort, filter, grouping, layout changes, formulas, and pivots.
 - Visible indexes are presentation coordinates, never durable identity.
 - Main-thread code owns DOM and interaction only; workers never access DOM.
 - Renderer state is not the authoritative full data state.
-- Cell values, clipboard input, formula text, protocol requests, server responses, and query field names are untrusted.
+- Cell values, clipboard input, formula text, and query field names are untrusted.
 - Portable contracts never contain JavaScript callbacks, executable text, unrestricted expressions, or raw SQL.
 - Core imports remain SSR-safe.
 - Runtime dependencies require license review.
@@ -109,9 +108,26 @@ The first Alpha 4 checkpoint now includes the portable pipeline, transferable mi
 
 ### Grid-Shell UX Closure Before Alpha 5
 
-The accepted [grid-shell visual UX plan](0005-grid-shell-visual-ux-research-and-implementation.md) runs after the Alpha 4 shaping boundary is stable and before Alpha 5 begins. It must correct missing header and accessibility behavior, provide row numbers, readonly pinned bottom rows, a client status bar, and a dependency-free modern-enterprise default theme without weakening the engine-selection gate. Alpha 7 extends the same status surface for server loading, error, retry, and unknown totals.
+The accepted [grid-shell visual UX plan](0005-grid-shell-visual-ux-research-and-implementation.md) runs after the Alpha 4 shaping boundary is stable and before Alpha 5 begins. It must correct missing header and accessibility behavior, provide row numbers, readonly pinned bottom rows, a client status bar, and a dependency-free modern-enterprise default theme without weakening the engine-selection gate. Server loading, error, retry, and unknown-total states move to Server 2.0.
 
-## `0.0.0-alpha.5` - Gethen Formula Engine
+## `0.0.0-alpha.5` - Read-Only Grid Table
+
+### Public Surface
+
+- An `editable`/`readOnly` interaction mode on the existing Core grid and Angular component.
+- A read-only preset/helper that disables mutation handlers without creating a second renderer.
+- Shared query state for header sorting and configurable header-menu or filter-row filtering.
+
+### Work
+
+- [ ] Keep selection, copy, layout, grouping, aggregation, virtualization, pinned summaries, and status behavior active while blocking editing and mutation paths.
+- [ ] Add pointer drag-and-drop column reordering plus keyboard-accessible move-left/move-right commands.
+- [ ] Add stable single/multi-sort header controls and typed filter controls in both supported presentations.
+- [ ] Preserve layout persistence, frozen panes, hidden columns, ARIA state, focus, and Angular passthrough.
+- [ ] Verify that read-only mode avoids installing editor, paste-mutation, row-mutation, and mutation-history handlers.
+- [ ] Benchmark read-only and editable modes independently at the accepted dataset target.
+
+## `0.0.0-alpha.6` - Gethen Formula Engine
 
 ### Formula Model
 
@@ -133,7 +149,7 @@ The accepted [grid-shell visual UX plan](0005-grid-shell-visual-ux-research-and-
 - [ ] Validate up to 1,000,000 formula cells at the primary target or the accepted 500K fallback.
 - [ ] Document that Gethen formulas are not an Excel-compatibility claim.
 
-## `0.0.0-alpha.6` - Pivot And Field Builder
+## `0.0.0-alpha.7` - Pivot And Field Builder
 
 ### Public Surface
 
@@ -151,62 +167,24 @@ The accepted [grid-shell visual UX plan](0005-grid-shell-visual-ux-research-and-
 - [ ] Enforce configurable cardinality limits before allocating oversized output.
 - [ ] Benchmark generation, refresh, navigation, memory, and cancellation at the accepted dataset target.
 
-## `0.0.0-alpha.7` - Protocol v2 And Server DataSource
-
-### Protocol v2
-
-- JSON Schema 2020-12 remains the source of truth.
-- Generate TypeScript and C# contracts; do not maintain duplicate handwritten wire types.
-- Add bounded range, sort, filter, group, aggregate, pivot, update, revision/concurrency, and structured error contracts.
-- Use portable allowlisted descriptors only.
-
-### Work
-
-- [ ] Add Protocol v2 schemas, examples, inferred TypeScript contracts, validators, and migration fixtures.
-- [ ] Implement server request identity, cancellation, stale-response discard, retry, loading/error/empty states, and bounded block caching.
-- [ ] Define cache eviction, invalidation, unknown/changed totals, revisions, and optimistic concurrency.
-- [ ] Keep server formulas limited to allowlisted computed fields.
-- [ ] Prevent cached-subset shaping from being represented as whole-dataset results.
-- [ ] Provide v1-to-v2 migration documentation during Alpha 7/8 and remove v1 from the supported beta surface.
-
-## `0.0.0-alpha.8` - .NET Backend Preview
-
-### Packages And Versions
-
-- Frontend/npm packages: `0.0.0-alpha.8`.
-- `Gethen.Protocol`, `Gethen.Linq`, `Gethen.EntityFrameworkCore`, and `Gethen.AspNetCore`: `0.0.0-alpha.1`.
-- Target: `net10.0`, EF Core 10.
-
-### Work
-
-- [ ] Generate C# Protocol v2 contracts from JSON Schema.
-- [ ] Implement transport-neutral request handlers.
-- [ ] Add Minimal API mapping extensions and services usable from controllers.
-- [ ] Translate only allowlisted fields/operators with bounded ranges and expression depth.
-- [ ] Propagate cancellation and return safe structured client errors.
-- [ ] Prevent accidental EF client evaluation.
-- [ ] Verify optimistic concurrency and generated query behavior.
-- [ ] Run integration matrices against MySQL, SQL Server, and PostgreSQL using stable EF Core 10-compatible providers.
-- [ ] Block Alpha 8 if a required stable provider is unavailable; do not lower the target framework.
-
 ## `0.1.0-beta.1` - Feature Complete And API Hardening
 
 - [ ] Freeze new feature scope.
 - [ ] Inventory exports and mark stable, internal, or deprecated.
-- [ ] Freeze Core, Protocol v2, and Angular public surfaces intended for 1.0.
-- [ ] Remove Protocol v1 from the supported surface and publish migration docs locally.
-- [ ] Stabilize formula, pivot, server DataSource, and custom renderer/editor contracts.
+- [ ] Freeze Core, Angular, Grid Table, formula, pivot, and portable client data-operation surfaces intended for 1.0.
+- [ ] Inventory server-oriented Protocol v1 exports and keep them outside the stable client-side 1.0 surface.
+- [ ] Stabilize formula, pivot, Grid Table, and custom renderer/editor contracts.
 - [ ] Verify SSR-safe imports, memory disposal, package contents, licenses, bundle sizes, and browser behavior.
 - [ ] Run automated accessibility checks and manual NVDA/Chrome validation.
-- [ ] Produce local npm/NuGet beta artifacts without publishing.
+- [ ] Produce and inspect local npm beta artifacts. Publishing requires a separately approved beta decision.
 
 ## Local `1.0.0` Release Candidate
 
 - [ ] Every included feature is implemented, documented, tested, and benchmarked.
 - [ ] Public APIs follow Semantic Versioning and documented deprecation rules.
 - [ ] Chrome/Edge release gates and NVDA/Chrome validation pass.
-- [ ] Long-running mount/unmount, edit/history, compute, cache, formula, and pivot stress tests pass.
-- [ ] Local npm/NuGet pack inspection, license review, changelog, migration guide, and release notes pass.
+- [ ] Long-running mount/unmount, edit/history, Grid Table, compute, formula, and pivot stress tests pass.
+- [ ] Local npm pack inspection, license review, changelog, migration guide, and release notes pass.
 - [ ] No registry publish occurs. The maintainer decides separately when personal use is sufficient to open a publishing plan.
 
 ## Performance Gate
@@ -224,16 +202,16 @@ Reference workload: 1,000,000 rows by 50 mixed-type columns and up to 1,000,000 
 
 ## Verification Matrix
 
-- Unit and property tests for identity, editor transitions, history bounds, layout round-trips, shaping determinism, formula parsing/cycles/invalidation, pivot limits, and query validation.
+- Unit and property tests for identity, editor transitions, history bounds, layout round-trips, shaping determinism, read-only boundaries, formula parsing/cycles/invalidation, pivot limits, and query validation.
 - TypeScript/Rust parity fixtures for nulls, text, numbers, booleans, dates, JSON, formula errors, group output, and pivot output.
-- Browser tests for frozen panes, layout, custom extensions, formula bar, pivot builder, cancellation, and server states.
+- Browser tests for frozen panes, layout, custom extensions, read-only Grid Table controls, formula bar, pivot builder, and cancellation.
 - Manual keyboard and NVDA/Chrome checks.
-- .NET integration tests for MySQL, SQL Server, and PostgreSQL, including SQL shape, cancellation, pagination, concurrency, and adversarial requests.
 
-## Post-1.0 Direction
+## Server-Side 2.0 Direction
 
-- Portable formula definitions in Protocol and client/server formula parity.
+- Server DataSource and a versioned server wire protocol with parity for range/paging, sort, filter, group, aggregate, formula, pivot, updates, and row transactions.
+- A separately versioned C# project/solution area in this repository; the package split, target framework, provider matrix, and release numbering require a dedicated 2.0 plan.
 - React adapter.
 - Current/previous Chromium, Firefox, and WebKit support matrix.
-- Pivot write-back, server formula execution, and advanced Excel compatibility.
+- Pivot write-back and advanced Excel compatibility.
 - npm/NuGet publishing, provenance, signing, and registry rollout under a separately approved plan.

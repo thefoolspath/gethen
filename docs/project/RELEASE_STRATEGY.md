@@ -1,6 +1,6 @@
 # Release Strategy
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-12.
 
 ## Alpha Objective
 
@@ -20,13 +20,13 @@ Proposed npm scope: `@thefoolspath`. Perform final npm, GitHub, crates.io, NuGet
 
 ## Local-Only Release Policy
 
-Alpha, beta, and the first `1.0.0` release candidate are local package artifacts only. Do not publish, reserve names, create registry releases, or push release tags as part of the current execution plan. The maintainer will use the packages personally and approve a separate publishing plan later; there is no formal self-use duration gate.
+All alpha releases are local package artifacts only. Do not publish, reserve names, create registry releases, or push release tags during alpha. Before beta, the maintainer will make a separate publishing decision; this plan neither authorizes nor requires beta or 1.0 publishing.
 
 The MIT License keeps the legal “as is” and no-warranty language. That disclaimer does not reduce implementation, documentation, test, accessibility, security, compatibility, or performance gates.
 
-## Future NuGet Relationship
+## Server-Side 2.0 And Future NuGet Relationship
 
-The frontend and NuGet package lifecycles are independent. At frontend `0.0.0-alpha.8`, the first NuGet preview is `0.0.0-alpha.1`. .NET packages implement Protocol v2 and must not define frontend semantics.
+Client-side `1.0.0` contains no C# or NuGet release requirement. Server-side integration begins in the 2.0 workstream. C# code will live in a separate project/solution area in this repository and use versions independent from the npm packages. Its package split, target framework, provider matrix, and first preview version require a dedicated 2.0 plan. C# packages must implement shared data-operation semantics rather than define frontend behavior.
 
 ## Release Verification
 
@@ -40,7 +40,7 @@ Before each local release candidate:
 - review dependency licenses
 - update the project state and migration documentation
 - write versioned release notes
-- create and inspect local npm/NuGet artifacts without publishing
+- create and inspect the local artifacts included in that release; alpha currently includes npm artifacts only
 
 ## Browser Compatibility
 
@@ -52,4 +52,4 @@ Define a private reporting channel before public release.
 
 ## Deprecation
 
-During alpha, breaking changes are allowed but must be documented in release notes and migration guidance. Beta freezes the public Core, Protocol v2, and Angular surfaces. After 1.0, breaking changes require a major version or a documented deprecation path.
+During alpha, breaking changes are allowed but must be documented in release notes and migration guidance. Beta freezes the public Core, Angular, Grid Table, Formula, Pivot, and portable client data-operation surfaces intended for 1.0. A server wire protocol is not frozen in client 1.0. After 1.0, breaking client changes require a major version or a documented deprecation path.
