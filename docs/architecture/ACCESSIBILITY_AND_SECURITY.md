@@ -2,9 +2,9 @@
 
 Last reviewed: 2026-08-11.
 
-Initial alpha note: the virtualized DOM renderer represents the active cell with `aria-activedescendant`, cell `aria-selected`, and row/column indexes. Full screen-reader validation remains required before release confidence.
+Initial alpha note: the virtualized DOM renderer represents the active cell with `aria-activedescendant`, cell `aria-selected`, and row/column indexes. Full screen-reader validation is optional during alpha and required before Beta/1.0 release confidence.
 
-Status: Alpha 4 grid-shell ARIA corrections plus Alpha 3 keyboard, trusted-extension, and untrusted-input boundaries are implemented as described below. Manual NVDA/Chrome validation remains open.
+Status: Alpha 4 grid-shell ARIA corrections plus Alpha 3 keyboard, trusted-extension, and untrusted-input boundaries are implemented as described below. Alpha 3 passed a manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome validation remains open and is mandatory before Beta/1.0.
 
 ## Accessibility
 

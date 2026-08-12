@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-12.
 
-Status: A local `0.0.0-alpha.2` release candidate is implemented and verified; no package is published. Alpha 3 automated work is implemented but manual NVDA/Chrome remains open. The accepted client-first plan through local 1.0 is active.
+Status: Local `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates are implemented and verified; no package is published. Manual NVDA/Chrome validation is optional during alpha and remains mandatory before Beta/1.0. The accepted client-first plan through local 1.0 is active.
 
 ## Roadmap Principles
 
@@ -40,6 +40,7 @@ The accepted Alpha 4 grid-shell closure follows [../plans/active/0005-grid-shell
 
 - Alpha 2 is closed. Start Alpha 3 only after its implementation and roadmap documentation commits are separated.
 - Each later alpha must preserve stable row/column identity, SSR-safe imports, virtualization correctness, keyboard operation, and untrusted-input boundaries.
+- Manual NVDA/Chrome validation is not an individual alpha exit gate. Open screen-reader evidence must be reported truthfully and completed before Beta/1.0.
 - Grid Table, formula, and pivot capabilities are mandatory before beta; their semantics, memory behavior, accessibility, and security gates must pass before they can be called complete.
 - A conditional feature may be deferred without blocking a release only when the reason, downstream impact, replacement milestone, and documentation updates are recorded.
 - Beta freezes new feature scope. `1.0.0` requires compatibility, security, accessibility, performance, packaging, and release-process evidence rather than additional feature breadth.

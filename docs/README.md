@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-12.
 
-Gethen has a locally verified `0.0.0-alpha.2` release candidate and an automated `0.0.0-alpha.3` implementation awaiting manual NVDA/Chrome verification. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
+Gethen has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates. Alpha 3 passed automated verification and a manual keyboard-only Chrome walkthrough; manual NVDA/Chrome validation is deferred during alpha but remains mandatory before Beta/1.0. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
 
 ## Source-Of-Truth Hierarchy
 

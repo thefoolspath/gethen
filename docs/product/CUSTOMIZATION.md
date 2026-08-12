@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-11.
 
-Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shell/default-theme closure are implemented locally. Manual NVDA/Chrome and representative-user validation remain open.
+Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shell/default-theme closure are implemented locally. Alpha 3 passed its manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome and representative-user validation remain open; NVDA/Chrome is deferred during alpha but mandatory before Beta/1.0.
 
 ## Core API
 

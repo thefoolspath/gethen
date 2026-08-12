@@ -10,7 +10,7 @@ Complete Gethen as a production-quality client-side grid through `1.0.0` before 
 
 ## Accepted Sequence
 
-1. Finish `0.0.0-alpha.3` by recording the outstanding manual NVDA/Chrome gate. Automated implementation is already complete, but Alpha 3 is not yet a completed local release candidate.
+1. Treat `0.0.0-alpha.3` as a completed local release candidate after automated verification and the manual keyboard-only Chrome walkthrough passed on 2026-08-12. Carry manual NVDA/Chrome validation as deferred evidence to the Beta/1.0 gate.
 2. Finish `0.0.0-alpha.4` data shaping, engine bake-off, and grid-shell closure without weakening its current exit gates.
 3. Implement `0.0.0-alpha.5` as the read-only Grid Table milestone.
 4. Implement the Gethen Formula Engine as `0.0.0-alpha.6`.
@@ -49,7 +49,7 @@ No Protocol v2 server transport, Server DataSource, ASP.NET Core, LINQ, EF Core,
 ## Release And Quality Gates
 
 - Alpha completion means all gates relevant to the included surface pass locally; it does not mean build-and-demo only.
-- Manual NVDA/Chrome remains an accessibility release gate. Current open manual evidence must continue to be reported truthfully.
+- Manual NVDA/Chrome is optional for individual alpha milestones but remains a mandatory Beta/1.0 accessibility release gate. Current open manual evidence must continue to be reported truthfully, and no screen-reader or WCAG compliance claim may be made before it passes.
 - Chrome and Edge remain release-blocking through client-side 1.0; other browser commitments remain unchanged.
 - Performance-sensitive milestones retain the accepted 1,000,000-row target and documented 500,000-row fallback.
 - Alpha packages are not published. Before beta, the maintainer will approve a separate publishing decision; this plan neither authorizes nor requires npm publishing.

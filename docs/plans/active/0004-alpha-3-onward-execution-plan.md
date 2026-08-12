@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-12.
 
-Status: Accepted for Alpha 3 and Alpha 4. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). Alpha 2 is a locally verified release candidate; no package is published.
+Status: Alpha 3 is a locally verified release candidate. This plan remains accepted for Alpha 4. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). No package is published.
 
 ## Goal
 
@@ -73,9 +73,9 @@ Deliver a production-quality, desktop-first Gethen data-grid and spreadsheet eco
 - History is bounded by entry count and retained bytes and does not retain disposed data.
 - Layout round-trips are deterministic.
 - Resize/reorder/frozen panes work with hidden columns, range selection, clipboard, and Angular.
-- Keyboard-only and NVDA/Chrome checks pass for the included layout/editor surface.
+- Keyboard-only Chrome checks pass for the included layout/editor surface.
 
-Automated Alpha 3 gates are implemented. Manual NVDA/Chrome verification remains open because NVDA is not installed in the current environment; Alpha 3 cannot be declared a completed local release candidate until that manual gate is recorded.
+Alpha 3 is a completed local release candidate. Automated gates and a manual keyboard-only Chrome walkthrough passed on 2026-08-12 for focus traversal, active-cell navigation, editor activation/cancellation, Tab commit/advance, resize, reorder, and frozen panes. Manual NVDA/Chrome validation remains open because NVDA is not installed in the current environment. By maintainer decision on 2026-08-12, it is optional during alpha and mandatory before Beta/1.0; no screen-reader or WCAG compliance claim is made.
 
 ## `0.0.0-alpha.4` - Data Shaping And Engine Bake-Off
 

@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-12.
 
-Status: Alpha 4 foundation implemented and locally verified. Manual NVDA/Chrome and representative-user walkthroughs remain open. The former Alpha 7 server-status extension is superseded by the Server 2.0 roadmap.
+Status: Alpha 4 foundation implemented and locally verified. Manual NVDA/Chrome and representative-user walkthroughs remain open. NVDA/Chrome is optional during alpha and mandatory before Beta/1.0. The former Alpha 7 server-status extension is superseded by the Server 2.0 roadmap.
 
 ## Goal
 
@@ -45,4 +45,4 @@ Make an uncustomized Gethen grid visually coherent, understandable, and keyboard
 - Header, gutter, body, pinned rows, and status remain aligned through scroll, resize, reorder, hide, and frozen-pane operations.
 - The default theme meets WCAG 2.2 AA contrast for included text and component states.
 - Rendering remains viewport-bounded and repeated shell-enabled measurements do not hide a material regression.
-- Core and Angular checks, unit tests, Chromium scenarios, benchmark suite, and manual NVDA/Chrome gate are recorded truthfully.
+- Core and Angular checks, unit tests, Chromium scenarios, benchmark suite, and the deferred manual NVDA/Chrome evidence are recorded truthfully. NVDA/Chrome must pass before Beta/1.0.
