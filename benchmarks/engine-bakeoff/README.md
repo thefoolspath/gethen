@@ -2,6 +2,12 @@
 
 The Alpha 4 checkpoint contains TypeScript Worker and dependency-free Rust/WASM Worker candidates behind the same transferable columnar boundary. The browser suite verifies full-result parity for a mixed numeric/text/boolean fixture.
 
+The A4-01 deterministic mixed-type fixture generator defines three 50-column profiles: `small` (10,000 rows), `fallback` (500,000 rows), and `primary` (1,000,000 rows). Each profile contains numeric, UTF-8 text, boolean, ISO-date, canonical-JSON, and nullable values with stable row IDs and column ordering. Run `node benchmarks/engine-bakeoff/validate-alpha4-mixed-type-fixtures.mjs` to allocate the `small` profile, verify repeatable seeded digests, and inspect all profile metadata. The normal validation does not allocate the 500,000-row or 1,000,000-row profiles.
+
+The A4-02 canonical TypeScript parity oracle runs mixed filter/sort, group/aggregate, and null-ordering scenarios. Run `pnpm run build` followed by `node benchmarks/engine-bakeoff/validate-alpha4-parity-oracle.mjs` to verify repeatable full-result digests for the 10,000-row profile. The oracle supports compact count/aggregate/checksum output for the `fallback` and `primary` profiles, but normal validation records those definitions without allocating them; their end-to-end runs remain part of the later capacity gate.
+
+The A4-04 Rust/WASM checkpoint performs relational and set filtering, normalized UTF-8 contains/starts-with filtering, and stable multi-sort over Rust-owned row masks and indices. TypeScript remains the accepted control layer and normalizes mixed comparison values into deterministic ranks before coarse-grained WASM calls. Chromium parity covers the 10,000-row mixed-type fixture; Rust-owned group/aggregate/flatten execution remains A4-05.
+
 Run `node benchmarks/engine-bakeoff/measure-worker-boundary.mjs`. It reports cold startup, buffer-copy cost, and warm median/p75/p95 round-trip timing for a 100,000-row numeric filter/aggregate kernel. Its output is diagnostic evidence, not an engine-selection result; the complete mixed-type 1M/500K workload, memory, bundle, cancellation, formula, and pivot gates remain open.
 
 Run `node --max-old-space-size=2048 benchmarks/engine-bakeoff/measure-columnar-capacity.mjs` after building Core for the 1,000,000-row by 50-column numeric capacity diagnostic. It exercises bounded viewport hydration, but is not a substitute for the Worker and mixed-type gates.

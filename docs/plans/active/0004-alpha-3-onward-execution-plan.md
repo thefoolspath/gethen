@@ -92,6 +92,10 @@ Alpha 3 is a completed local release candidate. Automated gates and a manual key
 - [x] Define null, text, number, boolean, date, and JSON comparison semantics.
 - [x] Give synthetic rows stable IDs, explicit provenance, and readonly defaults. Keyboard behavior and ARIA expansion state remain part of the rendered group-row slice.
 - [x] Define one compact columnar buffer schema and one batched worker contract.
+- [x] A4-01: Add deterministic 10K, 500K, and 1M by 50-column mixed-type fixture profiles with stable seeded data, row IDs, column ordering, and nullable values. Normal validation allocates only the 10K profile.
+- [x] A4-02: Add a canonical TypeScript parity oracle with full deterministic results for the 10K profile and compact checksum/count/aggregate output for later 500K/1M capacity runs. Normal validation does not allocate the larger profiles.
+- [x] A4-03: Execute the TypeScript Worker pipeline as ordered asynchronous decode, filter, sort, group, aggregate, flatten, and completion stages with truthful start/end progress while preserving canonical results. Cooperative batching within long stages remains A4-07.
+- [x] A4-04: Move mixed-type filter and stable multi-sort row-mask/index execution into dependency-free Rust/WASM kernels behind TypeScript-normalized comparison ranks. The 10K mixed fixture passes Chromium parity; group/aggregate/flatten remain A4-05.
 - [ ] Implement equivalent TypeScript Worker and Rust/WASM Worker kernels for ingestion, transfer, sort, filter, group, aggregate, and representative formula/pivot workloads.
 - [ ] Use identical fixtures, algorithms, optimization intent, cancellation, and progress behavior.
 - [ ] Measure cold/warm startup, end-to-end latency, peak/retained memory, transfer, bundle cost, and disposal.

@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-08-12.
+Last updated: 2026-08-24.
 
 ## Purpose
 
@@ -36,6 +36,10 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Alpha 4 canonical filter/sort/group/aggregate/flatten/viewport pipeline with deterministic mixed-type comparisons, stable readonly synthetic group rows, and client-only custom reducers.
 - Alpha 4 transferable mixed-type columnar schema and shared worker contract with progress and cancellation messages.
 - Alpha 4 TypeScript Worker and dependency-free Rust/WASM Worker candidates, shared numeric formula/pivot-style kernels, browser parity smoke coverage, and a diagnostic 100,000-row numeric boundary comparison. Full end-to-end selection evidence remains open.
+- Alpha 4 A4-01 deterministic mixed-type fixture generator with stable seeded 10,000-row, 500,000-row, and 1,000,000-row by 50-column profiles. Normal validation allocates the 10,000-row profile; full end-to-end Worker execution remains open.
+- Alpha 4 A4-02 canonical TypeScript parity oracle with deterministic full-result digests for the 10,000-row fixture and compact checksum/count/aggregate output prepared for later 500,000-row and 1,000,000-row capacity runs.
+- Alpha 4 A4-03 staged TypeScript Worker execution with ordered decode, filter, sort, group, aggregate, flatten, and completion progress. Each stage yields to the Worker event loop; canonical parity, 69 unit/contract/adapter tests, and 26 Chromium scenarios pass locally. Cooperative batching within long stages remains open.
+- Alpha 4 A4-04 dependency-free Rust/WASM relational/UTF-8 filter masks and stable multi-sort indices behind TypeScript-normalized mixed-type comparison ranks. The 10,000-row mixed fixture passes full TypeScript/Rust-WASM filter/sort parity in Chromium; Rust-owned grouping and aggregation remain open.
 - Alpha 4 grid shell with visible column headers, dedicated row-number gutter, correct body/header ARIA offsets, focus-safe empty state, readonly pinned bottom rows, client status bar, and host/aggregate-backed summary rows.
 - Dependency-free modern-enterprise light default theme with comfortable default density, compact/spacious presets, expanded shell/state tokens, header class/callback customization, labelled built-in editors, and readonly cell semantics.
 - Core and Angular grid-shell passthrough plus Chromium coverage and manual visual QA at 1280 x 720 and 1440 x 900. Representative-user walkthroughs and manual NVDA/Chrome remain open.
@@ -98,7 +102,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Milestone 3 minimal TypeScript reference engine is initially complete.
 - Renderer strategy is accepted for alpha as virtualized DOM; Canvas is deferred.
 - Rust language boundary is accepted for alpha as TypeScript public/control layer with Rust research-only.
-- The Alpha 4 shaping pipeline and both Worker candidates exist. Full 1M/500K end-to-end fixtures, browser memory/bundle evidence, rendered group-row accessibility, and the production-engine selection remain active work.
+- The Alpha 4 shaping pipeline, both Worker candidates, deterministic 10K/500K/1M mixed-type fixture profiles, and the canonical TypeScript parity oracle exist. Running the larger profiles end to end through equivalent candidates, browser memory/bundle evidence, rendered group-row accessibility, and the production-engine selection remain active work.
 - Milestones 6-9 are initially complete. Server-side DataSource is deferred for alpha.
 - Milestone 11 first framework adapter is complete for alpha.1 with Angular as selected adapter and browser-tested demo path.
 - Milestone 12 second adapter is deferred from alpha.1; React remains a follow-up candidate.
@@ -195,3 +199,7 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-10 | Added the first Alpha 4 checkpoint: canonical shaping, mixed-type columnar worker contract, TypeScript and Rust/WASM candidates, browser parity, cancellation, and diagnostic numeric boundary evidence; engine selection remains open | `packages/core/src/grid-data-shaping.ts`, `packages/core/src/grid-engine-contract.ts`, `crates/gethen-engine/src/lib.rs`, `benchmarks/engine-bakeoff/`, [../research/findings/2026-08-10-alpha4-worker-boundary-checkpoint.md](../research/findings/2026-08-10-alpha4-worker-boundary-checkpoint.md) |
 | 2026-08-12 | Reverified Alpha 3 checks, build, 68 unit/contract/adapter tests, and 26 Chromium scenarios; recorded a passing manual keyboard-only Chrome walkthrough. NVDA/Chrome remains open because NVDA is not installed. | [ALPHA_3_RELEASE_NOTES.md](ALPHA_3_RELEASE_NOTES.md), [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md) |
 | 2026-08-12 | Accepted Alpha 3 as a completed local release candidate and deferred manual NVDA/Chrome validation from individual alpha exit gates to the mandatory Beta/1.0 release gate. No screen-reader or WCAG compliance claim is made until it passes. | [ALPHA_3_RELEASE_NOTES.md](ALPHA_3_RELEASE_NOTES.md), [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md), [../architecture/ACCESSIBILITY_AND_SECURITY.md](../architecture/ACCESSIBILITY_AND_SECURITY.md) |
+| 2026-08-24 | Completed Alpha 4 A4-01 deterministic mixed-type fixture profiles for 10K, 500K, and 1M rows by 50 columns; full candidate parity and engine selection remain open. | `benchmarks/engine-bakeoff/alpha4-mixed-type-fixtures.mjs`, `benchmarks/engine-bakeoff/validate-alpha4-mixed-type-fixtures.mjs`, [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md) |
+| 2026-08-24 | Completed Alpha 4 A4-02 canonical TypeScript parity oracle for full 10K mixed-type results and compact later-capacity summaries; equivalent Worker candidate execution remains open. | `benchmarks/engine-bakeoff/alpha4-parity-oracle.mjs`, `benchmarks/engine-bakeoff/validate-alpha4-parity-oracle.mjs`, [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md) |
+| 2026-08-24 | Completed Alpha 4 A4-03 staged TypeScript Worker progress across the canonical shaping pipeline; canonical parity and 69 automated tests pass. Cooperative within-stage cancellation and engine selection remain open. | `packages/core/src/grid-data-shaping.ts`, `packages/core/src/grid-engine-contract.ts`, `packages/core/src/grid-engine-worker.ts`, [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md) |
+| 2026-08-24 | Completed Alpha 4 A4-04 Rust/WASM mixed-type filter and stable multi-sort checkpoint; 3 GNU Rust tests and 27 Chromium scenarios pass, including full 10K fixture parity. Rust-owned grouping/aggregation remains A4-05. | `crates/gethen-engine/src/lib.rs`, `packages/core/src/rust-wasm-filter-sort.ts`, `tests/browser/renderer-prototypes.spec.ts`, [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md) |
