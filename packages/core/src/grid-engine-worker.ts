@@ -1,5 +1,5 @@
 import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "./grid-engine-contract.js";
-import { executeGridEngineShapeRequest } from "./grid-engine-contract.js";
+import { executeGridEngineShapeRequestInStages } from "./grid-engine-contract.js";
 
 interface PortableWorkerScope {
   addEventListener(type: "message", listener: (event: MessageEvent<GridEngineWorkerRequest>) => void): void;
@@ -25,17 +25,22 @@ if (typeof scope.importScripts !== "undefined") {
       completed: 0,
       total: request.data.rowCount
     });
-    setTimeout(() => {
+    setTimeout(async () => {
       if (cancelled.delete(request.requestId)) return;
       try {
-        scope.postMessage({
-          type: "progress",
-          requestId: request.requestId,
-          stage: "decode",
-          completed: 0,
-          total: request.data.rowCount
+        const result = await executeGridEngineShapeRequestInStages(request, {
+          onProgress: (stage, completed, total) => {
+            if (cancelled.has(request.requestId)) return;
+            scope.postMessage({
+              type: "progress",
+              requestId: request.requestId,
+              stage,
+              completed,
+              total
+            });
+          },
+          yieldControl: yieldToWorkerEventLoop
         });
-        const result = executeGridEngineShapeRequest(request);
         if (cancelled.delete(request.requestId)) return;
         scope.postMessage({ type: "result", requestId: request.requestId, result });
       } catch (error) {
@@ -48,4 +53,8 @@ if (typeof scope.importScripts !== "undefined") {
       }
     }, 0);
   });
+}
+
+function yieldToWorkerEventLoop(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }

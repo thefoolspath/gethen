@@ -9,7 +9,7 @@ import type {
   GridGroupDescriptor,
   GridSortDescriptor
 } from "./grid-data-shaping.js";
-import { shapeGridData } from "./grid-data-shaping.js";
+import { shapeGridData, shapeGridDataInStages } from "./grid-data-shaping.js";
 
 export type GridColumnarStorage = "float64" | "boolean" | "utf8";
 
@@ -115,6 +115,15 @@ export type GridEngineWorkerResponse =
       readonly message: string;
     };
 
+export interface GridEngineStagedExecutionOptions {
+  readonly onProgress?: (
+    stage: GridEngineProgressStage,
+    completed: number,
+    total: number
+  ) => void;
+  readonly yieldControl?: () => Promise<void>;
+}
+
 export function createGridColumnarBuffer(
   rows: readonly GridRow[],
   columns: readonly GridColumnarInputColumn[]
@@ -177,6 +186,44 @@ export function executeGridEngineShapeRequest(request: GridEngineShapeRequest): 
       : new Set(request.definition.expandedGroupIds),
     ...(request.definition.viewport ? { viewport: request.definition.viewport } : {})
   });
+  return hydrateGridEngineResult(request, result);
+}
+
+export async function executeGridEngineShapeRequestInStages(
+  request: GridEngineShapeRequest,
+  options: GridEngineStagedExecutionOptions = {}
+): Promise<GridDataShapingResult> {
+  const total = request.data.rowCount;
+  options.onProgress?.("decode", 0, total);
+  await options.yieldControl?.();
+  const computationColumnIds = getComputationColumnIds(request.definition);
+  const rows = decodeGridColumnarBuffer(request.data, computationColumnIds);
+  options.onProgress?.("decode", total, total);
+  await options.yieldControl?.();
+  const result = await shapeGridDataInStages({
+    rows,
+    filter: request.definition.filter,
+    sort: request.definition.sort,
+    group: request.definition.group,
+    aggregate: request.definition.aggregate,
+    expandedGroupIds: request.definition.expandedGroupIds === "all"
+      ? "all"
+      : new Set(request.definition.expandedGroupIds),
+    ...(request.definition.viewport ? { viewport: request.definition.viewport } : {})
+  }, {
+    ...(options.onProgress ? { onProgress: options.onProgress } : {}),
+    ...(options.yieldControl ? { yieldControl: options.yieldControl } : {})
+  });
+  const hydrated = hydrateGridEngineResult(request, result);
+  options.onProgress?.("complete", total, total);
+  await options.yieldControl?.();
+  return hydrated;
+}
+
+function hydrateGridEngineResult(
+  request: GridEngineShapeRequest,
+  result: GridDataShapingResult
+): GridDataShapingResult {
   const rowIndexes = new Map(request.data.rowIds.map((id, index) => [id, index]));
   return {
     ...result,

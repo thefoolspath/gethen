@@ -98,13 +98,23 @@ export interface GridDataShapingResult {
 interface GroupNode {
   readonly row: GridGroupRow;
   readonly children: readonly (GroupNode | GridRow)[];
+  readonly sourceRows: readonly GridRow[];
+}
+
+export type GridDataShapingPipelineStage = "filter" | "sort" | "group" | "aggregate" | "flatten";
+
+export interface GridDataShapingPipelineOptions {
+  readonly onProgress?: (
+    stage: GridDataShapingPipelineStage,
+    completed: number,
+    total: number
+  ) => void;
+  readonly yieldControl?: () => Promise<void>;
 }
 
 export function shapeGridData(options: GridDataShapingOptions): GridDataShapingResult {
   validateDescriptors(options);
-  const filtered = options.rows.filter((row) =>
-    (options.filter ?? []).every((descriptor) => matchesFilter(row, descriptor))
-  );
+  const filtered = filterGridRows(options.rows, options.filter ?? []);
   const sorted = stableMultiSort(filtered, options.sort ?? []);
   const groups = options.group ?? [];
   const expanded = options.expandedGroupIds ?? "all";
@@ -118,7 +128,7 @@ export function shapeGridData(options: GridDataShapingOptions): GridDataShapingR
     };
   }
   const shaped = flattenGroups(
-        createGroupNodes(sorted, groups, options.aggregate ?? [], 0),
+        applyGroupAggregates(createGroupNodes(sorted, groups, 0), options.aggregate ?? []),
         expanded
       );
   const viewport = normalizeViewport(options.viewport, shaped.length);
@@ -129,6 +139,58 @@ export function shapeGridData(options: GridDataShapingOptions): GridDataShapingR
     totalViewRowCount: shaped.length,
     rows: shaped.slice(viewport.start, viewport.start + viewport.count)
   };
+}
+
+export async function shapeGridDataInStages(
+  options: GridDataShapingOptions,
+  pipelineOptions: GridDataShapingPipelineOptions = {}
+): Promise<GridDataShapingResult> {
+  validateDescriptors(options);
+  const total = options.rows.length;
+  const filtered = await runPipelineStage(
+    "filter",
+    total,
+    () => filterGridRows(options.rows, options.filter ?? []),
+    pipelineOptions
+  );
+  const sorted = await runPipelineStage(
+    "sort",
+    total,
+    () => stableMultiSort(filtered, options.sort ?? []),
+    pipelineOptions
+  );
+  const groups = options.group ?? [];
+  const groupNodes = await runPipelineStage(
+    "group",
+    total,
+    () => groups.length === 0 ? [] : createGroupNodes(sorted, groups, 0),
+    pipelineOptions
+  );
+  const aggregatedNodes = await runPipelineStage(
+    "aggregate",
+    total,
+    () => applyGroupAggregates(groupNodes, options.aggregate ?? []),
+    pipelineOptions
+  );
+  return runPipelineStage("flatten", total, () => {
+    if (groups.length === 0) {
+      const viewport = normalizeViewport(options.viewport, sorted.length);
+      return {
+        sourceRowCount: options.rows.length,
+        filteredRowCount: filtered.length,
+        totalViewRowCount: sorted.length,
+        rows: sorted.slice(viewport.start, viewport.start + viewport.count).map(toSourceViewRow)
+      };
+    }
+    const shaped = flattenGroups(aggregatedNodes, options.expandedGroupIds ?? "all");
+    const viewport = normalizeViewport(options.viewport, shaped.length);
+    return {
+      sourceRowCount: options.rows.length,
+      filteredRowCount: filtered.length,
+      totalViewRowCount: shaped.length,
+      rows: shaped.slice(viewport.start, viewport.start + viewport.count)
+    };
+  }, pipelineOptions);
 }
 
 export function stableMultiSort(
@@ -252,7 +314,6 @@ function isCellValueArray(value: GridFilterDescriptor["value"]): value is readon
 function createGroupNodes(
   rows: readonly GridRow[],
   descriptors: readonly GridGroupDescriptor[],
-  aggregates: readonly GridAggregateDescriptor[],
   level: number,
   parentId?: string
 ): readonly GroupNode[] {
@@ -269,7 +330,7 @@ function createGroupNodes(
   return [...buckets.entries()].map(([key, bucket]) => {
     const id = `${parentId ? `${parentId}/` : ""}group:${level}:${encodeURIComponent(descriptor.columnId)}:${encodeURIComponent(key)}`;
     const children = level + 1 < descriptors.length
-      ? createGroupNodes(bucket.rows, descriptors, aggregates, level + 1, id)
+      ? createGroupNodes(bucket.rows, descriptors, level + 1, id)
       : bucket.rows;
     return {
       row: {
@@ -279,8 +340,7 @@ function createGroupNodes(
         expanded: true,
         childCount: bucket.rows.length,
         cells: {
-          [descriptor.columnId]: bucket.value,
-          ...aggregateGridRows(bucket.rows, aggregates)
+          [descriptor.columnId]: bucket.value
         },
         provenance: {
           level,
@@ -290,9 +350,29 @@ function createGroupNodes(
           sourceRowIds: bucket.rows.map((row) => row.id)
         }
       },
-      children
+      children,
+      sourceRows: bucket.rows
     };
   });
+}
+
+function applyGroupAggregates(
+  nodes: readonly GroupNode[],
+  aggregates: readonly GridAggregateDescriptor[]
+): readonly GroupNode[] {
+  return nodes.map((node) => ({
+    ...node,
+    row: {
+      ...node.row,
+      cells: {
+        ...node.row.cells,
+        ...aggregateGridRows(node.sourceRows, aggregates)
+      }
+    },
+    children: node.children.map((child) =>
+      "row" in child ? applyGroupAggregates([child], aggregates)[0]! : child
+    )
+  }));
 }
 
 function flattenGroups(
@@ -376,4 +456,25 @@ function normalizeViewport(
     throw new Error("Viewport start and count must be non-negative safe integers.");
   }
   return { start: Math.min(viewport.start, total), count: Math.min(viewport.count, total) };
+}
+
+function filterGridRows(
+  rows: readonly GridRow[],
+  descriptors: readonly GridFilterDescriptor[]
+): readonly GridRow[] {
+  return rows.filter((row) => descriptors.every((descriptor) => matchesFilter(row, descriptor)));
+}
+
+async function runPipelineStage<T>(
+  stage: GridDataShapingPipelineStage,
+  total: number,
+  operation: () => T,
+  options: GridDataShapingPipelineOptions
+): Promise<T> {
+  options.onProgress?.(stage, 0, total);
+  await options.yieldControl?.();
+  const result = operation();
+  options.onProgress?.(stage, total, total);
+  await options.yieldControl?.();
+  return result;
 }

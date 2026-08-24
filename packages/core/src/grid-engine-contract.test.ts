@@ -5,6 +5,7 @@ import {
   createGridWorkerShapeDefinition,
   decodeGridColumnarBuffer,
   executeGridEngineShapeRequest,
+  executeGridEngineShapeRequestInStages,
   getGridColumnarTransferables
 } from "./grid-engine-contract.js";
 
@@ -41,6 +42,52 @@ describe("grid engine columnar contract", () => {
       })
     });
     expect(result.rows.map((row) => row.id)).toEqual(["r1"]);
+  });
+
+  it("executes the canonical pipeline in ordered progress stages without changing results", async () => {
+    const data = createGridColumnarBuffer(rows, [
+      { columnId: "amount", storage: "float64" },
+      { columnId: "active", storage: "boolean" },
+      { columnId: "name", storage: "utf8" }
+    ]);
+    const request = {
+      type: "shape" as const,
+      requestId: "staged-test",
+      data,
+      definition: createGridWorkerShapeDefinition({
+        filter: [{ columnId: "amount", operator: "greaterThan", value: 0, comparisonType: "number" }],
+        sort: [{ columnId: "amount", direction: "desc", comparisonType: "number" }],
+        group: [{ columnId: "active", comparisonType: "boolean" }],
+        aggregate: [{ id: "total", operation: "sum", columnId: "amount" }]
+      })
+    };
+    const progress: string[] = [];
+    let yields = 0;
+    const staged = await executeGridEngineShapeRequestInStages(request, {
+      onProgress: (stage, completed, total) => progress.push(`${stage}:${completed}/${total}`),
+      yieldControl: () => {
+        yields += 1;
+        return Promise.resolve();
+      }
+    });
+
+    expect(staged).toEqual(executeGridEngineShapeRequest(request));
+    expect(progress).toEqual([
+      "decode:0/2",
+      "decode:2/2",
+      "filter:0/2",
+      "filter:2/2",
+      "sort:0/2",
+      "sort:2/2",
+      "group:0/2",
+      "group:2/2",
+      "aggregate:0/2",
+      "aggregate:2/2",
+      "flatten:0/2",
+      "flatten:2/2",
+      "complete:2/2"
+    ]);
+    expect(yields).toBe(13);
   });
 
   it("rejects callbacks at the worker boundary", () => {
