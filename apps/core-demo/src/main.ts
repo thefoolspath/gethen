@@ -236,8 +236,15 @@ requireElement("runEngineParity").addEventListener("click", async () => {
     { columnId: "c2", storage: "boolean" as const }
   ];
   const definition = createGridWorkerShapeDefinition({
-    filter: [{ columnId: "c0", operator: "greaterThan", value: 50, comparisonType: "number" }],
-    sort: [{ columnId: "c0", direction: "desc", comparisonType: "number" }],
+    filter: [
+      { columnId: "c0", operator: "greaterThan", value: 50, comparisonType: "number" },
+      { columnId: "c1", operator: "contains", value: "column", comparisonType: "text" }
+    ],
+    sort: [
+      { columnId: "c2", direction: "asc", comparisonType: "boolean" },
+      { columnId: "c1", direction: "desc", comparisonType: "text" },
+      { columnId: "c0", direction: "desc", comparisonType: "number" }
+    ],
     group: [{ columnId: "c2", comparisonType: "boolean" }],
     aggregate: [{ id: "sum", operation: "sum", columnId: "c0" }]
   });

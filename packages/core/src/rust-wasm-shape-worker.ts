@@ -1,5 +1,6 @@
 import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "./grid-engine-contract.js";
-import { executeGridEngineShapeRequest } from "./grid-engine-contract.js";
+import { executeGridEngineShapeRequestInStages } from "./grid-engine-contract.js";
+import { prepareRustWasmFilterSortRequest } from "./rust-wasm-filter-sort.js";
 import { loadRustWasmKernels } from "./rust-wasm-kernels.js";
 
 interface WorkerScope {
@@ -29,8 +30,6 @@ if (typeof scope.importScripts !== "undefined") {
     });
     setTimeout(async () => {
       try {
-        const kernels = await kernelsPromise;
-        if (cancelled.delete(request.requestId)) return;
         scope.postMessage({
           type: "progress",
           requestId: request.requestId,
@@ -38,14 +37,32 @@ if (typeof scope.importScripts !== "undefined") {
           completed: 0,
           total: request.data.rowCount
         });
-        // Exercise the identical numeric columnar boundary before the portable
-        // orchestration fallback handles mixed-type shaping semantics.
-        for (const column of request.data.columns) {
-          if (column.storage === "float64") {
-            kernels.filterAggregate(column.values, column.validity, Number.NEGATIVE_INFINITY);
-          }
-        }
-        const result = executeGridEngineShapeRequest(request);
+        const kernels = await kernelsPromise;
+        if (cancelled.delete(request.requestId)) return;
+        scope.postMessage({
+          type: "progress",
+          requestId: request.requestId,
+          stage: "decode",
+          completed: request.data.rowCount,
+          total: request.data.rowCount
+        });
+        const prepared = prepareRustWasmFilterSortRequest(request, kernels, (stage, completed, total) => {
+          if (cancelled.has(request.requestId)) return;
+          scope.postMessage({ type: "progress", requestId: request.requestId, stage, completed, total });
+        });
+        const stagedResult = await executeGridEngineShapeRequestInStages(prepared.request, {
+          onProgress: (stage, completed, total) => {
+            if (stage === "decode" || stage === "filter" || stage === "sort") return;
+            if (cancelled.has(request.requestId)) return;
+            scope.postMessage({ type: "progress", requestId: request.requestId, stage, completed, total });
+          },
+          yieldControl: yieldToWorkerEventLoop
+        });
+        const result = {
+          ...stagedResult,
+          sourceRowCount: request.data.rowCount,
+          filteredRowCount: prepared.filteredRowCount
+        };
         if (!cancelled.delete(request.requestId)) {
           scope.postMessage({ type: "result", requestId: request.requestId, result });
         }
@@ -59,4 +76,8 @@ if (typeof scope.importScripts !== "undefined") {
       }
     }, 0);
   });
+}
+
+function yieldToWorkerEventLoop(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }

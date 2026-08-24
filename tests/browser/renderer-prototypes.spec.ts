@@ -324,6 +324,50 @@ test("Alpha 4 TypeScript and Rust/WASM shaping candidates return full parity", a
   await expect(page.locator("#wasmStatus")).toHaveText("full parity: 52 view rows");
 });
 
+test("Alpha 4 Rust/WASM filter and sort match the 10K mixed-type fixture", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const parity = await page.evaluate(async () => {
+    const fixtureUrl = "/benchmarks/engine-bakeoff/alpha4-mixed-type-fixtures.mjs";
+    const coreUrl = "/packages/core/dist/index.js";
+    const [{ createAlpha4MixedTypeFixture }, core] = await Promise.all([
+      import(fixtureUrl),
+      import(coreUrl)
+    ]);
+    const fixture = createAlpha4MixedTypeFixture("small");
+    const definition = core.createGridWorkerShapeDefinition({
+      filter: [
+        { columnId: "number-00", operator: "greaterThan", value: -2_500, comparisonType: "number" },
+        { columnId: "text-00", operator: "contains", value: "a", comparisonType: "text" },
+        { columnId: "boolean-00", operator: "equals", value: true, comparisonType: "boolean" },
+        { columnId: "date-00", operator: "greaterThanOrEqual", value: "2021-01-01", comparisonType: "date" },
+        { columnId: "json-00", operator: "isNotNull", comparisonType: "json" }
+      ],
+      sort: [
+        { columnId: "json-00", direction: "asc", comparisonType: "json", nulls: "last" },
+        { columnId: "date-01", direction: "desc", comparisonType: "date", nulls: "last" },
+        { columnId: "number-01", direction: "desc", comparisonType: "number", nulls: "last" }
+      ]
+    });
+    const typescriptEngine = core.createTypeScriptWorkerGridEngine();
+    const rustEngine = core.createRustWasmWorkerGridEngine();
+    try {
+      const [typescriptResult, rustResult] = await Promise.all([
+        typescriptEngine.shape({ data: fixture.data, definition }),
+        rustEngine.shape({ data: createAlpha4MixedTypeFixture("small").data, definition })
+      ]);
+      return {
+        equal: JSON.stringify(typescriptResult) === JSON.stringify(rustResult),
+        filteredRowCount: rustResult.filteredRowCount,
+        returnedRowCount: rustResult.rows.length
+      };
+    } finally {
+      typescriptEngine.destroy();
+      rustEngine.destroy();
+    }
+  });
+  expect(parity).toEqual({ equal: true, filteredRowCount: 898, returnedRowCount: 898 });
+});
+
 test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
   await page.goto("/apps/angular-demo/index.html");
   await expect(page.locator("gethen-angular-demo")).toBeVisible();
