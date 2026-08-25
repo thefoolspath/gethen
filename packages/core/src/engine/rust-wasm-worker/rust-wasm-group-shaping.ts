@@ -1,12 +1,12 @@
 import type { CellValue } from "@thefoolspath/gethen-protocol";
 
-import type { GridGroupRow, GridShapedRow } from "./grid-data-shaping.js";
+import type { GridGroupRow, GridShapedRow } from "../../shaping/grid-data-shaping.js";
 import type {
   GridColumnarBuffer,
   GridColumnarColumn,
   GridEngineShapeRequest,
   GridPortableAggregateDescriptor
-} from "./grid-engine-contract.js";
+} from "../../contracts/engine-contract.js";
 import type { RustWasmKernels } from "./rust-wasm-kernels.js";
 
 type RustGroupKernels = Pick<

@@ -1,6 +1,6 @@
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
+import type { GridRow } from "./grid-types.js";
 import type {
   GridAggregateDescriptor,
   GridDataShapingOptions,
@@ -8,8 +8,8 @@ import type {
   GridFilterDescriptor,
   GridGroupDescriptor,
   GridSortDescriptor
-} from "./grid-data-shaping.js";
-import { shapeGridData, shapeGridDataInStages } from "./grid-data-shaping.js";
+} from "../shaping/grid-data-shaping.js";
+import { shapeGridData, shapeGridDataInStages } from "../shaping/grid-data-shaping.js";
 
 export type GridColumnarStorage = "float64" | "boolean" | "utf8";
 

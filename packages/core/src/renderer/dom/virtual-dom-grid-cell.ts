@@ -1,10 +1,10 @@
 import type { CellValue } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
+import type { GridRow } from "../../contracts/grid-types.js";
 import type { GridClassValue, GridColumnView, GridStylingOptions } from "./grid-customization.js";
 import { resolveGridClassNames } from "./grid-customization.js";
-import type { GridCellEditor, GridEditorContext } from "./grid-editing.js";
-import { parseBuiltInEditorValue, resolveBuiltInEditor } from "./grid-editing.js";
+import type { GridCellEditor, GridEditorContext } from "../../state/grid-editing.js";
+import { parseBuiltInEditorValue, resolveBuiltInEditor } from "../../state/grid-editing.js";
 
 export interface VirtualDomGridCellInput<TRow extends GridRow = GridRow> {
   readonly rowHeight: number;

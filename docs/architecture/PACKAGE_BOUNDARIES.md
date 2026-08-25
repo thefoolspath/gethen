@@ -1,6 +1,6 @@
 # Package Boundaries
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-08-25.
 
 Status: Initial npm packages exist. Backend boundaries are deferred to the Server 2.0 plan.
 
@@ -45,6 +45,17 @@ future backend packages -> portable contracts / server protocol
 Future backend packages may depend on portable shared contracts and the 2.0 server protocol. Frontend protocol types and Core must not depend on ASP.NET Core, LINQ, EF Core, SQL, or any backend-specific runtime.
 
 Client 1.0 portable descriptors cover the intent of range/paging, sort, filter, group, aggregate, formula, pivot, updates, and row transactions where those operations exist. They must remain serializable. Renderers, editors, formatters, themes, layouts, and arbitrary JavaScript callbacks are browser-only and are not backend contracts.
+
+## Current Core Internal Organization
+
+`@thefoolspath/gethen-core` remains one npm package. Its source is grouped into `contracts`, `data`,
+`state`, `shaping`, `engine`, and `renderer/dom` directories for navigation and dependency clarity.
+This organization does not add a runtime boundary, package dependency, asynchronous call, data copy,
+or serialization step. The existing root package exports remain the public API; internal directories
+do not expose additional barrel entry points.
+
+Worker scripts and `gethen_engine.wasm` are emitted beside their loaders under the matching engine
+directories so `new URL(..., import.meta.url)` keeps the same loading behavior after compilation.
 
 ## Internal Until Stable
 

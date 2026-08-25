@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createGridColumnarBuffer, createGridWorkerShapeDefinition } from "./grid-engine-contract.js";
+import { createGridColumnarBuffer, createGridWorkerShapeDefinition } from "../../contracts/engine-contract.js";
 import { TypeScriptWorkerGridEngine } from "./typescript-worker-grid-engine.js";
 
 class FakeWorker {

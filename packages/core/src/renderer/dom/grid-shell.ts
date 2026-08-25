@@ -1,8 +1,8 @@
 import type { CellValue } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
-import type { GridAggregateDescriptor } from "./grid-data-shaping.js";
-import { aggregateGridRows } from "./grid-data-shaping.js";
+import type { GridRow } from "../../contracts/grid-types.js";
+import type { GridAggregateDescriptor } from "../../shaping/grid-data-shaping.js";
+import { aggregateGridRows } from "../../shaping/grid-data-shaping.js";
 
 export interface GridRowNumberOptions {
   readonly visible?: boolean;

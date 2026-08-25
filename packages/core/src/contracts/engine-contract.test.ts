@@ -7,7 +7,7 @@ import {
   executeGridEngineShapeRequest,
   executeGridEngineShapeRequestInStages,
   getGridColumnarTransferables
-} from "./grid-engine-contract.js";
+} from "./engine-contract.js";
 
 const rows = [
   { id: "r1", cells: { amount: 10, active: true, name: "Ada", nullable: null } },

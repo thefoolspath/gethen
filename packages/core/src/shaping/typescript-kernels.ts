@@ -1,4 +1,4 @@
-import type { RustWasmFilterAggregateResult } from "./rust-wasm-kernels.js";
+import type { RustWasmFilterAggregateResult } from "../engine/rust-wasm-worker/rust-wasm-kernels.js";
 
 export function typescriptFilterAggregate(
   values: Float64Array,

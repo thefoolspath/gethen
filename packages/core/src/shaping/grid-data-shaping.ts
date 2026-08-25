@@ -1,6 +1,6 @@
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
+import type { GridRow } from "../contracts/grid-types.js";
 
 export type GridSortDirection = "asc" | "desc";
 export type GridNullPlacement = "first" | "last";

@@ -17,6 +17,9 @@ if (result.error) throw result.error;
 if (result.status !== 0) process.exit(result.status ?? 1);
 
 const source = resolve(root, "crates/gethen-engine/target/wasm32-unknown-unknown/release/gethen_engine.wasm");
-const destination = resolve(root, "packages/core/dist/gethen_engine.wasm");
+const destination = resolve(
+  root,
+  "packages/core/dist/engine/rust-wasm-worker/gethen_engine.wasm"
+);
 mkdirSync(dirname(destination), { recursive: true });
 copyFileSync(source, destination);

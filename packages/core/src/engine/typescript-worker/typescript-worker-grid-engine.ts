@@ -3,9 +3,9 @@ import type {
   GridEngineWorkerRequest,
   GridEngineWorkerResponse,
   GridWorkerShapeDefinition
-} from "./grid-engine-contract.js";
-import { getGridColumnarTransferables } from "./grid-engine-contract.js";
-import type { GridDataShapingResult } from "./grid-data-shaping.js";
+} from "../../contracts/engine-contract.js";
+import { getGridColumnarTransferables } from "../../contracts/engine-contract.js";
+import type { GridDataShapingResult } from "../../shaping/grid-data-shaping.js";
 
 export interface TypeScriptWorkerGridEngineOptions {
   readonly workerFactory?: () => Worker;

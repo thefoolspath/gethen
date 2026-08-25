@@ -1,11 +1,11 @@
 import type { CellValue, ColumnDataType } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
+import type { GridRow } from "../contracts/grid-types.js";
 import type {
   GridClassValue,
   GridColumnAlignment,
   GridColumnView
-} from "./grid-customization.js";
+} from "../renderer/dom/grid-customization.js";
 
 export type GridModelField<TRow extends object> = Extract<keyof TRow, string>;
 

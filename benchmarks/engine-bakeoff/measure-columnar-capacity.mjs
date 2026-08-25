@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import { executeGridEngineShapeRequest } from "../../packages/core/dist/grid-engine-contract.js";
+import { executeGridEngineShapeRequest } from "../../packages/core/dist/contracts/engine-contract.js";
 
 const rowCount = 1_000_000;
 const columnCount = 50;

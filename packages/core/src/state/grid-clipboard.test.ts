@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseTabularClipboardText, prepareGridPaste } from "./grid-clipboard.js";
-import type { GridColumnView } from "./grid-customization.js";
+import type { GridColumnView } from "../renderer/dom/grid-customization.js";
 
 const columns: readonly GridColumnView[] = [
   { id: "name", title: "Name", dataType: "text" },

@@ -1,4 +1,4 @@
-import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "./grid-engine-contract.js";
+import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "../../contracts/engine-contract.js";
 import { prepareRustWasmFilterSortRequest } from "./rust-wasm-filter-sort.js";
 import { executeRustWasmGroupShape } from "./rust-wasm-group-shaping.js";
 import { loadRustWasmKernels } from "./rust-wasm-kernels.js";

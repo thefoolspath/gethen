@@ -1,49 +1,49 @@
 export {
   ClientGridEngine,
   createClientGridEngine
-} from "./client-grid-engine.js";
+} from "./state/client-grid-engine.js";
 
 export {
   ClientDataSource,
   createClientDataSource
-} from "./client-data-source.js";
+} from "./data/client-data-source.js";
 
 export {
   calculateVirtualViewport
-} from "./viewport.js";
+} from "./renderer/dom/viewport.js";
 
 export {
   getVisibleColumns,
   resolveGridClassNames
-} from "./grid-customization.js";
+} from "./renderer/dom/grid-customization.js";
 
 export {
   createGridModel
-} from "./grid-model.js";
+} from "./data/grid-model.js";
 
 export {
   parseTabularClipboardText,
   prepareGridPaste
-} from "./grid-clipboard.js";
+} from "./state/grid-clipboard.js";
 
 export {
   RowTransactionManager,
   createRowTransactionManager,
   invertRowHistoryChange
-} from "./row-transactions.js";
+} from "./data/row-transactions.js";
 
 export {
   GridEditorStateMachine,
   createGridEditorStateMachine,
   parseBuiltInEditorValue,
   resolveBuiltInEditor
-} from "./grid-editing.js";
+} from "./state/grid-editing.js";
 
 export {
   GridHistory,
   createGridHistory,
   invertCellChange
-} from "./grid-history.js";
+} from "./state/grid-history.js";
 
 export {
   applyGridLayoutState,
@@ -53,14 +53,14 @@ export {
   getGridLayoutWidth,
   reorderGridColumn,
   resizeGridColumn
-} from "./grid-layout.js";
+} from "./state/grid-layout.js";
 
 export {
   aggregateGridRows,
   compareGridValues,
   shapeGridData,
   stableMultiSort
-} from "./grid-data-shaping.js";
+} from "./shaping/grid-data-shaping.js";
 
 export {
   createGridColumnarBuffer,
@@ -68,34 +68,34 @@ export {
   decodeGridColumnarBuffer,
   executeGridEngineShapeRequest,
   getGridColumnarTransferables
-} from "./grid-engine-contract.js";
+} from "./contracts/engine-contract.js";
 
 export {
   TypeScriptWorkerGridEngine,
   createTypeScriptWorkerGridEngine
-} from "./typescript-worker-grid-engine.js";
+} from "./engine/typescript-worker/typescript-worker-grid-engine.js";
 
 export {
   RustWasmKernels,
   loadRustWasmKernels
-} from "./rust-wasm-kernels.js";
+} from "./engine/rust-wasm-worker/rust-wasm-kernels.js";
 
 export {
   RustWasmWorkerEngine,
   createRustWasmWorkerEngine
-} from "./rust-wasm-worker-engine.js";
+} from "./engine/rust-wasm-worker/rust-wasm-worker-engine.js";
 
-export { createRustWasmWorkerGridEngine } from "./rust-wasm-worker-grid-engine.js";
+export { createRustWasmWorkerGridEngine } from "./engine/rust-wasm-worker/rust-wasm-worker-grid-engine.js";
 
 export {
   typescriptFilterAggregate,
   typescriptFormulaSumProduct,
   typescriptGroupSum
-} from "./typescript-kernels.js";
+} from "./shaping/typescript-kernels.js";
 
 export {
   mountVirtualDomGrid
-} from "./virtual-dom-grid.js";
+} from "./renderer/dom/virtual-dom-grid.js";
 
 export type {
   CellClassContext,
@@ -109,16 +109,16 @@ export type {
   HeaderClassContext,
   RowClassContext,
   VirtualDomGridTheme
-} from "./grid-customization.js";
+} from "./renderer/dom/grid-customization.js";
 export {
   createGridAggregatePinnedRow,
   formatGridStatus
-} from "./grid-shell.js";
+} from "./renderer/dom/grid-shell.js";
 export type {
   GridAggregatePinnedRowOptions,
   GridRowNumberOptions,
   GridStatusBarOptions
-} from "./grid-shell.js";
+} from "./renderer/dom/grid-shell.js";
 
 export type {
   CreateGridModelOptions,
@@ -126,7 +126,7 @@ export type {
   GridModelColumn,
   GridModelField,
   GridModelRow
-} from "./grid-model.js";
+} from "./data/grid-model.js";
 
 export type {
   GridClipboardOptions,
@@ -139,7 +139,7 @@ export type {
   PasteCellValidationError,
   PasteCellValidationResult,
   PrepareGridPasteOptions
-} from "./grid-clipboard.js";
+} from "./state/grid-clipboard.js";
 
 export type {
   RowSaveEvent,
@@ -147,7 +147,7 @@ export type {
   RowSaveMode,
   RowTransactionManagerOptions,
   RowTransactionState
-} from "./row-transactions.js";
+} from "./data/row-transactions.js";
 
 export type {
   GridBuiltInEditorDefinition,
@@ -164,7 +164,7 @@ export type {
   GridEditorValue,
   GridSelectOption,
   GridValidationResult
-} from "./grid-editing.js";
+} from "./state/grid-editing.js";
 
 export type {
   GridHistoryEntry,
@@ -172,7 +172,7 @@ export type {
   GridHistoryKind,
   GridHistoryOptions,
   GridHistorySnapshot
-} from "./grid-history.js";
+} from "./state/grid-history.js";
 
 export type {
   ApplyGridLayoutStateOptions,
@@ -180,7 +180,7 @@ export type {
   GridColumnLayoutState,
   GridLayoutEvent,
   GridLayoutState
-} from "./grid-layout.js";
+} from "./state/grid-layout.js";
 
 export type {
   GridAggregateDescriptor,
@@ -199,7 +199,7 @@ export type {
   GridSortDescriptor,
   GridSortDirection,
   GridSourceViewRow
-} from "./grid-data-shaping.js";
+} from "./shaping/grid-data-shaping.js";
 
 export type {
   GridColumnarBooleanColumn,
@@ -217,41 +217,42 @@ export type {
   GridEngineWorkerResponse,
   GridPortableAggregateDescriptor,
   GridWorkerShapeDefinition
-} from "./grid-engine-contract.js";
+} from "./contracts/engine-contract.js";
 
 export type {
   GridWorkerExecutionOptions,
   TypeScriptWorkerGridEngineOptions
-} from "./typescript-worker-grid-engine.js";
+} from "./engine/typescript-worker/typescript-worker-grid-engine.js";
 
 export type {
   RustWasmFilterAggregateResult,
   RustWasmKernelExports
-} from "./rust-wasm-kernels.js";
+} from "./engine/rust-wasm-worker/rust-wasm-kernels.js";
 
 export type {
   RustWasmWorkerCallOptions,
   RustWasmWorkerEngineOptions,
   RustWasmWorkerRequest,
   RustWasmWorkerResponse
-} from "./rust-wasm-worker-engine.js";
+} from "./engine/rust-wasm-worker/rust-wasm-worker-engine.js";
 
 export type {
   ClientDataSourceOptions,
   ClientDataSourceRow
-} from "./client-data-source.js";
+} from "./data/client-data-source.js";
 
 export type {
   ClientGridEngineOptions,
   EditState,
-  GridRow,
   SelectionState
-} from "./client-grid-engine.js";
+} from "./state/client-grid-engine.js";
+
+export type { GridRow } from "./contracts/grid-types.js";
 
 export type {
   VirtualViewport,
   VirtualViewportInput
-} from "./viewport.js";
+} from "./renderer/dom/viewport.js";
 
 export type {
   VirtualDomGrid,
@@ -259,4 +260,4 @@ export type {
   VirtualDomGridRenderMetrics,
   VirtualDomGridSelection,
   VirtualDomGridSelectionRange
-} from "./virtual-dom-grid.js";
+} from "./renderer/dom/virtual-dom-grid.js";

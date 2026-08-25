@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { executeGridEngineShapeRequest } from "../../packages/core/dist/grid-engine-contract.js";
+import { executeGridEngineShapeRequest } from "../../packages/core/dist/contracts/engine-contract.js";
 import { createAlpha4MixedTypeFixture } from "./alpha4-mixed-type-fixtures.mjs";
 
 export const ALPHA4_PARITY_SCENARIOS = Object.freeze([

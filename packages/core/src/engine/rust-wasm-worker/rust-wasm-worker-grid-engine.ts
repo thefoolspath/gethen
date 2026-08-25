@@ -1,4 +1,4 @@
-import { TypeScriptWorkerGridEngine } from "./typescript-worker-grid-engine.js";
+import { TypeScriptWorkerGridEngine } from "../typescript-worker/typescript-worker-grid-engine.js";
 
 export function createRustWasmWorkerGridEngine(): TypeScriptWorkerGridEngine {
   return new TypeScriptWorkerGridEngine({

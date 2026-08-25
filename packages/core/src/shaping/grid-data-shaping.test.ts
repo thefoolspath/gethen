@@ -6,7 +6,7 @@ import {
   shapeGridData,
   stableMultiSort
 } from "./grid-data-shaping.js";
-import type { GridRow } from "./client-grid-engine.js";
+import type { GridRow } from "../contracts/grid-types.js";
 
 const rows: readonly GridRow[] = [
   { id: "r1", cells: { team: "B", score: 10, name: "Ada", active: true, note: null } },

@@ -1,5 +1,5 @@
-import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "./grid-engine-contract.js";
-import { executeGridEngineShapeRequestInStages } from "./grid-engine-contract.js";
+import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "../../contracts/engine-contract.js";
+import { executeGridEngineShapeRequestInStages } from "../../contracts/engine-contract.js";
 
 interface PortableWorkerScope {
   addEventListener(type: "message", listener: (event: MessageEvent<GridEngineWorkerRequest>) => void): void;

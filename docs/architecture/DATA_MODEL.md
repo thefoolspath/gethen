@@ -8,11 +8,11 @@ Status: Initial TypeScript reference model implemented.
 
 The public developer API should start with row-oriented objects and typed column definitions because that is the most natural integration shape for web apps.
 
-Initial implementation: `packages/core/src/client-grid-engine.ts` uses rows shaped as stable `id` plus a `cells` record keyed by column ID.
+Initial implementation: `packages/core/src/state/client-grid-engine.ts` uses rows shaped as stable `id` plus a `cells` record keyed by column ID. The shared `GridRow` contract lives in `packages/core/src/contracts/grid-types.ts`.
 
-Alpha 2 view metadata is implemented separately in `packages/core/src/grid-customization.ts`. Hidden columns remain present in caller metadata and row values but are omitted from the renderer's visible-column list.
+Alpha 2 view metadata is implemented separately in `packages/core/src/renderer/dom/grid-customization.ts`. Hidden columns remain present in caller metadata and row values but are omitted from the renderer's visible-column list.
 
-`packages/core/src/grid-model.ts` implements explicit portable DTO mapping. It requires exactly one stable string or numeric key field, validates declared cell types and nullability at runtime, and produces renderer rows that retain their typed source DTO. `packages/core/src/row-transactions.ts` implements a framework-neutral single-row edit/insert transaction boundary with original-row and changed-field save payloads.
+`packages/core/src/data/grid-model.ts` implements explicit portable DTO mapping. It requires exactly one stable string or numeric key field, validates declared cell types and nullability at runtime, and produces renderer rows that retain their typed source DTO. `packages/core/src/data/row-transactions.ts` implements a framework-neutral single-row edit/insert transaction boundary with original-row and changed-field save payloads.
 
 ## Identity
 

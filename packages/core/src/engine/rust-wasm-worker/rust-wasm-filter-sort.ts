@@ -1,12 +1,12 @@
 import type { CellValue } from "@thefoolspath/gethen-protocol";
 
-import { compareGridValues } from "./grid-data-shaping.js";
-import type { GridFilterDescriptor, GridSortDescriptor } from "./grid-data-shaping.js";
+import { compareGridValues } from "../../shaping/grid-data-shaping.js";
+import type { GridFilterDescriptor, GridSortDescriptor } from "../../shaping/grid-data-shaping.js";
 import type {
   GridColumnarBuffer,
   GridColumnarColumn,
   GridEngineShapeRequest
-} from "./grid-engine-contract.js";
+} from "../../contracts/engine-contract.js";
 import type { RustWasmKernels } from "./rust-wasm-kernels.js";
 
 type RustFilterSortKernels = Pick<

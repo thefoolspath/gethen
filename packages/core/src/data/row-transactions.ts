@@ -1,5 +1,5 @@
-import type { GridHistory, GridHistoryOptions } from "./grid-history.js";
-import { createGridHistory } from "./grid-history.js";
+import type { GridHistory, GridHistoryOptions } from "../state/grid-history.js";
+import { createGridHistory } from "../state/grid-history.js";
 
 export type RowSaveMode = "edit" | "insert";
 

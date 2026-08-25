@@ -7,10 +7,7 @@ import type {
   RowId
 } from "@thefoolspath/gethen-protocol";
 
-export interface GridRow {
-  readonly id: RowId;
-  readonly cells: Readonly<Record<ColumnId, CellValue>>;
-}
+import type { GridRow } from "../contracts/grid-types.js";
 
 export interface SelectionState extends CellCoordinate {}
 

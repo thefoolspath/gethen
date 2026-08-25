@@ -1,7 +1,7 @@
 import type { CellValue } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
-import type { GridColumnView } from "./grid-customization.js";
+import type { GridRow } from "../contracts/grid-types.js";
+import type { GridColumnView } from "../renderer/dom/grid-customization.js";
 
 export type GridPasteMode = "direct" | "dialog" | "direct-and-dialog";
 

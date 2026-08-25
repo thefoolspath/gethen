@@ -1,11 +1,11 @@
 import type { CellValue, GridColumn } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
+import type { GridRow } from "../../contracts/grid-types.js";
 import type {
   GridBuiltInEditorDefinition,
   GridCellEditorFactory,
   GridCellRendererFactory
-} from "./grid-editing.js";
+} from "../../state/grid-editing.js";
 
 export type GridClassValue = string | readonly string[] | undefined;
 export type GridColumnAlignment = "left" | "center" | "right";
@@ -24,7 +24,7 @@ export interface GridColumnView<TRow extends GridRow = GridRow> extends GridColu
   readonly validate?: (
     value: CellValue,
     context: GridCellContext<TRow>
-  ) => import("./grid-editing.js").GridValidationResult | Promise<import("./grid-editing.js").GridValidationResult>;
+  ) => import("../../state/grid-editing.js").GridValidationResult | Promise<import("../../state/grid-editing.js").GridValidationResult>;
 }
 
 export interface GridCellContext<TRow extends GridRow = GridRow> {

@@ -1,17 +1,17 @@
 import type { CellChangeEvent } from "@thefoolspath/gethen-protocol";
 
-import type { GridRow } from "./client-grid-engine.js";
-import type { GridClipboardOptions, GridPasteResult } from "./grid-clipboard.js";
-import { prepareGridPaste } from "./grid-clipboard.js";
+import type { GridRow } from "../../contracts/grid-types.js";
+import type { GridClipboardOptions, GridPasteResult } from "../../state/grid-clipboard.js";
+import { prepareGridPaste } from "../../state/grid-clipboard.js";
 import type { GridColumnView, GridStylingOptions, VirtualDomGridTheme } from "./grid-customization.js";
 import { getVisibleColumns, resolveGridClassNames } from "./grid-customization.js";
-import type { GridCellEditor, GridEditorSnapshot, GridValidationResult } from "./grid-editing.js";
-import { createGridEditorStateMachine } from "./grid-editing.js";
-import type { GridHistoryEvent, GridHistoryOptions } from "./grid-history.js";
+import type { GridCellEditor, GridEditorSnapshot, GridValidationResult } from "../../state/grid-editing.js";
+import { createGridEditorStateMachine } from "../../state/grid-editing.js";
+import type { GridHistoryEvent, GridHistoryOptions } from "../../state/grid-history.js";
 import type { GridRowNumberOptions, GridStatusBarOptions } from "./grid-shell.js";
 import { formatGridStatus } from "./grid-shell.js";
-import { createGridHistory, invertCellChange } from "./grid-history.js";
-import type { GridLayoutEvent, GridLayoutState } from "./grid-layout.js";
+import { createGridHistory, invertCellChange } from "../../state/grid-history.js";
+import type { GridLayoutEvent, GridLayoutState } from "../../state/grid-layout.js";
 import {
   applyGridLayoutState,
   freezeGridPanes,
@@ -19,7 +19,7 @@ import {
   getGridLayoutWidth,
   reorderGridColumn,
   resizeGridColumn
-} from "./grid-layout.js";
+} from "../../state/grid-layout.js";
 import { createVirtualDomGridCell } from "./virtual-dom-grid-cell.js";
 import { clamp, isTypeToEditKey } from "./virtual-dom-grid-values.js";
 
