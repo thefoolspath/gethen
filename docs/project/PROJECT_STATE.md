@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-08-24.
+Last updated: 2026-08-25.
 
 ## Purpose
 
@@ -72,6 +72,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Research Rust crate scaffold in `crates/gethen-engine/`; default `cargo check` passes, GNU release benchmark runs, but default MSVC release execution is blocked by missing `msvcrt.lib`.
 - Initial dependency/license candidate review for Milestone 1 and Angular-first alpha tooling in `docs/research/DEPENDENCY_LICENSE_EVALUATION.md`.
 - Documentation entry point: [../README.md](../README.md).
+- Project-name origin, product wordplay, creator relationship, and naming principles: [../project-name.md](../project-name.md).
 - Active plan: [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md).
 - Active feedback/control plan: [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md).
 - Completed Alpha 2 developer customization and row transaction plan: [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md).

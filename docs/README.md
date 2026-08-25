@@ -1,6 +1,6 @@
 # Gethen Documentation
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-08-25.
 
 Gethen has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates. Alpha 3 passed automated verification and a manual keyboard-only Chrome walkthrough; manual NVDA/Chrome validation is deferred during alpha but remains mandatory before Beta/1.0. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
 
@@ -17,6 +17,7 @@ Gethen has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidat
 
 ## Documentation Map
 
+- Project name: [project-name.md](project-name.md)
 - Product: [product/VISION.md](product/VISION.md), [product/SCOPE.md](product/SCOPE.md), [product/ROADMAP.md](product/ROADMAP.md), [product/CUSTOMIZATION.md](product/CUSTOMIZATION.md)
 - Architecture: [architecture/SYSTEM_OVERVIEW.md](architecture/SYSTEM_OVERVIEW.md), [architecture/PACKAGE_BOUNDARIES.md](architecture/PACKAGE_BOUNDARIES.md), [architecture/RUST_WASM_BOUNDARY.md](architecture/RUST_WASM_BOUNDARY.md), [architecture/DATA_MODEL.md](architecture/DATA_MODEL.md), [architecture/PROTOCOL_V1.md](architecture/PROTOCOL_V1.md), [architecture/DATA_SOURCE.md](architecture/DATA_SOURCE.md), [architecture/ACCESSIBILITY_AND_SECURITY.md](architecture/ACCESSIBILITY_AND_SECURITY.md)
 - Research: [research/PRE_ALPHA_RESEARCH_GATE.md](research/PRE_ALPHA_RESEARCH_GATE.md), [research/RENDERER_EVALUATION.md](research/RENDERER_EVALUATION.md), [research/WORKER_WASM_EVALUATION.md](research/WORKER_WASM_EVALUATION.md), [research/COLUMNAR_DATA_EVALUATION.md](research/COLUMNAR_DATA_EVALUATION.md), [research/FRAMEWORK_ADAPTER_EVALUATION.md](research/FRAMEWORK_ADAPTER_EVALUATION.md), [research/DEPENDENCY_LICENSE_EVALUATION.md](research/DEPENDENCY_LICENSE_EVALUATION.md), [research/CODEX_REPOSITORY_INSTRUCTIONS.md](research/CODEX_REPOSITORY_INSTRUCTIONS.md), [research/sources/README.md](research/sources/README.md), [research/findings/README.md](research/findings/README.md), [research/project-fit/README.md](research/project-fit/README.md)
