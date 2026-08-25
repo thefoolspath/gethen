@@ -1,6 +1,6 @@
 import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "./grid-engine-contract.js";
-import { executeGridEngineShapeRequestInStages } from "./grid-engine-contract.js";
 import { prepareRustWasmFilterSortRequest } from "./rust-wasm-filter-sort.js";
+import { executeRustWasmGroupShape } from "./rust-wasm-group-shaping.js";
 import { loadRustWasmKernels } from "./rust-wasm-kernels.js";
 
 interface WorkerScope {
@@ -50,20 +50,24 @@ if (typeof scope.importScripts !== "undefined") {
           if (cancelled.has(request.requestId)) return;
           scope.postMessage({ type: "progress", requestId: request.requestId, stage, completed, total });
         });
-        const stagedResult = await executeGridEngineShapeRequestInStages(prepared.request, {
-          onProgress: (stage, completed, total) => {
-            if (stage === "decode" || stage === "filter" || stage === "sort") return;
+        const result = executeRustWasmGroupShape(
+          prepared.request,
+          kernels,
+          request.data.rowCount,
+          prepared.filteredRowCount,
+          (stage, completed, total) => {
             if (cancelled.has(request.requestId)) return;
             scope.postMessage({ type: "progress", requestId: request.requestId, stage, completed, total });
-          },
-          yieldControl: yieldToWorkerEventLoop
-        });
-        const result = {
-          ...stagedResult,
-          sourceRowCount: request.data.rowCount,
-          filteredRowCount: prepared.filteredRowCount
-        };
+          }
+        );
         if (!cancelled.delete(request.requestId)) {
+          scope.postMessage({
+            type: "progress",
+            requestId: request.requestId,
+            stage: "complete",
+            completed: request.data.rowCount,
+            total: request.data.rowCount
+          });
           scope.postMessage({ type: "result", requestId: request.requestId, result });
         }
       } catch (error) {
@@ -76,8 +80,4 @@ if (typeof scope.importScripts !== "undefined") {
       }
     }, 0);
   });
-}
-
-function yieldToWorkerEventLoop(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
 }

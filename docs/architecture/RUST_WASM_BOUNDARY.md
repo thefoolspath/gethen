@@ -1,6 +1,6 @@
 # Rust/WASM Boundary
 
-Last reviewed: 2026-08-24.
+Last reviewed: 2026-08-25.
 
 Status: Alpha 4 research implementation exists; production-engine selection remains pending end-to-end benchmarks.
 
@@ -15,7 +15,7 @@ Do not call WASM per cell. If adopted, communication must be coarse-grained:
 - cancel operation
 - dispose dataset
 
-The current A4-04 checkpoint follows this boundary: TypeScript normalizes mixed-type comparison values into deterministic rank columns, then dependency-free Rust/WASM kernels compute filter masks and stable multi-sort row indices in coarse column batches. Grouping, aggregation, full-capacity evidence, and production-engine selection remain open; the implementation is not yet an accepted production runtime.
+The current A4-05 checkpoint follows this boundary: TypeScript normalizes mixed-type comparison and grouping values, then dependency-free Rust/WASM kernels compute filter masks, stable multi-sort row indices, hierarchical group assignments, built-in aggregates, and flattened viewport tokens in coarse column batches. TypeScript hydrates the public source/group row objects. Full-capacity, memory, cancellation, formula/pivot, and production-engine-selection evidence remain open; the implementation is not yet an accepted production runtime.
 
 ## Conditional Data Format
 

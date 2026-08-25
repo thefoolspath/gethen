@@ -1,6 +1,6 @@
 # Alpha 3 Through Local 1.0 Execution Plan
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-08-25.
 
 Status: Alpha 3 is a locally verified release candidate. This plan remains accepted for Alpha 4. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). No package is published.
 
@@ -95,13 +95,14 @@ Alpha 3 is a completed local release candidate. Automated gates and a manual key
 - [x] A4-01: Add deterministic 10K, 500K, and 1M by 50-column mixed-type fixture profiles with stable seeded data, row IDs, column ordering, and nullable values. Normal validation allocates only the 10K profile.
 - [x] A4-02: Add a canonical TypeScript parity oracle with full deterministic results for the 10K profile and compact checksum/count/aggregate output for later 500K/1M capacity runs. Normal validation does not allocate the larger profiles.
 - [x] A4-03: Execute the TypeScript Worker pipeline as ordered asynchronous decode, filter, sort, group, aggregate, flatten, and completion stages with truthful start/end progress while preserving canonical results. Cooperative batching within long stages remains A4-07.
-- [x] A4-04: Move mixed-type filter and stable multi-sort row-mask/index execution into dependency-free Rust/WASM kernels behind TypeScript-normalized comparison ranks. The 10K mixed fixture passes Chromium parity; group/aggregate/flatten remain A4-05.
+- [x] A4-04: Move mixed-type filter and stable multi-sort row-mask/index execution into dependency-free Rust/WASM kernels behind TypeScript-normalized comparison ranks. The 10K mixed fixture passes Chromium parity.
+- [x] A4-05: Move hierarchical group assignment, built-in count/sum/min/max/average aggregation, and expanded/collapsed viewport flatten tokens into dependency-free Rust/WASM kernels. TypeScript retains stable mixed-type key normalization and result hydration; full 10K group/aggregate output passes Chromium parity.
 - [ ] Implement equivalent TypeScript Worker and Rust/WASM Worker kernels for ingestion, transfer, sort, filter, group, aggregate, and representative formula/pivot workloads.
 - [ ] Use identical fixtures, algorithms, optimization intent, cancellation, and progress behavior.
 - [ ] Measure cold/warm startup, end-to-end latency, peak/retained memory, transfer, bundle cost, and disposal.
 - [ ] Select the production engine at the Alpha 4 exit gate; retain the loser only as a test/benchmark oracle.
 
-The first Alpha 4 checkpoint now includes the portable pipeline, transferable mixed-type buffer, TypeScript Worker, dependency-free Rust/WASM numeric kernels, a Rust/WASM shaping candidate, browser parity coverage, and immediate cancellation rejection. The current 100,000-row numeric boundary measurement is diagnostic only; it does not satisfy the full engine-selection gate.
+The first Alpha 4 checkpoint now includes the portable pipeline, transferable mixed-type buffer, TypeScript Worker, dependency-free Rust/WASM filter/sort/group/aggregate/flatten kernels, browser parity coverage, and immediate cancellation rejection. The current 100,000-row numeric boundary measurement is diagnostic only; it does not satisfy the full engine-selection gate.
 
 ### Exit Gate
 

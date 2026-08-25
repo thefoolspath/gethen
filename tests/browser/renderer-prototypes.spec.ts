@@ -368,6 +368,88 @@ test("Alpha 4 Rust/WASM filter and sort match the 10K mixed-type fixture", async
   expect(parity).toEqual({ equal: true, filteredRowCount: 898, returnedRowCount: 898 });
 });
 
+test("Alpha 4 Rust/WASM grouping and aggregates match the 10K mixed-type fixture", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const parity = await page.evaluate(async () => {
+    const fixtureUrl = "/benchmarks/engine-bakeoff/alpha4-mixed-type-fixtures.mjs";
+    const coreUrl = "/packages/core/dist/index.js";
+    const [{ createAlpha4MixedTypeFixture }, core] = await Promise.all([
+      import(fixtureUrl),
+      import(coreUrl)
+    ]);
+    const definition = core.createGridWorkerShapeDefinition({
+      filter: [
+        { columnId: "number-02", operator: "greaterThan", value: -7_500, comparisonType: "number" }
+      ],
+      sort: [
+        { columnId: "number-03", direction: "asc", comparisonType: "number", nulls: "last" }
+      ],
+      group: [
+        { columnId: "boolean-01", comparisonType: "boolean" },
+        { columnId: "text-02", comparisonType: "text" }
+      ],
+      aggregate: [
+        { id: "rowCount", operation: "count" },
+        { id: "valueCount", operation: "count", columnId: "number-04" },
+        { id: "valueSum", operation: "sum", columnId: "number-04" },
+        { id: "valueMin", operation: "min", columnId: "number-04" },
+        { id: "valueMax", operation: "max", columnId: "number-04" },
+        { id: "valueAverage", operation: "average", columnId: "number-04" }
+      ],
+      expandedGroupIds: "all"
+    });
+    const typescriptEngine = core.createTypeScriptWorkerGridEngine();
+    const rustEngine = core.createRustWasmWorkerGridEngine();
+    try {
+      const [typescriptResult, rustResult] = await Promise.all([
+        typescriptEngine.shape({
+          data: createAlpha4MixedTypeFixture("small").data,
+          definition
+        }),
+        rustEngine.shape({
+          data: createAlpha4MixedTypeFixture("small").data,
+          definition
+        })
+      ]);
+      const viewportDefinition = {
+        ...definition,
+        viewport: { start: 8_870, count: Number.MAX_SAFE_INTEGER }
+      };
+      const [typescriptViewport, rustViewport] = await Promise.all([
+        typescriptEngine.shape({
+          data: createAlpha4MixedTypeFixture("small").data,
+          definition: viewportDefinition
+        }),
+        rustEngine.shape({
+          data: createAlpha4MixedTypeFixture("small").data,
+          definition: viewportDefinition
+        })
+      ]);
+      return {
+        equal: JSON.stringify(typescriptResult) === JSON.stringify(rustResult),
+        viewportEqual: JSON.stringify(typescriptViewport) === JSON.stringify(rustViewport),
+        viewportRowCount: rustViewport.rows.length,
+        filteredRowCount: rustResult.filteredRowCount,
+        totalViewRowCount: rustResult.totalViewRowCount,
+        returnedRowCount: rustResult.rows.length,
+        groupRowCount: rustResult.rows.filter((row: { kind: string }) => row.kind === "group").length
+      };
+    } finally {
+      typescriptEngine.destroy();
+      rustEngine.destroy();
+    }
+  });
+  expect(parity).toEqual({
+    equal: true,
+    viewportEqual: true,
+    viewportRowCount: 6,
+    filteredRowCount: 8_840,
+    totalViewRowCount: 8_876,
+    returnedRowCount: 8_876,
+    groupRowCount: 36
+  });
+});
+
 test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
   await page.goto("/apps/angular-demo/index.html");
   await expect(page.locator("gethen-angular-demo")).toBeVisible();
