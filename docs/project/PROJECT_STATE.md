@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-08-25.
+Last updated: 2026-09-01.
 
 ## Purpose
 
@@ -47,6 +47,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Dependency-free modern-enterprise light default theme with comfortable default density, compact/spacious presets, expanded shell/state tokens, header class/callback customization, labelled built-in editors, and readonly cell semantics.
 - Core and Angular grid-shell passthrough plus Chromium coverage and manual visual QA at 1280 x 720 and 1440 x 900. Representative-user walkthroughs and manual NVDA/Chrome remain open.
 - Initial shell-enabled local performance evidence: 4.7 ms customization-on repeated-scroll median; three-process trace median-of-medians 16.599 ms, median p95 18.559 ms, and zero tasks over 50 ms. Cross-hardware evidence remains open.
+- Angular standalone Alpha documentation workbench under `apps/docs-site/` with clean `/docs/<route>` URLs, responsive keyboard-accessible navigation, English feature pages, live `@thefoolspath/gethen-angular` examples backed by public Core and Protocol package entry points, deterministic fixtures, copyable public-API code, reset controls, event logs, and truthful Alpha/Experimental/Preview labels.
 
 ## Present Repository Assets
 
@@ -82,7 +83,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Active Alpha 3 through local 1.0 execution plan: [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md).
 - Active Alpha 4 grid-shell visual UX plan: [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md).
 - Active client-first 1.0 and Server 2.0 sequencing amendment: [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md).
-- Accepted documentation and interactive-demo site plan; implementation has not started: [../plans/active/0007-documentation-demo-site.md](../plans/active/0007-documentation-demo-site.md).
+- Implemented Phase 1 documentation and interactive-demo workbench; later milestone examples and public-site work remain open: [../plans/active/0007-documentation-demo-site.md](../plans/active/0007-documentation-demo-site.md).
+- Accepted Gethen Corporate Identity and light/dark Grid theme-system plan; implementation has not started: [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md).
 - Initial customization API guide: [../product/CUSTOMIZATION.md](../product/CUSTOMIZATION.md).
 - Pre-alpha research gate tracker: [../research/PRE_ALPHA_RESEARCH_GATE.md](../research/PRE_ALPHA_RESEARCH_GATE.md).
 - Proposed ADRs: [../adr/README.md](../adr/README.md).
@@ -123,7 +125,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - The local Alpha 2 release candidate is implemented and verified. Application-owned classes, conditional styling, alignment, hidden columns, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping, headless row transactions, opt-in validated direct clipboard paste, host-dialog preparation, and Angular passthrough are included. JavaScript, repeated-render, and local CDP frame-trace baselines exist. Headed/cross-hardware evidence remains required before external performance claims. Renderer-owned row/paste-dialog controls, a second adapter, custom renderers/editors, raw HTML formatters, XLSX import/export, and rich clipboard content are deliberately omitted or deferred.
 - Work remains sequential after the completed `0.0.0-alpha.3` local candidate: finish the Alpha 4 engine bake-off, implement Read-only Grid Table in Alpha 5, Formula in Alpha 6, Pivot in Alpha 7, then complete deferred NVDA/Chrome validation during client-side beta hardening before client 1.0. Server DataSource, a server wire protocol, and C#/EF Core integration move to 2.0.
 - The Alpha 4 grid-shell foundation is implemented. ISSUE-20260811-001 through ISSUE-20260811-003 and CR-20260811-001 are done; the client portion of CR-20260811-002 is done and its server-status extension is deferred to 2.0. User walkthroughs and manual NVDA/Chrome evidence remain open and no validated-usability claim is made.
-- A documentation and interactive-demo site is accepted as bounded alpha work and a browser verification surface. The MVP will document completed Alpha 1-3 behavior, label incomplete Alpha 4 behavior accurately, and grow with later milestones; public marketing, hosting, search, versioning, and launch polish remain deferred. No site application has been implemented yet.
+- The Phase 1 documentation and interactive-demo workbench is implemented under `apps/docs-site/` as a standalone Angular application and participates in workspace check/build plus Chromium verification. Phase 2 must add examples with Alpha 5-7 milestones; public marketing, hosting, search, versioning, analytics, social previews, and launch polish remain deferred to Phase 3 and require a separate publishing plan.
+- Gethen Corporate Identity work is accepted but not implemented. The chosen direction is Frost Light and Winter Night with aurora cyan as the primary accent, perspective violet as the secondary accent, explicit public light/dark Grid presets, unchanged no-theme Grid defaults, developer-owned token overrides, documentation theme switching, route search, and a right-side page table of contents.
 
 ## Verified Commands
 
@@ -137,6 +140,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `pnpm run test`
 - `pnpm exec playwright install chromium`
 - `pnpm run test:browser`
+- `pnpm run docs`, serving clean documentation routes such as `http://127.0.0.1:4173/docs/introduction` through the repository-local static server.
 - `pnpm run test:browser` with automatic allocation of an available loopback port, including when `127.0.0.1:4173` is already in use.
 - `pnpm run bench`
 - `node benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`
@@ -212,3 +216,5 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-25 | Completed Alpha 4 A4-05 Rust/WASM hierarchical grouping, built-in aggregation, and viewport flatten-token checkpoint; 6 GNU Rust tests and 28 Chromium scenarios pass, including full 10K group/aggregate parity. Full-capacity and engine-selection gates remain open. | `crates/gethen-engine/src/lib.rs`, `packages/core/src/engine/rust-wasm-worker/rust-wasm-group-shaping.ts`, `tests/browser/renderer-prototypes.spec.ts`, [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md) |
 | 2026-08-25 | Accepted a phased documentation and interactive-demo site: bounded alpha playground and browser verification first, milestone-owned examples thereafter, and full public-site polish deferred to Beta preparation. Implementation has not started. | [../plans/active/0007-documentation-demo-site.md](../plans/active/0007-documentation-demo-site.md) |
 | 2026-08-25 | Reorganized `@thefoolspath/gethen-core` source into responsibility-based internal directories and extracted the shared `GridRow` type into `contracts/`; package boundaries, public root exports, algorithms, and runtime boundaries are unchanged. Three before/after benchmark suites plus targeted noise follow-ups remained within the 5% acceptance threshold with no trace task over 50 ms. | `packages/core/src/`, `benchmarks/`, [../architecture/PACKAGE_BOUNDARIES.md](../architecture/PACKAGE_BOUNDARIES.md), `packages/README.md` |
+| 2026-09-01 | Implemented and locally verified the Phase 1 Angular documentation workbench with clean routes, accessible responsive navigation, live `@thefoolspath/gethen-angular` examples, public package-boundary checks, and expanded Chromium coverage. No deployment or publishing workflow was added. | `apps/docs-site/`, `tests/browser/docs-site.spec.ts`, [../plans/active/0007-documentation-demo-site.md](../plans/active/0007-documentation-demo-site.md) |
+| 2026-09-01 | Accepted the Gethen Corporate Identity and theme-system direction: Frost Light and Winter Night, public overridable Grid presets, unchanged unthemed defaults, Aspire-inspired documentation UX without copying its brand, and explicit approval required before Browser, Chrome, Computer Use, or browser rendering. Implementation has not started. | [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md), [../project-name.md](../project-name.md) |
