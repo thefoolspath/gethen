@@ -6,6 +6,7 @@ Current demos:
 
 - `angular-demo/`: Angular-backed demo that mounts the `@thefoolspath/gethen-angular` adapter.
 - `core-demo/`: framework-neutral demo for the core virtualized DOM renderer.
+- `docs-site/`: local Angular Alpha documentation workbench with clean routes and live public-package examples.
 
 Current research prototypes:
 

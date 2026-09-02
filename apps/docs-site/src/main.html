@@ -1,0 +1,167 @@
+<div class="site-shell">
+  <header class="topbar">
+    <a class="brand" href="/docs/introduction" (click)="navigate($event, '/docs/introduction')">
+      <span class="brand-mark" aria-hidden="true">G</span>
+      <span><strong>Gethen</strong><small>One dataset. Every perspective.</small></span>
+    </a>
+    <span class="angular-pill">Angular</span>
+    <span class="release-pill">0.0.0-alpha.3</span>
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-controls="docs-navigation"
+      [attr.aria-expanded]="navigationOpen()"
+      (click)="toggleNavigation()"
+    >Browse docs</button>
+  </header>
+
+  <nav
+    id="docs-navigation"
+    class="sidebar"
+    [class.is-open]="navigationOpen()"
+    aria-label="Documentation"
+  >
+    <section class="nav-group" *ngFor="let group of routeGroups">
+      <h2>{{ group.name }}</h2>
+      <a
+        *ngFor="let route of group.routes"
+        [href]="route.path"
+        [attr.aria-current]="isActive(route.path) ? 'page' : null"
+        (click)="navigate($event, route.path)"
+      >
+        <span>{{ route.title }}</span>
+        <small *ngIf="route.stability === 'Experimental' || route.stability === 'Preview'">{{ route.stability }}</small>
+      </a>
+    </section>
+  </nav>
+
+  <main id="main-content" class="content" tabindex="-1">
+    <ng-container *ngIf="activeRoute() as route; else notFound">
+      <article class="doc-page">
+        <div class="page-kicker">
+          <span class="stability" [ngClass]="'stability-' + route.stability.toLowerCase()">{{ route.stability }}</span>
+          {{ route.group }}
+        </div>
+        <h1>{{ route.title }}</h1>
+        <p class="lede">{{ route.summary }}</p>
+
+        <section class="overview" aria-labelledby="overview-title">
+          <h2 id="overview-title">Overview</h2>
+          <p>{{ route.details }}</p>
+        </section>
+
+        <ng-container *ngIf="route.demo; else guideContent">
+          <section class="workbench" aria-labelledby="live-example-title">
+            <div class="workbench-heading">
+              <div><p class="eyebrow">Angular live example</p><h2 id="live-example-title">{{ route.title }} workspace</h2></div>
+              <div id="demo-controls" class="demo-controls">
+                <button type="button" (click)="resetDemo()">Reset</button>
+                <button *ngIf="route.demo === 'layout'" type="button" (click)="resizeCustomer()">Resize Customer</button>
+                <button *ngIf="route.demo === 'layout'" type="button" (click)="moveStatusFirst()">Move Status First</button>
+                <button *ngIf="route.demo === 'frozen'" type="button" (click)="freezePanes()">Freeze 2 × 2</button>
+                <button *ngIf="route.demo === 'history'" type="button" (click)="undo()">Undo</button>
+                <button *ngIf="route.demo === 'history'" type="button" (click)="redo()">Redo</button>
+                <button *ngIf="route.demo === 'theme'" type="button" (click)="applyTealTheme()">Apply Teal Accent</button>
+                <button *ngIf="route.demo === 'clipboard'" type="button" (click)="pasteSample()">Paste Sample</button>
+                <button *ngIf="route.demo === 'shaping'" type="button" (click)="runShaping()">Run Shaping</button>
+              </div>
+            </div>
+            <p class="demo-instructions">{{ instructionFor(route) }}</p>
+
+            <div class="workbench-grid" *ngIf="demoConfig() as config">
+              <div id="grid-host" class="grid-host" [attr.data-demo-kind]="route.demo">
+                <gethen-grid
+                  #docsGrid
+                  [columns]="config.columns"
+                  [rows]="config.rows"
+                  [pinnedBottomRows]="config.pinnedBottomRows"
+                  [rowHeight]="32"
+                  [columnWidth]="132"
+                  [styling]="config.styling"
+                  [theme]="config.theme"
+                  [rowNumbers]="true"
+                  [statusBar]="config.statusBar"
+                  [clipboard]="config.clipboard"
+                  [history]="config.history"
+                  [frozenRowCount]="config.frozenRowCount"
+                  [frozenColumnCount]="config.frozenColumnCount"
+                  (selectionChange)="handleSelection($event)"
+                  (selectionRangeChange)="handleSelectionRange($event)"
+                  (cellChange)="handleCellChange($event)"
+                  (pasteResult)="handlePaste($event)"
+                  (layoutChange)="handleLayout($event)"
+                  (historyChange)="handleHistory($event)"
+                  (editorStateChange)="handleEditorState($event)"
+                ></gethen-grid>
+              </div>
+              <aside class="inspector" aria-label="Example inspector">
+                <h3>Angular outputs</h3>
+                <button type="button" (click)="clearLog()">Clear</button>
+                <ol id="event-log" aria-live="polite">
+                  <li *ngFor="let event of eventLog()">{{ event }}</li>
+                </ol>
+              </aside>
+            </div>
+
+            <div class="code-panel">
+              <div><span>Angular + TypeScript</span><button id="copy-code" type="button" (click)="copyCode()">Copy</button></div>
+              <pre><code>{{ codeForDemo(route.demo) }}</code></pre>
+            </div>
+          </section>
+        </ng-container>
+
+        <ng-template #guideContent>
+          <ng-container *ngIf="route.path === '/docs/introduction'; else nonIntroduction">
+            <section class="intro-panel">
+              <p>Get the data. Then render, edit, shape, and understand it through Angular and the public Gethen package boundary.</p>
+              <a class="primary-link" href="/docs/basic-grid" (click)="navigate($event, '/docs/basic-grid')">Build an Angular grid <span aria-hidden="true">→</span></a>
+            </section>
+            <div class="principles-grid">
+              <section><span>01</span><h2>Angular application</h2><p>The docs shell and live grid components share the standalone Angular runtime.</p></section>
+              <section><span>02</span><h2>Public packages</h2><p>Examples import Gethen Angular, Core, and Protocol package entry points only.</p></section>
+              <section><span>03</span><h2>Truthful Alpha</h2><p>Experimental and unavailable surfaces remain visibly labelled.</p></section>
+            </div>
+          </ng-container>
+
+          <ng-template #nonIntroduction>
+            <ng-container *ngIf="route.path === '/docs/installation'; else projectGuide">
+              <div class="code-panel standalone-code">
+                <div><span>Shell</span></div>
+                <pre><code>pnpm install
+pnpm run build
+pnpm run docs
+
+# Open http://127.0.0.1:4173/docs/introduction</code></pre>
+              </div>
+            </ng-container>
+            <ng-template #projectGuide>
+              <section class="guide-card">
+                <p>This project page is sourced from the accepted repository roadmap and release evidence.</p>
+                <a class="primary-link" [href]="nextRoute(route).path" (click)="navigate($event, nextRoute(route).path)">Continue to {{ nextRoute(route).title }} <span aria-hidden="true">→</span></a>
+              </section>
+            </ng-template>
+          </ng-template>
+        </ng-template>
+
+        <section class="api-section" *ngIf="route.api?.length" aria-labelledby="api-title">
+          <p class="eyebrow">Public package surface</p>
+          <h2 id="api-title">Relevant API</h2>
+          <ul><li *ngFor="let item of route.api"><code>{{ item }}</code></li></ul>
+        </section>
+
+        <section class="limitations" aria-labelledby="limitations-title">
+          <h2 id="limitations-title">Known limitations</h2>
+          <p>{{ route.limitation }}</p>
+        </section>
+      </article>
+    </ng-container>
+
+    <ng-template #notFound>
+      <article class="doc-page not-found">
+        <p class="eyebrow">404</p><h1>Page not found</h1>
+        <p class="lede">This documentation route is not registered.</p>
+        <a class="primary-link" href="/docs/introduction" (click)="navigate($event, '/docs/introduction')">Return to Introduction</a>
+      </article>
+    </ng-template>
+  </main>
+</div>

@@ -38,6 +38,10 @@ export function createStaticServer(port = 4173) {
       filePath = join(filePath, "index.html");
     }
 
+    if (!existsSync(filePath) && (url.pathname === "/docs" || url.pathname.startsWith("/docs/"))) {
+      filePath = join(root, "apps", "docs-site", "index.html");
+    }
+
     if (!existsSync(filePath)) {
       response.writeHead(404);
       response.end("Not found");

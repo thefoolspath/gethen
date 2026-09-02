@@ -1,8 +1,8 @@
 # Documentation And Demo Site
 
-Last reviewed: 2026-08-25.
+Last reviewed: 2026-09-01.
 
-Status: Accepted plan; implementation has not started.
+Status: Phase 1 Alpha documentation playground implemented and locally verified; Phase 2 and Phase 3 remain milestone-owned future work.
 
 ## Goal
 
@@ -100,17 +100,17 @@ Examples must import built workspace packages such as `@thefoolspath/gethen-core
 
 ### Phase 1 - Alpha Documentation Playground
 
-- [ ] Confirm the site application name, route scheme, and dependency-free or dependency-minimal implementation approach.
-- [ ] Scaffold the workspace application with responsive shell, accessible sidebar, main content region, and not-found state.
-- [ ] Add Getting Started pages for framework-neutral Core and Angular.
-- [ ] Add live examples for completed Alpha 1 through Alpha 3 behavior.
-- [ ] Add implemented Alpha 4 grid-shell and data-shaping examples, with experimental labels where the production engine decision remains open.
-- [ ] Add copyable code, reset controls, event logs, limitations, and stability labels.
-- [ ] Reuse shared deterministic demo fixtures instead of copying large row datasets into each page.
-- [ ] Update root demo-serving behavior or add a documented site-specific serve command.
-- [ ] Add the application to workspace build and check commands.
-- [ ] Add browser smoke and interaction coverage for the site.
-- [ ] Update `docs/project/PROJECT_STATE.md` with implemented structure and verified commands.
+- [x] Confirm the `apps/docs-site/` application name, clean `/docs/<route>` scheme, and standalone Angular implementation approach.
+- [x] Scaffold the workspace application with responsive shell, accessible sidebar, main content region, and not-found state.
+- [x] Add Getting Started pages for framework-neutral Core and Angular.
+- [x] Add live examples for completed Alpha 1 through Alpha 3 behavior.
+- [x] Add implemented Alpha 4 grid-shell and data-shaping examples, with experimental labels where the production engine decision remains open.
+- [x] Add copyable code, reset controls, event logs, limitations, and stability labels.
+- [x] Reuse shared deterministic demo fixtures instead of copying large row datasets into each page.
+- [x] Update root demo-serving behavior and add the documented `pnpm run docs` command.
+- [x] Add the application to workspace build and check commands.
+- [x] Add browser smoke and interaction coverage for the site.
+- [x] Update `docs/project/PROJECT_STATE.md` with implemented structure and verified commands.
 
 ### Phase 2 - Milestone-Owned Examples
 
@@ -131,7 +131,7 @@ The documentation site is part of the browser verification surface. At minimum, 
 
 - Every registered route loads without an uncaught error or missing asset.
 - Sidebar keyboard navigation and current-page state work at desktop and narrow viewport sizes.
-- Each live grid mounts from built packages and renders visible cells.
+- Each live grid mounts from the built Angular adapter package and renders visible cells.
 - The virtualization example remains populated after deep vertical and horizontal scrolling.
 - Editing, selection, clipboard, layout, frozen-pane, undo/redo, and data-shaping examples perform their advertised primary interaction.
 - Reset returns an example to deterministic initial state.
@@ -149,4 +149,3 @@ Manual visual review should cover at least one desktop and one narrow viewport. 
 - Relevant unit, package, and browser checks pass.
 - No unimplemented feature is represented as production-ready.
 - No unreviewed runtime dependency, package publication, or deployment is introduced.
-

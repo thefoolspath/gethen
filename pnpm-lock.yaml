@@ -63,6 +63,36 @@ importers:
         specifier: workspace:*
         version: link:../../packages/protocol
 
+  apps/docs-site:
+    dependencies:
+      '@angular/common':
+        specifier: ^22.1.0
+        version: 22.1.0(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/compiler':
+        specifier: ^22.1.0
+        version: 22.1.0
+      '@angular/core':
+        specifier: ^22.1.0
+        version: 22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2)
+      '@angular/platform-browser':
+        specifier: ^22.1.0
+        version: 22.1.0(@angular/common@22.1.0(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.1.0(@angular/compiler@22.1.0)(rxjs@7.8.2))
+      '@thefoolspath/gethen-angular':
+        specifier: workspace:*
+        version: link:../../packages/gethen-angular
+      '@thefoolspath/gethen-core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@thefoolspath/gethen-protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+
   apps/renderer-canvas-prototype: {}
 
   apps/renderer-prototype: {}

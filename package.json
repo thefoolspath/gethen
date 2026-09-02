@@ -7,8 +7,9 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm -r --if-present check",
+    "check": "pnpm -r --if-present check && node scripts/verify-docs-site-boundary.mjs",
     "demo": "pnpm build && node scripts/serve-static.mjs",
+    "docs": "pnpm build && node scripts/serve-static.mjs",
     "test": "vitest run --passWithNoTests",
     "test:browser": "node scripts/run-browser-tests.mjs",
     "bench": "pnpm build && node benchmarks/run-benchmarks.mjs"

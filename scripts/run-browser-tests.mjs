@@ -18,9 +18,10 @@ if (!address || typeof address === "string") {
 const port = address.port;
 
 const playwrightCli = join(process.cwd(), "node_modules", "@playwright", "test", "cli.js");
+const playwrightArgs = process.argv.slice(2);
 
 try {
-  const child = spawn(process.execPath, [playwrightCli, "test"], {
+  const child = spawn(process.execPath, [playwrightCli, "test", ...playwrightArgs], {
     stdio: "inherit",
     shell: false,
     env: {
