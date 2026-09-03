@@ -1,6 +1,6 @@
 # Issue And Change Request Log
 
-Last reviewed: 2026-08-11.
+Last reviewed: 2026-09-03.
 
 Status: Active intake log.
 
@@ -65,6 +65,7 @@ Example: `CR-20260808-001`.
 | ISSUE-20260811-003 | Issue | Empty grids retain a dangling active-descendant model, while built-in editors and readonly cells do not provide all labels/states required by the accepted accessibility note. | Repository accessibility/API comparison | High | Done | Alpha 4 grid-shell closure | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md) |
 | CR-20260811-001 | Change request | Research and implement a polished modern-enterprise light default theme with comfortable default density and compact/spacious alternatives. | Maintainer planning feedback and local browser QA | High | Done | Alpha 4 UX closure before Alpha 5 | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md); [../product/ROADMAP.md](../product/ROADMAP.md) |
 | CR-20260811-002 | Change request | Add a row-number gutter, client status bar, and readonly pinned bottom/totals rows supplied by the host or derived with existing aggregate helpers; extend the status surface for future server states. | Maintainer planning feedback | High | In progress | Alpha 4 client foundation; Server 2.0 extension | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md); [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md) |
+| CR-20260903-001 | Change request | Add dropdown, local/async autocomplete, and lookup selection that can atomically map one selected record into multiple cells in the same row. | Maintainer request | High | Deferred | Future grid editing / lookup | Deferred change-request details below |
 
 ## Accepted Or Planned Changes
 
@@ -81,3 +82,46 @@ Example: `CR-20260808-001`.
 
 | ID | Status | Reason | Revisit Trigger |
 | --- | --- | --- | --- |
+| CR-20260903-001 | Deferred | Preserve the requested grid editing and lookup behavior for later planning without adding it to the current milestone. | A future grid-editing milestone is approved for lookup, autocomplete, and multi-cell mapped commits. |
+
+### CR-20260903-001: Dropdown, autocomplete, and lookup mapping
+
+Status: Deferred.
+
+Requested on 2026-09-03 for a future grid-editing and lookup milestone. This request is recorded for later planning and does not change the current roadmap or implementation scope.
+
+#### Requested Behavior
+
+- Provide dropdown editors with typed options, including boolean choices such as `true` and `false`.
+- Provide autocomplete editors backed by either local options or an asynchronous/API data source.
+- Let each column require selection from the available options or allow free-text input.
+- Keep a lookup option's stored value separate from its displayed label and retain the selected record as mapping input.
+- Support declarative mapping from a lookup cell to multiple target columns in the same logical row. For example, selecting a record in `A2` can populate mapped values in `B2`, `C2`, and `Z2`.
+- Validate the source and every mapped target before committing. If any value fails validation, return structured cell-level errors and leave all source and target cells unchanged.
+- Commit a successful lookup selection as one atomic history entry while emitting the typed cell-change events for every changed cell. One undo or redo action must reverse or reapply the complete mapped change.
+- Let each lookup column choose whether clearing the source also clears mapped targets or preserves them. The default is to clear all mapped targets atomically.
+- Reject invalid lookup configurations, including unknown target columns, duplicate mappings, stable key targets, and readonly targets.
+- Treat option labels and values returned by local or remote sources as untrusted data. Display labels as text and do not interpret them as HTML or executable content.
+
+#### Public API Direction For Later Planning
+
+- Define typed lookup and autocomplete editor options for local and asynchronous sources.
+- Give asynchronous lookup requests the search query and an `AbortSignal`; expose loading and error states and ignore stale responses.
+- Define a typed selected-record mapping from source fields to target column IDs.
+- Return structured lookup commit results and validation errors through Core, with equivalent Angular inputs and outputs delegated to the same Core behavior.
+
+#### Acceptance Criteria
+
+- A dropdown configured with `true` and `false` commits a boolean value rather than a string.
+- Strict autocomplete rejects a value outside its option set, while free-text mode accepts it.
+- Asynchronous autocomplete reports loading and errors, supports cancellation, and cannot apply a stale response over a newer query.
+- Selecting a lookup record in `A2` updates `A2`, `B2`, `C2`, and `Z2` together according to the configured mapping.
+- If any mapped target fails validation, no affected cell changes and the result identifies each failing cell and message.
+- A successful mapped selection produces one history entry, and one undo or redo action applies to the complete change set.
+- Clearing a lookup follows the source column's configured clear policy; the default clears all mapped targets in the same atomic commit.
+- Lookup behavior continues to work with keyboard navigation, virtualized rows, hidden target columns, and the Angular adapter.
+
+#### Scope Boundary
+
+- Mapping is limited to cells in the same logical row. Cross-row lookup updates are not part of this change request.
+- This deferred request does not authorize source-code, test, roadmap, active-plan, or project-state changes until it is triaged into a future milestone.
