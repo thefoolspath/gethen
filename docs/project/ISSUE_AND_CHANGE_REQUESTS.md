@@ -63,6 +63,7 @@ Example: `CR-20260808-001`.
 | ISSUE-20260811-001 | Issue | The renderer has no column-header row even though the Alpha 1 renderer outcome requires headers; `GridColumn.title` is unused and the first ordinary data column is exposed as `rowheader`. | Maintainer review and local browser QA | High | Done | Alpha 4 grid-shell closure | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md) |
 | ISSUE-20260811-002 | Issue | The closed Alpha 2 customization direction names header classes, header styling callbacks, header/readonly/edit-focus tokens, and density presets that are absent from the implemented public surface. | Repository plan/API comparison | Medium | Done | Alpha 4 grid-shell closure | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md) |
 | ISSUE-20260811-003 | Issue | Empty grids retain a dangling active-descendant model, while built-in editors and readonly cells do not provide all labels/states required by the accepted accessibility note. | Repository accessibility/API comparison | High | Done | Alpha 4 grid-shell closure | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md) |
+| ISSUE-20260902-001 | Issue | Angular demo cell values cannot be edited reliably, and the built-in text editor is visibly smaller than the active cell instead of fitting its bounds. | Maintainer hands-on feedback and screenshot from Chrome QA on `apps/angular-demo/` | High | New | Core renderer editing UX | `packages/core/src/renderer/dom/virtual-dom-grid.ts`; `packages/core/src/renderer/dom/virtual-dom-grid-cell.ts`; `tests/browser/renderer-prototypes.spec.ts` |
 | CR-20260811-001 | Change request | Research and implement a polished modern-enterprise light default theme with comfortable default density and compact/spacious alternatives. | Maintainer planning feedback and local browser QA | High | Done | Alpha 4 UX closure before Alpha 5 | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md); [../product/ROADMAP.md](../product/ROADMAP.md) |
 | CR-20260811-002 | Change request | Add a row-number gutter, client status bar, and readonly pinned bottom/totals rows supplied by the host or derived with existing aggregate helpers; extend the status surface for future server states. | Maintainer planning feedback | High | In progress | Alpha 4 client foundation; Server 2.0 extension | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md); [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md) |
 | CR-20260903-001 | Change request | Add dropdown, local/async autocomplete, and lookup selection that can atomically map one selected record into multiple cells in the same row. | Maintainer request | High | Deferred | Future grid editing / lookup | Deferred change-request details below |
@@ -77,6 +78,40 @@ Example: `CR-20260808-001`.
 | ISSUE-20260811-001 through ISSUE-20260811-003 | Correct the accepted header/customization/accessibility gaps during the Alpha 4 grid-shell closure. | Core renderer and Angular adapter | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md) | Treat missing accepted behavior as defects rather than relabeling it as new scope. |
 | CR-20260811-001 | Accept a dependency-free modern-enterprise light default theme, comfortable by default with compact and spacious density presets, before Alpha 5 UI work begins. | Default visual system | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md); [../product/ROADMAP.md](../product/ROADMAP.md) | Keep host-owned CSS and per-grid tokens; do not add a runtime design-system dependency. |
 | CR-20260811-002 | Accept row numbers, a client status bar, and host/aggregate-backed pinned bottom rows as the Alpha 4 foundation, then add server-aware state in Server 2.0. | Grid shell and summaries | [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md); [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md) | Pinned rows remain readonly by default and outside body row counts, shaping, history, and paste. |
+
+## New Issue Details
+
+### ISSUE-20260902-001: Cell editing and editor fit in the Angular demo
+
+Status: New.
+
+Observed on 2026-09-02 in Chrome at `apps/angular-demo/` with the 50,000-row demo.
+
+#### Steps To Reproduce
+
+1. Open the Angular demo.
+2. Activate an editable text cell and enter edit mode.
+3. Click inside the text editor and attempt to change the value.
+4. Compare the editor bounds with the active cell bounds.
+
+#### Actual Behavior
+
+- The cell value cannot be edited reliably.
+- The text editor is inset and visibly smaller than the cell.
+
+#### Expected Behavior
+
+- The editor retains focus, accepts text input, and commits the edited value through the existing cell-change flow.
+- The editor fills the active cell without an unintended gap while preserving the cell border and focus indication.
+- Keyboard entry and pointer-based editing remain supported.
+
+#### Acceptance Criteria
+
+- A text cell in the Angular demo can be edited and committed with the pointer and keyboard.
+- Clicking inside an active editor does not move focus back to the grid or interrupt editing.
+- The built-in editor's rendered outer bounds fit the active cell at the default density and after column resizing.
+- Existing validation, Enter, Tab, Shift+Tab, and Escape behavior remains unchanged.
+- Browser regression coverage verifies successful Angular cell editing, editor focus retention, and editor-to-cell sizing.
 
 ## Deferred Or Rejected Items
 

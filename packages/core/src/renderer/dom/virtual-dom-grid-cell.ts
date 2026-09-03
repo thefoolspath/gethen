@@ -19,11 +19,12 @@ export interface VirtualDomGridCellInput<TRow extends GridRow = GridRow> {
     value: CellValue,
     editor?: GridCellEditor<TRow>,
     navigation?: "next" | "previous"
-  ) => void;
+  ) => Promise<boolean>;
   readonly cancelEdit: (editor?: GridCellEditor<TRow>) => void;
   readonly styling: GridStylingOptions<TRow> | undefined;
   readonly editorSignal: AbortSignal;
   readonly registerLifecycle: (destroy: () => void) => void;
+  readonly registerEditorCommit: (commit: () => Promise<boolean>) => void;
 }
 
 export function createVirtualDomGridCell<TRow extends GridRow>(
@@ -60,6 +61,7 @@ export function createVirtualDomGridCell<TRow extends GridRow>(
 
   if (editing) {
     cell.dataset.gethenEditorHost = "true";
+    cell.style.padding = "0";
     const editor = createCellEditor(cell, input, context, draftValue);
     input.registerLifecycle(() => editor?.destroy());
   } else if (column.renderer) {
@@ -176,6 +178,7 @@ function createCellEditor<TRow extends GridRow>(
     };
     editor.mount(host, editorContext);
     editor.update(editorContext);
+    input.registerEditorCommit(() => input.commitEdit(editor.getValue(), editor));
     queueMicrotask(() => editor.focus());
     return editor;
   }
@@ -213,13 +216,21 @@ function createCellEditor<TRow extends GridRow>(
   Object.assign(control.style, {
     width: "100%",
     height: "100%",
+    minWidth: "0",
+    minHeight: "0",
+    boxSizing: "border-box",
     border: "0",
     padding: "0",
+    margin: "0",
+    borderRadius: "0",
+    background: "var(--gethen-background, #ffffff)",
+    color: "inherit",
+    font: "inherit",
     outline: "2px solid var(--gethen-editor-focus-color, #2563eb)",
     outlineOffset: "-2px"
   });
 
-  const commit = (navigation?: "next" | "previous"): void => {
+  const commit = (navigation?: "next" | "previous"): Promise<boolean> => {
     const rawValue = control instanceof HTMLInputElement && definition.kind === "boolean"
       ? control.checked
       : control.value;
@@ -228,20 +239,21 @@ function createCellEditor<TRow extends GridRow>(
       control.setAttribute("aria-invalid", "true");
       control.title = parsed.error;
       control.style.outlineColor = "var(--gethen-invalid-color, #b42318)";
-      return;
+      return Promise.resolve(false);
     }
-    input.commitEdit(parsed.value, undefined, navigation);
+    return input.commitEdit(parsed.value, undefined, navigation);
   };
+  input.registerEditorCommit(commit);
   control.addEventListener("keydown", (event) => {
     const keyboardEvent = event as KeyboardEvent;
     if (keyboardEvent.key === "Enter" && !(control instanceof HTMLTextAreaElement && keyboardEvent.shiftKey)) {
       event.preventDefault();
       event.stopPropagation();
-      commit();
+      void commit();
     } else if (keyboardEvent.key === "Tab") {
       event.preventDefault();
       event.stopPropagation();
-      commit(keyboardEvent.shiftKey ? "previous" : "next");
+      void commit(keyboardEvent.shiftKey ? "previous" : "next");
     } else if (keyboardEvent.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
@@ -249,7 +261,7 @@ function createCellEditor<TRow extends GridRow>(
     }
   });
   if (definition.kind === "boolean" || definition.kind === "select") {
-    control.addEventListener("change", () => commit());
+    control.addEventListener("change", () => void commit());
   }
   host.replaceChildren(control);
   return undefined;

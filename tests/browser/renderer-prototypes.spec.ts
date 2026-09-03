@@ -478,6 +478,52 @@ test("Angular demo relays selection and edit events", async ({ page }) => {
   await expect(page.locator("#lastChange")).toHaveText("row-2 / c1: R2 Column 2 -> angular edited");
 });
 
+test("Angular demo retains pointer editor focus and fits the active cell", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html");
+  const cell = dataCell(page, 0, 1);
+  const cellBounds = await cell.boundingBox();
+
+  await cell.dblclick();
+  const editor = page.locator("[data-gethen-editor='true']");
+  await expect(editor).toBeFocused();
+
+  await editor.click();
+  await expect(editor).toBeFocused();
+  await expect(editor).toHaveCount(1);
+
+  const editorBounds = await editor.boundingBox();
+  expect(cellBounds).not.toBeNull();
+  expect(editorBounds).not.toBeNull();
+  expect(editorBounds?.x).toBeCloseTo(cellBounds?.x ?? 0, 0);
+  expect(editorBounds?.y).toBeCloseTo(cellBounds?.y ?? 0, 0);
+  expect(editorBounds?.width).toBeCloseTo(cellBounds?.width ?? 0, 0);
+  expect(editorBounds?.height).toBeCloseTo(cellBounds?.height ?? 0, 0);
+
+  await editor.fill("pointer edited");
+  await editor.press("Enter");
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c1: R1 Column 2 -> pointer edited"
+  );
+});
+
+test("Angular demo commits text and number edits before focusing another cell", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html");
+
+  await dataCell(page, 0, 1).dblclick();
+  await page.locator("[data-gethen-editor='true']").fill("focus committed");
+  await dataCell(page, 1, 1).click();
+  await expect(page.locator("#lastChange")).toHaveText(
+    "row-1 / c1: R1 Column 2 -> focus committed"
+  );
+  await expect(dataCell(page, 0, 1)).toHaveText("focus committed");
+
+  await dataCell(page, 0, 0).dblclick();
+  await page.locator("[data-gethen-editor='true']").fill("42");
+  await dataCell(page, 1, 0).click();
+  await expect(page.locator("#lastChange")).toHaveText("row-1 / c0: 1 -> 42");
+  await expect(dataCell(page, 0, 0)).toHaveText("42");
+});
+
 test("Angular demo relays range selection events", async ({ page }) => {
   await page.goto("/apps/angular-demo/index.html");
   const grid = page.getByRole("grid");

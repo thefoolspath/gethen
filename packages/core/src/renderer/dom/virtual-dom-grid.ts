@@ -134,6 +134,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const editorState = createGridEditorStateMachine();
   let editorAbortController = new AbortController();
   let mountedLifecycles: Array<() => void> = [];
+  let requestActiveEditorCommit: (() => Promise<boolean>) | undefined;
   const activeCell = {
     rowIndex: 0,
     columnIndex: 0
@@ -183,6 +184,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     animationFrame = 0;
     const started = performance.now();
     destroyMountedLifecycles();
+    requestActiveEditorCommit = undefined;
     const columnOffsets = getGridColumnOffsets(layoutState);
     const rowIndexes = getRenderedRowIndexes(
       rows.length,
@@ -236,15 +238,16 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
             value: CellChangeEvent["newValue"],
             editor?: GridCellEditor<TRow>,
             navigation?: "next" | "previous"
-          ) => {
-            void handleEditorCommit(value, editor, navigation);
-          },
+          ) => handleEditorCommit(value, editor, navigation),
           cancelEdit: (editor?: GridCellEditor<TRow>) => {
             void handleEditorCancel(editor);
           },
           styling: options.styling,
           editorSignal: editorAbortController.signal,
-          registerLifecycle: (destroy: () => void) => mountedLifecycles.push(destroy)
+          registerLifecycle: (destroy: () => void) => mountedLifecycles.push(destroy),
+          registerEditorCommit: (commit: () => Promise<boolean>) => {
+            requestActiveEditorCommit = commit;
+          }
         };
         fragment.appendChild(
           createVirtualDomGridCell(
@@ -642,10 +645,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
   }
 
-  function handleClick(event: MouseEvent): void {
+  async function handleClick(event: MouseEvent): Promise<void> {
     const target = event.target;
 
     if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (target.closest("[data-gethen-editor-host='true']")) {
       return;
     }
 
@@ -654,6 +661,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     const columnIndex = Number(cell?.dataset.columnIndex);
 
     if (Number.isInteger(rowIndex) && Number.isInteger(columnIndex)) {
+      if (editState && requestActiveEditorCommit) {
+        const committed = await requestActiveEditorCommit();
+        if (!committed) return;
+      }
       grid.focus();
       setActiveCell(rowIndex, columnIndex, event.shiftKey);
 
@@ -756,9 +767,9 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     value: CellChangeEvent["newValue"],
     editor?: GridCellEditor<TRow>,
     navigation?: "next" | "previous"
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!editState) {
-      return;
+      return false;
     }
 
     editState = { ...editState, draftValue: value };
@@ -768,7 +779,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     const row = rows[editState.rowIndex];
     if (!column || !row) {
       editorState.validationFailed({ valid: false, message: "The edited cell is no longer available." });
-      return;
+      return false;
     }
     const context = {
       row,
@@ -785,7 +796,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     if (!validation.valid) {
       editorState.validationFailed(validation);
       render();
-      return;
+      return false;
     }
     editorState.beginCommit();
     try {
@@ -795,7 +806,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     } catch (error) {
       editorState.commitFailed(error instanceof Error ? error.message : "Editor commit failed.");
       render();
-      return;
+      return false;
     }
     editState = null;
     editorAbortController.abort("commit");
@@ -808,6 +819,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       grid.focus();
       render();
     }
+    return true;
   }
 
   async function handleEditorCancel(editor?: GridCellEditor<TRow>): Promise<void> {
