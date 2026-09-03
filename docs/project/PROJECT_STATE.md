@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-09-01.
+Last updated: 2026-09-03.
 
 ## Purpose
 
@@ -77,6 +77,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Initial dependency/license candidate review for Milestone 1 and Angular-first alpha tooling in `docs/research/DEPENDENCY_LICENSE_EVALUATION.md`.
 - Documentation entry point: [../README.md](../README.md).
 - Project-name origin, product wordplay, creator relationship, and naming principles: [../project-name.md](../project-name.md).
+- Source-grounded AI briefing context for future logo analysis, including accepted identity facts, creative boundaries, production requirements, and evaluation criteria: [../product/LOGO_DESIGN_CONTEXT.md](../product/LOGO_DESIGN_CONTEXT.md).
+- Self-contained vertical clever-fusion logo-reveal video prompt package with shot prompts, editing, audio, negative prompts, quality checks, and delivery requirements: [../product/GETHEN_LOGO_REVEAL_VIDEO_PROMPT.md](../product/GETHEN_LOGO_REVEAL_VIDEO_PROMPT.md).
 - Active plan: [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md).
 - Active feedback/control plan: [../plans/active/0002-feedback-and-change-control.md](../plans/active/0002-feedback-and-change-control.md).
 - Completed Alpha 2 developer customization and row transaction plan: [../plans/completed/0003-developer-customization-and-row-transactions.md](../plans/completed/0003-developer-customization-and-row-transactions.md).
@@ -218,3 +220,5 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-08-25 | Reorganized `@thefoolspath/gethen-core` source into responsibility-based internal directories and extracted the shared `GridRow` type into `contracts/`; package boundaries, public root exports, algorithms, and runtime boundaries are unchanged. Three before/after benchmark suites plus targeted noise follow-ups remained within the 5% acceptance threshold with no trace task over 50 ms. | `packages/core/src/`, `benchmarks/`, [../architecture/PACKAGE_BOUNDARIES.md](../architecture/PACKAGE_BOUNDARIES.md), `packages/README.md` |
 | 2026-09-01 | Implemented and locally verified the Phase 1 Angular documentation workbench with clean routes, accessible responsive navigation, live `@thefoolspath/gethen-angular` examples, public package-boundary checks, and expanded Chromium coverage. No deployment or publishing workflow was added. | `apps/docs-site/`, `tests/browser/docs-site.spec.ts`, [../plans/active/0007-documentation-demo-site.md](../plans/active/0007-documentation-demo-site.md) |
 | 2026-09-01 | Accepted the Gethen Corporate Identity and theme-system direction: Frost Light and Winter Night, public overridable Grid presets, unchanged unthemed defaults, Aspire-inspired documentation UX without copying its brand, and explicit approval required before Browser, Chrome, Computer Use, or browser rendering. Implementation has not started. | [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md), [../project-name.md](../project-name.md) |
+| 2026-09-03 | Added a source-grounded, copy-paste-ready logo analysis brief and clever-visual-fusion exploration plan. It records accepted identity facts and palette, ranks five symbol-fusion territories, separates creative hypotheses from decisions, and adds copyright, originality, small-size, vector-delivery, sprint, and evaluation requirements without selecting a final logo. | [../product/LOGO_DESIGN_CONTEXT.md](../product/LOGO_DESIGN_CONTEXT.md) |
+| 2026-09-03 | Added a self-contained prompt package for a 12-second vertical clever-fusion Gethen logo-reveal concept, including master and per-shot generation prompts, post-production typography, sound design, negative prompts, light/dark variants, quality gates, and deliverables. | [../product/GETHEN_LOGO_REVEAL_VIDEO_PROMPT.md](../product/GETHEN_LOGO_REVEAL_VIDEO_PROMPT.md) |
