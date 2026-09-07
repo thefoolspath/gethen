@@ -88,15 +88,20 @@ const demoCode: Partial<Record<DemoKind, string>> = {
 
 <button (click)="grid.undo()">Undo</button>
 <button (click)="grid.redo()">Redo</button>`,
-  theme: `<gethen-grid
-  [columns]="columns"
-  [rows]="rows"
-  [theme]="{
-    density: 'comfortable',
-    activeCellBorder: '#0b6b72',
-    headerBackground: '#edf5f5'
-  }"
-/>`,
+  theme: `import { gethenDarkTheme, gethenLightTheme } from "@thefoolspath/gethen-core";
+
+readonly lightTheme = gethenLightTheme;
+readonly darkTheme = gethenDarkTheme;
+readonly brandedOverride = {
+  ...gethenDarkTheme,
+  activeCellBorder: "#ff5a5f"
+};
+
+// Object preset:
+// <gethen-grid [theme]="darkTheme" [columns]="columns" [rows]="rows" />
+
+// Direct host-scoped CSS variable override remains supported:
+// .orders-grid { --gethen-active-cell-border: #ff5a5f; }`,
   formatting: `readonly columns: readonly GridColumnView[] = [{
   id: "total",
   title: "Total",
@@ -180,12 +185,7 @@ export function createDemoConfig(kind: DemoKind): DemoConfig {
           getHeaderClass: ({ column }) => column.id === "total" ? "docs-total-header" : undefined
         }
       : undefined,
-    theme: {
-      density: "comfortable",
-      activeCellBorder: "#0b6b72",
-      activeCellBackground: "#e9f7f7",
-      headerBackground: kind === "theme" ? "#eaf3f3" : "#f1f5f7"
-    },
+    theme: {},
     frozenRowCount: kind === "frozen" ? 2 : 0,
     frozenColumnCount: kind === "frozen" ? 2 : 0,
     statusBar: { totalRowCount: rows.length }

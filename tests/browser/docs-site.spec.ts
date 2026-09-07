@@ -157,3 +157,68 @@ test("narrow viewport exposes keyboard-accessible documentation navigation", asy
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByRole("navigation", { name: "Documentation" })).toBeVisible();
 });
+
+test("documentation theme follows the system, persists an override, and updates the grid without remounting", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/docs/themes");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  const grid = page.getByRole("grid");
+  await grid.evaluate((element) => { element.dataset.themeMountIdentity = "preserved"; });
+  await expect(grid).toHaveCSS("background-color", "rgb(13, 21, 18)");
+
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(grid).toHaveAttribute("data-theme-mount-identity", "preserved");
+  await expect(grid).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  expect(await page.evaluate(() => localStorage.getItem("gethen-docs-theme"))).toBe("light");
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("documentation route search supports keyboard selection, empty state, Escape, and focus restoration", async ({ page }) => {
+  await page.goto("/docs/introduction");
+  const trigger = page.getByRole("button", { name: "Search documentation" });
+  await trigger.focus();
+  await page.keyboard.press("Control+K");
+
+  const search = page.getByRole("searchbox", { name: "Search route title, group, or summary" });
+  await expect(search).toBeFocused();
+  await search.fill("no matching gethen route");
+  await expect(page.getByText(/No documentation routes match/u)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
+
+  await page.keyboard.press("Control+K");
+  await search.fill("clipboard");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/docs\/clipboard$/u);
+  await expect(page.locator("#main-content")).toBeFocused();
+});
+
+test("documentation page exposes stable section anchors through the desktop table of contents", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/docs/basic-grid");
+  const toc = page.getByRole("complementary", { name: "On this page" });
+  await expect(toc.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "#overview");
+  await expect(toc.getByRole("link", { name: "Live example" })).toHaveAttribute("href", "#live-example");
+  await expect(toc.getByRole("link", { name: "Relevant API" })).toHaveAttribute("href", "#relevant-api");
+  await expect(toc.getByRole("link", { name: "Known limitations" })).toHaveAttribute("href", "#known-limitations");
+});
+
+test("desktop documentation sidebar collapses from icon-and-text navigation to icons only", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/docs/introduction");
+  const sidebar = page.getByRole("navigation", { name: "Documentation" });
+  await expect(sidebar).toHaveCSS("width", "300px");
+  await expect(sidebar.getByText("Getting Started", { exact: true })).toBeVisible();
+  await expect(sidebar.locator(".group-icon").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Collapse documentation sidebar" })).toHaveCount(1);
+  await page.getByRole("button", { name: "Collapse documentation sidebar" }).click();
+  await expect(sidebar).toHaveCSS("width", "76px");
+  await expect(sidebar.getByText("Getting Started", { exact: true })).toBeHidden();
+  await page.getByRole("button", { name: "Expand documentation sidebar" }).click();
+  await expect(sidebar).toHaveCSS("width", "300px");
+});

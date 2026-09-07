@@ -1,17 +1,17 @@
 # Corporate Identity And Theme System
 
-Last reviewed: 2026-09-01.
+Last reviewed: 2026-09-07.
 
-Status: Accepted design direction; implementation has not started.
+Status: Emerald Intelligence revision implemented locally with passing workspace check, build, 77 unit tests, and static contrast verification. Browser interaction tests are authored but remain unrun pending the plan's required explicit approval; manual two-mode visual review also remains open.
 
 ## Goal
 
 Establish a recognizable Gethen corporate identity across the documentation site and the default Grid theme system while preserving developer-owned customization. The documentation experience may borrow navigation density and developer-documentation patterns from [Aspire](https://aspire.dev/get-started/install-cli/), but Gethen must retain its own colors, meaning, copy, assets, and implementation.
 
-The identity is grounded in the documented project-name concepts:
+The identity direction is **Calm. Modern. Intelligent.** and remains grounded in Gethen's product concepts:
 
-- Gethen as Winter: cool, restrained, high-contrast surfaces.
-- One dataset, every perspective: cyan as the primary signal and violet as a secondary perspective accent.
+- Calm: restrained surfaces and clear hierarchy keep dense information approachable.
+- One dataset, every perspective: emerald is the core signal; teal, blue, and violet express additional views.
 - Get, then...: interfaces should reveal a clear progression from retrieval to exploration and understanding.
 
 The existing `G` mark remains a temporary logo. Logo redesign, favicon variants, and social artwork are outside this plan.
@@ -20,26 +20,29 @@ The existing `G` mark remains a temporary logo. Logo redesign, favicon variants,
 
 Use the following semantic palette as the CI baseline:
 
-| Semantic role | Frost Light | Winter Night |
+The canonical decorative gradient runs from `#B8FFD9` through `#28E59A`, `#00BFA6`, and `#4B7BEC` to `#8B5CF6`. It is an original CSS treatment and does not embed or crop the supplied reference artwork.
+
+| Semantic role | Emerald Light | Emerald Dark |
 | --- | --- | --- |
-| Canvas | `#F7FAFC` | `#0D121B` |
-| Surface | `#FFFFFF` | `#151C28` |
-| Raised surface | `#EEF3F7` | `#1D2634` |
-| Border | `#D6E1E7` | `#314052` |
-| Primary text | `#17212B` | `#EDF4F7` |
-| Muted text | `#586B78` | `#A7B7C2` |
-| Aurora accent | `#087785` | `#62D6E3` |
-| Perspective accent | `#6848D8` | `#A797F2` |
-| Selection | `#DCEFF2` | `#163A46` |
-| Focus | `#6848D8` | `#F2C66D` |
+| Canvas | `#F4FBF7` | `#070B0A` |
+| Surface | `#FFFFFF` | `#0D1512` |
+| Raised surface | `#E8F5EF` | `#14201B` |
+| Border | `#C6DDD2` | `#2A4037` |
+| Primary text | `#102019` | `#F5F7F6` |
+| Muted text | `#52665D` | `#8D9994` |
+| Primary action | `#087F5B` | `#18D98B` |
+| Secondary signal | `#087E7F` | `#18C7C8` |
+| Perspective accent | `#6848D8` | `#9B7CFF` |
+| Selection | `#D8F5E8` | `#12392B` |
+| Focus | `#6848D8` | `#A7F3D0` |
 | Error | `#B42318` | `#FF8090` |
 
 Usage rules:
 
-- Aurora cyan is the primary brand color for links, primary actions, active navigation, active cells, and progress.
-- Perspective violet is secondary and should identify alternate views, supporting emphasis, or selected metadata without becoming the dominant page background.
-- Gold is reserved for focus and attention in Winter Night; it is not a general decorative accent.
-- Neutral surfaces must remain cool and blue-based rather than Aspire-like purple-black surfaces.
+- Emerald is the primary brand color for links, active navigation, active cells, and progress.
+- Teal and violet identify alternate views or supporting emphasis without becoming dominant page backgrounds.
+- The full mint-to-violet gradient is decorative; text-bearing gradients use darker accessible stops.
+- Gradient use is limited to the temporary mark, primary CTA, introduction hero, and featured cards. Grid and documentation work surfaces remain flat.
 - Stability, success, warning, error, readonly, and disabled states must not rely on color alone.
 - All included text and interactive states must meet WCAG 2.2 AA contrast.
 
@@ -47,7 +50,7 @@ Use the existing dependency-free system sans-serif stack for interface text and 
 
 ## Documentation Site Work
 
-- Convert `apps/docs-site/styles.css` from repeated literal colors to semantic CI tokens with complete Frost Light and Winter Night mappings.
+- Keep `apps/docs-site/styles.css` on semantic CI tokens with complete Emerald Light and Emerald Dark mappings.
 - Apply the resolved mode through `data-theme="light|dark"` and the CSS `color-scheme` property.
 - On first visit, follow `prefers-color-scheme`. After an explicit user toggle, persist `light` or `dark` in local storage and prefer that value on later visits.
 - Continue following operating-system theme changes only while the user has no stored preference.
@@ -91,7 +94,7 @@ const theme: VirtualDomGridTheme = {
 
 Create a concise product-facing CI guide that records:
 
-- Project-name rationale and the Winter, perspective, and progression concepts.
+- The Calm, Modern, Intelligent direction plus Gethen's perspective and progression concepts.
 - Primitive and semantic color roles for both modes.
 - Typography, spacing, corner radius, border, and elevation guidance.
 - Interactive states for hover, active, focus, selection, readonly, disabled, warning, and error.
@@ -146,7 +149,7 @@ pnpm run bench
 
 ## Definition Of Done
 
-- Frost Light and Winter Night are implemented from one documented semantic system.
+- Emerald Light and Emerald Dark are implemented from one documented semantic system.
 - The documentation site has accessible theme switching, route search, hierarchical navigation, and an `On this page` column.
 - Official light and dark Grid presets are public, typed, documented, and developer-overridable.
 - Existing unthemed grids retain their current default appearance.

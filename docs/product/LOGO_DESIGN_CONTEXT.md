@@ -1,6 +1,6 @@
 # Gethen Logo Design Context
 
-Last reviewed: 2026-09-03.
+Last reviewed: 2026-09-07.
 
 Status: Source-grounded briefing material for logo analysis. No logo direction in this document is an accepted final design.
 
@@ -34,30 +34,30 @@ The desired personality is:
 
 Use the accepted corporate-identity concepts:
 
-- **Frost Light:** cool, bright, high-clarity surfaces;
-- **Winter Night:** deep blue-black, high-contrast surfaces;
-- **Aurora cyan:** primary signal, action, progress, and active data;
-- **Perspective violet:** secondary signal for alternate views and supporting emphasis;
+- **Calm. Modern. Intelligent.:** restrained hierarchy, crisp geometry, and emerald at the core;
+- **Emerald Light:** warm-neutral, high-clarity surfaces with restrained green tinting;
+- **Emerald Dark:** near-black, high-contrast surfaces;
+- **Emerald, teal, and soft violet:** progression from core data to alternate perspectives;
 - progression from retrieval to exploration to understanding.
 
 Accepted brand colors:
 
-| Role | Frost Light | Winter Night |
+| Role | Emerald Light | Emerald Dark |
 | --- | --- | --- |
-| Canvas | `#F7FAFC` | `#0D121B` |
-| Surface | `#FFFFFF` | `#151C28` |
-| Raised surface | `#EEF3F7` | `#1D2634` |
-| Border | `#D6E1E7` | `#314052` |
-| Primary text | `#17212B` | `#EDF4F7` |
-| Muted text | `#586B78` | `#A7B7C2` |
-| Aurora accent | `#087785` | `#62D6E3` |
-| Perspective accent | `#6848D8` | `#A797F2` |
-| Selection | `#DCEFF2` | `#163A46` |
-| Focus-only gold | n/a | `#F2C66D` |
+| Canvas | `#F4FBF7` | `#070B0A` |
+| Surface | `#FFFFFF` | `#0D1512` |
+| Raised surface | `#E8F5EF` | `#14201B` |
+| Border | `#C6DDD2` | `#2A4037` |
+| Primary text | `#102019` | `#F5F7F6` |
+| Muted text | `#52665D` | `#8D9994` |
+| Emerald accent | `#087F5B` | `#18D98B` |
+| Perspective accent | `#6848D8` | `#9B7CFF` |
+| Selection | `#D8F5E8` | `#12392B` |
+| Focus | `#6848D8` | `#A7F3D0` |
 
-Aurora cyan is the primary brand color. Perspective violet is secondary and must not become the dominant background. Gold is reserved for focus or attention in Winter Night and should not be used as general logo decoration. Neutral colors should remain cool and blue-based.
+Emerald is the primary brand color. Teal and violet support alternate perspectives and must not become dominant backgrounds. The canonical mint-to-violet gradient is a focused brand accent; the logo must also work in one color.
 
-The current temporary mark is only a white capital `G` on a cyan/teal rounded square. It is not a final logo and may be completely replaced. There is currently no approved favicon, social mark, mascot, symbol, wordmark construction, or logo typography.
+The current temporary mark is a capital `G` on an emerald-to-violet gradient square. It is not a final logo and may be completely replaced. There is currently no approved favicon, social mark, mascot, symbol, wordmark construction, or logo typography.
 
 ## Clever Visual Fusion Strategy
 
@@ -73,7 +73,7 @@ Every concept should pass these rules before refinement:
 2. **Primary reading first.** At a glance it should feel like a confident technology mark; the second meaning should reward a closer look.
 3. **Gethen-specific connection.** The fusion must connect to dataset + perspective or get + then, not merely “technology.”
 4. **Two-idea limit.** A third meaning may emerge naturally, but it must not add another visible object.
-5. **Monochrome proof.** The fusion must work in a single flat color before cyan or violet is added.
+5. **Monochrome proof.** The fusion must work in a single flat color before emerald or violet is added.
 6. **Favicon proof.** The hidden idea must survive at 16–24 px or simplify gracefully without changing identity.
 
 ### Recommended Direction: `G + Grid/Cells + Forward Step`
@@ -131,13 +131,13 @@ Construction plan:
 - Turn one edge inward so the same edge becomes a second perspective plane.
 - Shape the internal negative space so the whole silhouette hints at `G` without requiring a literal drawn letter.
 - The front plane represents the dataset; the turned plane represents an alternate view of the same structure.
-- Cyan may identify the primary plane and violet the secondary plane, but the fold must remain clear in monochrome.
+- Emerald may identify the primary plane and violet the secondary plane, but the fold must remain clear in monochrome.
 
 Why it fits:
 
 - directly expresses one dataset viewed in more than one way;
 - feels architectural and extensible across Grid, Core, Protocol, and engine packages;
-- connects naturally to Frost Light/Winter Night and the restrained “world” idea.
+- connects naturally to Emerald Light/Emerald Dark and the restrained “world” idea.
 
 Risk and control:
 
@@ -161,7 +161,7 @@ Construction plan:
 - Use four selection-corner marks or one open rectangular frame.
 - Make two corners simultaneously become the edges of offset view frames.
 - Keep a single central square/void constant while the outer frame changes direction.
-- Cyan identifies the stable selected data; violet may identify the alternate view only in the color version.
+- Emerald identifies the stable selected data; violet may identify the alternate view only in the color version.
 
 Why it fits:
 
@@ -262,7 +262,7 @@ Run similarity and trademark screening before adoption
 - Does the mark still look like Gethen when every cell seam is removed at 16 px?
 - Is the concept about an ecosystem and perspective, or merely about spreadsheets?
 - Can the mark distinguish itself from a generic `G`, grid, cube, camera, or AI sparkle?
-- Does the symbol remain credible without cyan/violet gradients?
+- Does the symbol remain credible without emerald/violet gradients?
 - Can future sub-brands use the geometry without fragmenting the master identity?
 
 Explore at least three genuinely different concepts before recommending one. Useful territories to investigate—but not blindly combine—include:
@@ -283,7 +283,7 @@ Avoid:
 - a Microsoft-Excel-like green `X`, spreadsheet-sheet icon, or generic table icon as the entire idea;
 - a literal eye as the default shortcut for “perspective,” unless transformed into a clearly original and data-specific concept;
 - a generic snowflake, mountain, planet, compass, database cylinder, cube, or neural-network sparkle with no Gethen-specific reasoning;
-- overly detailed aurora gradients that fail at favicon size;
+- overly detailed spectral gradients that fail at favicon size;
 - thin lines, tiny cells, or internal gaps that disappear at 16–24 px;
 - a logo dependent on gradients, glow, transparency, or color to remain recognizable;
 - excessive sci-fi, fantasy, icy, or mystical styling that weakens developer-tool credibility;
@@ -292,7 +292,7 @@ Avoid:
 Functional requirements:
 
 - recognizable at `16`, `24`, `32`, and `48` px;
-- works in one color, black, white/reversed, Frost Light, and Winter Night;
+- works in one color, black, white/reversed, Emerald Light, and Emerald Dark;
 - survives low-quality rendering, GitHub avatars, npm/package pages, documentation headers, CLI output, presentations, and social crops;
 - has a compact square icon and a horizontal lockup with the `Gethen` wordmark;
 - should also support icon-only, wordmark-only, and tagline lockups;
@@ -316,8 +316,8 @@ Required analysis and deliverables:
    - tagline lockup;
    - monochrome black;
    - monochrome white;
-   - Frost Light application;
-   - Winter Night application;
+   - Emerald Light application;
+   - Emerald Dark application;
    - `16`, `24`, `32`, `48`, and `128` px tests.
 6. Define clear space, minimum size, background rules, incorrect uses, and color assignments.
 7. Provide final editable SVGs with shapes/paths, plus PNG exports. Do not merely place a raster image inside an SVG.
@@ -386,7 +386,7 @@ The product mark should prioritize **Gethen**. “Created by TheFoolsPath” is 
 
 - dataset, structure, transformation, viewpoint, layers, facets;
 - clarity emerging from complexity;
-- winter restraint and aurora energy;
+- calm restraint and emerald energy;
 - reliable engineering and measured performance;
 - openness, accessibility, extensibility, and developer control;
 - movement toward understanding.
@@ -410,7 +410,7 @@ Score each proposed direction from 1–5 on:
 | Product fit | Does it feel like serious, flexible developer infrastructure? |
 | Ecosystem range | Can it represent more than a frontend table? |
 | Small-size clarity | Does it survive at 16–24 px and in one color? |
-| Light/dark performance | Does it work naturally in Frost Light and Winter Night? |
+| Light/dark performance | Does it work naturally in Emerald Light and Emerald Dark? |
 | Longevity | Will it survive framework, feature, and architecture changes? |
 | Originality/legal safety | Is it free from obvious copying and risky literary adaptation? |
 | Production simplicity | Can it be delivered as clean, editable vector paths? |
@@ -425,8 +425,8 @@ Accepted facts that should remain stable:
 - the tagline `One dataset. Every perspective.`;
 - the literary-origin explanation and the separate `Get, then...` product wordplay;
 - Gethen is an open-source MIT-licensed data-grid ecosystem;
-- Aurora cyan is primary, Perspective violet is secondary;
-- Frost Light and Winter Night are the accepted visual modes;
+- Emerald is primary, with teal and Soft Violet as supporting perspective colors;
+- Emerald Light and Emerald Dark are the accepted visual modes;
 - the identity must not copy literary or third-party product assets.
 
 Open creative decisions:
@@ -434,7 +434,7 @@ Open creative decisions:
 - the final symbol and geometry;
 - whether the symbol contains a `G`;
 - wordmark construction and typography;
-- exact logo-specific cyan/violet usage within the accepted palette;
+- exact logo-specific emerald/teal/violet usage within the accepted palette;
 - whether a restrained gradient is allowed as an optional secondary treatment;
 - clear-space system, lockups, motion behavior, and illustration extensions;
 - whether a mascot should ever exist. A mascot is not currently required.

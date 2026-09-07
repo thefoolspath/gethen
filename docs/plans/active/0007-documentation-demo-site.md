@@ -121,8 +121,9 @@ Examples must import built workspace packages such as `@thefoolspath/gethen-core
 
 ### Phase 3 - Public Documentation Site
 
-- [ ] Establish Gethen-specific visual identity and a polished landing page.
-- [ ] Add documentation search, API reference generation, version selection, migration guides, dark mode, responsive navigation, SEO metadata, and social previews as separately scoped work.
+- [x] Establish the Emerald Light/Emerald Dark documentation identity, explicit Grid presets, theme switching, route search, responsive hierarchical navigation, and a desktop page table of contents through the Corporate Identity plan.
+- [ ] Add a dedicated polished marketing landing page.
+- [ ] Add API reference generation, version selection, migration guides, SEO metadata, and social previews as separately scoped work.
 - [ ] Decide hosting, custom domain, deployment checks, analytics/privacy boundaries, and release ownership in a dedicated publishing plan.
 
 ## Test And Quality Gates

@@ -1,11 +1,18 @@
-<div class="site-shell">
+<div class="site-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
   <header class="topbar">
     <a class="brand" href="/docs/introduction" (click)="navigate($event, '/docs/introduction')">
       <span class="brand-mark" aria-hidden="true">G</span>
-      <span><strong>Gethen</strong><small>One dataset. Every perspective.</small></span>
+      <span><strong>Gethen</strong><small>Documentation</small></span>
     </a>
-    <span class="angular-pill">Angular</span>
+    <button class="search-trigger" type="button" (click)="openSearch()">
+      <span aria-hidden="true" class="search-icon">⌕</span><span>Search documentation</span><kbd>Ctrl K</kbd>
+    </button>
     <span class="release-pill">0.0.0-alpha.3</span>
+    <a class="topbar-link" href="/docs/introduction" (click)="navigate($event, '/docs/introduction')">Docs</a>
+    <a class="topbar-cta" href="/docs/basic-grid" (click)="navigate($event, '/docs/basic-grid')">Start building</a>
+    <button class="theme-toggle" type="button" [attr.aria-label]="themeToggleLabel()" (click)="toggleTheme()">
+      <span aria-hidden="true">{{ themeMode() === 'dark' ? '☀' : '◐' }}</span>
+    </button>
     <button
       class="nav-toggle"
       type="button"
@@ -15,14 +22,60 @@
     >Browse docs</button>
   </header>
 
+  <div class="search-backdrop" *ngIf="searchOpen()" (mousedown)="$event.target === $event.currentTarget && closeSearch()">
+    <section #searchDialog class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title" (keydown)="handleSearchDialogKeydown($event)">
+      <div class="search-heading">
+        <div><p class="eyebrow">Quick navigation</p><h2 id="search-title">Search documentation</h2></div>
+        <button type="button" aria-label="Close search" (click)="closeSearch()">Esc</button>
+      </div>
+      <label class="search-field">
+        <span class="visually-hidden">Search route title, group, or summary</span>
+        <input
+          #searchInput
+          type="search"
+          autocomplete="off"
+          placeholder="Search routes…"
+          [value]="searchQuery()"
+          [attr.aria-controls]="'search-results'"
+          [attr.aria-activedescendant]="searchResults().length ? 'search-result-' + activeSearchIndex() : null"
+          (input)="updateSearch($event)"
+          (keydown)="handleSearchKeydown($event)"
+        >
+      </label>
+      <div id="search-results" class="search-results" role="listbox" aria-label="Documentation routes">
+        <button
+          *ngFor="let route of searchResults(); let index = index"
+          type="button"
+          role="option"
+          [id]="'search-result-' + index"
+          [class.is-active]="index === activeSearchIndex()"
+          [attr.aria-selected]="index === activeSearchIndex()"
+          (click)="selectSearchRoute(route)"
+        >
+          <span><strong>{{ route.title }}</strong><small>{{ route.summary }}</small></span>
+          <em>{{ route.group }}</em>
+        </button>
+        <p class="search-empty" *ngIf="searchResults().length === 0">No documentation routes match “{{ searchQuery() }}”.</p>
+      </div>
+    </section>
+  </div>
+
   <nav
     id="docs-navigation"
     class="sidebar"
     [class.is-open]="navigationOpen()"
     aria-label="Documentation"
   >
-    <section class="nav-group" *ngFor="let group of routeGroups">
-      <h2>{{ group.name }}</h2>
+    <div class="sidebar-product">
+      <span class="sidebar-product-icon" aria-hidden="true">G</span>
+      <span><strong>Gethen Grid</strong><small>Angular-first alpha</small></span>
+    </div>
+    <button class="sidebar-search" type="button" (click)="openSearch()"><span aria-hidden="true">⌕</span><span class="sidebar-search-label">Filter documentation…</span></button>
+    <section class="nav-group" *ngFor="let group of routeGroups" [class.is-active-group]="isActiveGroup(group)" [id]="'nav-' + group.name.toLowerCase().replaceAll(' ', '-')">
+      <h2 [attr.title]="sidebarCollapsed() ? group.name : null">
+        <span class="group-icon" aria-hidden="true">{{ groupIcon(group.name) }}</span>
+        <span class="group-name">{{ group.name }}</span>
+      </h2>
       <a
         *ngFor="let route of group.routes"
         [href]="route.path"
@@ -35,6 +88,19 @@
     </section>
   </nav>
 
+  <div class="contextbar" *ngIf="activeRoute() as route">
+    <button
+      class="sidebar-collapse"
+      type="button"
+      aria-controls="docs-navigation"
+      [attr.aria-expanded]="!sidebarCollapsed()"
+      [attr.aria-label]="sidebarCollapsed() ? 'Expand documentation sidebar' : 'Collapse documentation sidebar'"
+      (click)="toggleSidebar()"
+    ><span aria-hidden="true">{{ sidebarCollapsed() ? '⇥' : '⇤' }}</span></button>
+    <a href="#overview"><span aria-hidden="true">☷</span> On this page <span aria-hidden="true">›</span></a>
+    <span>{{ route.group }}</span><span aria-hidden="true">/</span><strong>{{ route.title }}</strong>
+  </div>
+
   <main id="main-content" class="content" tabindex="-1">
     <ng-container *ngIf="activeRoute() as route; else notFound">
       <article class="doc-page">
@@ -44,14 +110,19 @@
         </div>
         <h1>{{ route.title }}</h1>
         <p class="lede">{{ route.summary }}</p>
+        <div class="page-actions">
+          <button type="button" (click)="copyPageLink()"><span aria-hidden="true">▣</span> {{ pageLinkCopied() ? 'Link copied' : 'Copy page link' }}</button>
+          <a *ngIf="route.api?.length" href="#relevant-api">API surface <span aria-hidden="true">⌄</span></a>
+          <span class="page-version">Angular · {{ route.stability }}</span>
+        </div>
 
-        <section class="overview" aria-labelledby="overview-title">
+        <section id="overview" class="overview" aria-labelledby="overview-title">
           <h2 id="overview-title">Overview</h2>
           <p>{{ route.details }}</p>
         </section>
 
         <ng-container *ngIf="route.demo; else guideContent">
-          <section class="workbench" aria-labelledby="live-example-title">
+          <section id="live-example" class="workbench" aria-labelledby="live-example-title">
             <div class="workbench-heading">
               <div><p class="eyebrow">Angular live example</p><h2 id="live-example-title">{{ route.title }} workspace</h2></div>
               <div id="demo-controls" class="demo-controls">
@@ -61,7 +132,7 @@
                 <button *ngIf="route.demo === 'frozen'" type="button" (click)="freezePanes()">Freeze 2 × 2</button>
                 <button *ngIf="route.demo === 'history'" type="button" (click)="undo()">Undo</button>
                 <button *ngIf="route.demo === 'history'" type="button" (click)="redo()">Redo</button>
-                <button *ngIf="route.demo === 'theme'" type="button" (click)="applyTealTheme()">Apply Teal Accent</button>
+                <button *ngIf="route.demo === 'theme'" type="button" (click)="applyThemeOverride()">Apply Accent Override</button>
                 <button *ngIf="route.demo === 'clipboard'" type="button" (click)="pasteSample()">Paste Sample</button>
                 <button *ngIf="route.demo === 'shaping'" type="button" (click)="runShaping()">Run Shaping</button>
               </div>
@@ -78,7 +149,7 @@
                   [rowHeight]="32"
                   [columnWidth]="132"
                   [styling]="config.styling"
-                  [theme]="config.theme"
+                  [theme]="gridTheme()"
                   [rowNumbers]="true"
                   [statusBar]="config.statusBar"
                   [clipboard]="config.clipboard"
@@ -111,9 +182,11 @@
         </ng-container>
 
         <ng-template #guideContent>
+          <div id="guide-content">
           <ng-container *ngIf="route.path === '/docs/introduction'; else nonIntroduction">
             <section class="intro-panel">
-              <p>Get the data. Then render, edit, shape, and understand it through Angular and the public Gethen package boundary.</p>
+              <p class="intro-concept"><span>Calm.</span><span>Modern.</span><strong>Intelligent.</strong></p>
+              <p class="intro-copy">One dataset stays at the core. Then Gethen helps you render, edit, shape, and understand every perspective through its public Angular package boundary.</p>
               <a class="primary-link" href="/docs/basic-grid" (click)="navigate($event, '/docs/basic-grid')">Build an Angular grid <span aria-hidden="true">→</span></a>
             </section>
             <div class="principles-grid">
@@ -141,18 +214,34 @@ pnpm run docs
               </section>
             </ng-template>
           </ng-template>
+          </div>
         </ng-template>
 
-        <section class="api-section" *ngIf="route.api?.length" aria-labelledby="api-title">
+        <section id="relevant-api" class="api-section" *ngIf="route.api?.length" aria-labelledby="api-title">
           <p class="eyebrow">Public package surface</p>
           <h2 id="api-title">Relevant API</h2>
           <ul><li *ngFor="let item of route.api"><code>{{ item }}</code></li></ul>
         </section>
 
-        <section class="limitations" aria-labelledby="limitations-title">
+        <section id="known-limitations" class="limitations" aria-labelledby="limitations-title">
           <h2 id="limitations-title">Known limitations</h2>
           <p>{{ route.limitation }}</p>
         </section>
+
+        <nav class="page-pagination" aria-label="Previous and next documentation pages">
+          <a [href]="previousRoute(route).path" (click)="navigate($event, previousRoute(route).path)">
+            <small>← Previous</small><strong>{{ previousRoute(route).title }}</strong>
+          </a>
+          <a [href]="nextRoute(route).path" (click)="navigate($event, nextRoute(route).path)">
+            <small>Next →</small><strong>{{ nextRoute(route).title }}</strong>
+          </a>
+        </nav>
+
+        <footer class="site-footer">
+          <div class="footer-brand"><span class="brand-mark" aria-hidden="true">G</span><div><strong>Gethen</strong><p>One dataset. Every perspective.</p></div></div>
+          <div><strong>Resources</strong><a href="/docs/introduction" (click)="navigate($event, '/docs/introduction')">Documentation</a><a href="/docs/known-limitations" (click)="navigate($event, '/docs/known-limitations')">Known limitations</a></div>
+          <div><strong>Project</strong><a href="/docs/roadmap" (click)="navigate($event, '/docs/roadmap')">Roadmap</a><a href="/docs/changelog" (click)="navigate($event, '/docs/changelog')">Changelog</a></div>
+        </footer>
       </article>
     </ng-container>
 
@@ -164,4 +253,9 @@ pnpm run docs
       </article>
     </ng-template>
   </main>
+
+  <aside class="page-toc" *ngIf="activeRoute() && pageSections().length" aria-label="On this page">
+    <p>On this page</p>
+    <a *ngFor="let section of pageSections()" [href]="'#' + section.id">{{ section.label }}</a>
+  </aside>
 </div>
