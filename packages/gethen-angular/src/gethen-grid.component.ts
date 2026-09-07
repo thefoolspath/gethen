@@ -90,8 +90,12 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
     this.mountGrid();
   }
 
-  ngOnChanges(_changes: SimpleChanges): void {
+  ngOnChanges(changes: SimpleChanges): void {
     if (this.initialized) {
+      if (this.grid && Object.keys(changes).length === 1 && changes["theme"]) {
+        this.grid.setTheme(this.theme);
+        return;
+      }
       this.mountGrid();
     }
   }

@@ -17,6 +17,8 @@ Make an uncustomized Gethen grid visually coherent, understandable, and keyboard
 - Readonly pinned bottom rows supplied by the host or built from Alpha 4 aggregate results.
 - Dark mode is not part of this closure; tokens must remain sufficient for host overrides.
 
+The later Corporate Identity implementation adds explicit opt-in Emerald Light and Emerald Dark presets without changing this plan's unthemed default.
+
 ## Work
 
 - [x] Capture the issue/CR decisions and source-grounded baseline research.

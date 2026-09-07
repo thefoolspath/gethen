@@ -1,6 +1,6 @@
 # Grid Customization
 
-Last reviewed: 2026-08-11.
+Last reviewed: 2026-09-07.
 
 Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shell/default-theme closure are implemented locally. Alpha 3 passed its manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome and representative-user validation remain open; NVDA/Chrome is deferred during alpha but mandatory before Beta/1.0.
 
@@ -51,7 +51,20 @@ Class names belong to the host application, so utility classes and design-system
 
 `VirtualDomGridTheme` exposes color, typography, padding, grid-line, header, row-number, pinned-row, status, readonly, invalid, editor-focus, and shell-dimension tokens. The renderer maps supplied tokens to CSS custom properties on the grid root. Applications may also override these properties directly per grid container.
 
-The dependency-free default is a modern-enterprise light theme using system fonts. `density` accepts `compact`, `comfortable`, or `spacious`; `comfortable` is the default. Dark mode is not built in yet, but applications can override the complete token set per grid.
+The dependency-free default is a modern-enterprise light theme using system fonts. `density` accepts `compact`, `comfortable`, or `spacious`; `comfortable` is the default. A grid mounted without `theme` retains this existing appearance.
+
+Core also exports complete opt-in `gethenLightTheme` and `gethenDarkTheme` presets from the public package root. They implement the Emerald Light and Emerald Dark system documented in [CORPORATE_IDENTITY.md](CORPORATE_IDENTITY.md). Presets are readonly and may be extended with object spread:
+
+```ts
+import { gethenDarkTheme } from "@thefoolspath/gethen-core";
+
+const theme: VirtualDomGridTheme = {
+  ...gethenDarkTheme,
+  activeCellBorder: "#ff5a5f"
+};
+```
+
+Angular continues to accept the resolved object through `theme`; it does not add a mode input. Changing only the theme updates CSS variables on the mounted Grid instead of discarding selection, editing, history, or layout state.
 
 ## Grid Shell
 

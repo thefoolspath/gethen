@@ -18,6 +18,11 @@ export {
 } from "./renderer/dom/grid-customization.js";
 
 export {
+  gethenDarkTheme,
+  gethenLightTheme
+} from "./renderer/dom/grid-themes.js";
+
+export {
   createGridModel
 } from "./data/grid-model.js";
 

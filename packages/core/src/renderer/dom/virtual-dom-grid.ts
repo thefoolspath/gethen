@@ -76,6 +76,7 @@ export interface VirtualDomGrid {
   readonly element: HTMLElement;
   destroy(): void;
   render(): void;
+  setTheme(theme: VirtualDomGridTheme | undefined): void;
   getLayoutState(): GridLayoutState;
   applyLayoutState(state: GridLayoutState): void;
   resizeColumn(columnId: string, width: number): void;
@@ -163,7 +164,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   grid.style.color = "var(--gethen-text-color, #17212b)";
   grid.style.fontFamily = "var(--gethen-font-family, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif)";
   grid.style.fontSize = "var(--gethen-font-size, 13px)";
-  applyTheme(grid, options.theme);
+  applyGridTheme(grid, options.theme);
 
   spacer.style.position = "absolute";
   spacer.style.inset = "0 auto auto 0";
@@ -950,6 +951,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       container.replaceChildren();
     },
     render,
+    setTheme: (theme) => applyGridTheme(grid, theme),
     getLayoutState: () => layoutState,
     applyLayoutState: (state) => setLayoutState(state, "apply"),
     resizeColumn: (columnId, width) => setLayoutState(
@@ -1033,7 +1035,7 @@ function getRenderedColumnIndexes(
   return [...indexes].sort((left, right) => left - right);
 }
 
-function applyTheme(grid: HTMLElement, theme: VirtualDomGridTheme | undefined): void {
+function applyGridTheme(grid: HTMLElement, theme: VirtualDomGridTheme | undefined): void {
   const variables: ReadonlyArray<readonly [string, string | undefined]> = [
     ["--gethen-background", theme?.background],
     ["--gethen-text-color", theme?.textColor],
@@ -1059,6 +1061,8 @@ function applyTheme(grid: HTMLElement, theme: VirtualDomGridTheme | undefined): 
   for (const [name, value] of variables) {
     if (value !== undefined) {
       grid.style.setProperty(name, value);
+    } else {
+      grid.style.removeProperty(name);
     }
   }
 }
