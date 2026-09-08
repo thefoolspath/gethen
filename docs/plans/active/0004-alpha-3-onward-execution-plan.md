@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-25.
 
-Status: Alpha 3 is a locally verified release candidate. This plan remains accepted for Alpha 4. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). No package is published.
+Status: Alpha 3 is a locally verified release candidate. The Alpha 4 engine bake-off is complete with TypeScript Worker selected at the 500,000-row fallback capacity; the grid-shell walkthrough evidence remains open. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). No package is published.
 
 ## Goal
 
@@ -97,18 +97,18 @@ Alpha 3 is a completed local release candidate. Automated gates and a manual key
 - [x] A4-03: Execute the TypeScript Worker pipeline as ordered asynchronous decode, filter, sort, group, aggregate, flatten, and completion stages with truthful start/end progress while preserving canonical results. Cooperative batching within long stages remains A4-07.
 - [x] A4-04: Move mixed-type filter and stable multi-sort row-mask/index execution into dependency-free Rust/WASM kernels behind TypeScript-normalized comparison ranks. The 10K mixed fixture passes Chromium parity.
 - [x] A4-05: Move hierarchical group assignment, built-in count/sum/min/max/average aggregation, and expanded/collapsed viewport flatten tokens into dependency-free Rust/WASM kernels. TypeScript retains stable mixed-type key normalization and result hydration; full 10K group/aggregate output passes Chromium parity.
-- [ ] Implement equivalent TypeScript Worker and Rust/WASM Worker kernels for ingestion, transfer, sort, filter, group, aggregate, and representative formula/pivot workloads.
-- [ ] Use identical fixtures, algorithms, optimization intent, cancellation, and progress behavior.
-- [ ] Measure cold/warm startup, end-to-end latency, peak/retained memory, transfer, bundle cost, and disposal.
-- [ ] Select the production engine at the Alpha 4 exit gate; retain the loser only as a test/benchmark oracle.
+- [x] Implement equivalent TypeScript Worker and Rust/WASM Worker kernels for ingestion, transfer, sort, filter, group, aggregate, and representative formula/pivot workloads.
+- [x] Use identical fixtures, algorithms, optimization intent, cancellation, and progress behavior.
+- [x] Measure cold/warm startup, end-to-end latency, peak/retained main-thread memory, transfer, bundle cost, and disposal; record the Worker-heap observability limitation.
+- [x] Select TypeScript Worker as the production engine at the 500,000-row fallback gate; retain Rust/WASM only as an internal test/benchmark oracle.
 
-The first Alpha 4 checkpoint now includes the portable pipeline, transferable mixed-type buffer, TypeScript Worker, dependency-free Rust/WASM filter/sort/group/aggregate/flatten kernels, browser parity coverage, and immediate cancellation rejection. The current 100,000-row numeric boundary measurement is diagnostic only; it does not satisfy the full engine-selection gate.
+The Alpha 4 engine gate is complete. The 1,000,000-row workload completed but did not pass responsiveness/cancellation thresholds consistently, so the accepted process moved to 500,000 rows. TypeScript Worker passed that fallback gate and is exposed through `createGridWorkerEngine()`; Rust/WASM remains an internal oracle and is excluded from publishable package contents. See [../../research/findings/2026-09-08-alpha4-engine-selection.md](../../research/findings/2026-09-08-alpha4-engine-selection.md) and [../../adr/0006-alpha4-production-engine.md](../../adr/0006-alpha4-production-engine.md).
 
 ### Exit Gate
 
 - Shaping results are deterministic and parity fixtures pass.
 - Main-thread interaction remains responsive during full-dataset work.
-- The selected engine passes the accepted 1M target or the documented 500K fallback.
+- The selected TypeScript Worker engine passes the documented 500K fallback; the 1M target remains a future optimization target.
 - Synthetic rows cannot enter source-row save paths.
 
 ### Grid-Shell UX Closure Before Alpha 5

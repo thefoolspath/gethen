@@ -1,8 +1,8 @@
 # Gethen
 
-Gethen is a proposed open-source data-grid ecosystem for web applications. The intended direction is an Excel-like grid with virtualized rendering, editing, client-side and server-side data access, and future analytical capabilities.
+Gethen is an open-source data-grid ecosystem under active alpha development for web applications. The intended direction is an Excel-like grid with virtualized rendering, editing, client-side data shaping, and future analytical capabilities.
 
-Current status: documentation and architecture planning only. No production package, source code, build system, benchmark suite, or published release exists yet.
+Current status: local TypeScript packages, Angular and framework-neutral demos, automated tests, browser tests, Rust/WASM parity code, and benchmark suites exist. The Alpha 4 bake-off selected TypeScript Worker at the accepted 500,000-row fallback capacity. No package or external release is published.
 
 Start with [docs/README.md](docs/README.md) for the documentation map and current source-of-truth rules.
 

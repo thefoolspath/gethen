@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for alpha
+Superseded in part by [ADR-0006](0006-alpha4-production-engine.md)
 
 ## Context
 
@@ -10,7 +10,7 @@ Gethen needs browser integration, framework adapters, data operations, and futur
 
 ## Decision
 
-Use TypeScript as the public API and control layer for alpha. Keep Rust as research-only and conditional for future compute implementation behind an internal contract.
+Use TypeScript as the public API and control layer for alpha. Rust began as research-only and conditional; ADR-0006 retains it internally as a parity/benchmark oracle after selecting TypeScript Worker for production shaping.
 
 ## Alternatives Considered
 

@@ -45,7 +45,7 @@ This gate does not cover production grid implementation, package publishing, ser
 | Decision | Current state | Required evidence before acceptance | Gate result |
 | --- | --- | --- | --- |
 | Renderer strategy | Virtualized DOM selected for alpha; Canvas deferred | Browser trace, edit overlay, and screen-reader smoke tests before release confidence | Accepted for alpha |
-| Rust language boundary | TypeScript selected for alpha public/control layer; Rust remains research-only | End-to-end WASM/Worker evidence before production Rust/WASM acceptance | Accepted for alpha |
+| Rust language boundary | TypeScript selected for public/control and production Worker layers; Rust/WASM retained internally as an oracle | Alpha 4 end-to-end gate completed at the 500K fallback capacity | Superseded by ADR-0006 |
 | Worker boundary | Deferred for alpha | UI long-task evidence or Worker end-to-end improvement after clone/transfer cost | Deferred |
 | WASM boundary | Deferred for alpha | WASM startup, transfer, serialization, algorithm time, memory, and bundle measurement | Deferred |
 | Columnar data | Proposed; conditional | Row-object baseline, typed vector benchmark, string clone/dictionary-cost measurement, update/disposal behavior | Open |

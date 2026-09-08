@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Gethen is a proposed MIT-licensed, Excel-like data-grid ecosystem. The repository currently contains documentation only; no production packages, source code, build configuration, tests, or benchmarks have been implemented yet.
+Gethen is an MIT-licensed, Excel-like data-grid ecosystem under active alpha development. The repository contains TypeScript packages, a Rust/WASM research oracle, Angular and framework-neutral demos, automated tests, browser tests, benchmarks, and documentation. Alpha 4 selected TypeScript Worker as the production shaping engine at the accepted 500,000-row fallback capacity; no package is published.
 
 ## Repository Map
 
@@ -52,6 +52,8 @@ Gethen is a proposed MIT-licensed, Excel-like data-grid ecosystem. The repositor
 - `node --check apps/renderer-canvas-prototype/prototype.js`
 - `node --check benchmarks/typescript-reference/reference-operations.mjs`
 - `node benchmarks/typescript-reference/reference-operations.mjs`
+- `node benchmarks/engine-bakeoff/measure-alpha4-engine-selection.mjs --profile=primary`
+- `node benchmarks/engine-bakeoff/measure-alpha4-engine-selection.mjs --profile=fallback`
 - `pnpm install`
 - `pnpm run check`
 - `pnpm run build`

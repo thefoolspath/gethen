@@ -51,19 +51,21 @@ Client 1.0 portable descriptors cover the intent of range/paging, sort, filter, 
 `@thefoolspath/gethen-core` remains one npm package. Its source is grouped into `contracts`, `data`,
 `state`, `shaping`, `engine`, and `renderer/dom` directories for navigation and dependency clarity.
 This organization does not add a runtime boundary, package dependency, asynchronous call, data copy,
-or serialization step. The root package exposes supported application entry points, including
-`TypeScriptWorkerGridEngine`, `createTypeScriptWorkerGridEngine`, and
-`createRustWasmWorkerGridEngine`. Research-only raw FFI exports, WASM kernel loaders, low-level
+or serialization step. The root package exposes the implementation-neutral `GridWorkerEngine`
+contract and `createGridWorkerEngine()` factory. Alpha 4 selected the TypeScript Worker
+implementation at the 500,000-row fallback gate. Candidate-specific TypeScript and Rust/WASM
+factories, raw FFI exports, WASM kernel loaders, low-level
 numeric Worker APIs, internal engine request/response messages, decoding, execution, and transferable
 buffer helpers are not exported from the package root. Repository benchmarks may import emitted
 internal modules directly; those paths are not supported application contracts.
 
-The package manifest exports only `.`. Internal Worker scripts, the WASM binary, and supporting
-modules remain packaged as runtime assets, but package consumers cannot treat their deep paths as
-supported imports.
+The package manifest exports only `.`. The production TypeScript shaping Worker remains a packaged
+runtime asset. Rust/WASM and benchmark-only numeric-kernel assets remain locally buildable for tests
+and benchmarks but are excluded from publishable Core artifacts.
 
 Worker scripts and `gethen_engine.wasm` are emitted beside their loaders under the matching engine
-directories so `new URL(..., import.meta.url)` keeps the same loading behavior after compilation.
+directories for local parity and benchmark execution. The production TypeScript Worker keeps the
+same `new URL(..., import.meta.url)` loading behavior after compilation and packaging.
 
 ## Internal Until Stable
 

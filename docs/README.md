@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-25.
 
-Gethen has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates. Alpha 3 passed automated verification and a manual keyboard-only Chrome walkthrough; manual NVDA/Chrome validation is deferred during alpha but remains mandatory before Beta/1.0. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
+Gethen has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates and a completed Alpha 4 engine bake-off. TypeScript Worker is selected for production shaping at the accepted 500,000-row fallback capacity; Rust/WASM remains an internal oracle. Alpha 3 passed automated verification and a manual keyboard-only Chrome walkthrough; manual NVDA/Chrome validation is deferred during alpha but remains mandatory before Beta/1.0. No package is published. Architecture documents describe proposed target design unless explicitly labeled as implemented.
 
 ## Source-Of-Truth Hierarchy
 
@@ -30,9 +30,9 @@ Gethen has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidat
 
 ## Major Decision State
 
-- TypeScript is the accepted public/control layer for alpha; Rust remains research-only.
+- TypeScript is the accepted public/control layer and TypeScript Worker is the selected production shaping engine; Rust/WASM remains an internal parity/benchmark oracle.
 - Virtualized DOM is the accepted alpha renderer; Canvas remains deferred pending stronger evidence.
-- Production Rust/WASM and Worker integration are deferred for alpha.
+- Production Worker integration is accepted behind `createGridWorkerEngine()`; Rust/WASM is not shipped.
 - JSON Schema as protocol source of truth is proposed and likely, but still needs generation validation.
 - Angular is the accepted first adapter for alpha.1; React remains a deferred follow-up candidate.
 - Client-side features are the only runtime scope through 1.0. Server DataSource, the server wire protocol, and the separately versioned C# backend workstream begin in 2.0.

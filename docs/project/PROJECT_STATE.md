@@ -8,7 +8,7 @@ This file is the short AI-readable state note for Gethen. Read it before scannin
 
 ## Snapshot
 
-Gethen now has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates, an in-progress Alpha 4 data-shaping/engine checkpoint, and the implemented Alpha 4 grid-shell/default-theme foundation. Alpha 3 passed automated verification and a manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome validation remains open; it is optional during alpha and mandatory before Beta/1.0. The accepted roadmap is client-first through 1.0, with Read-only Grid Table in Alpha 5, Formula in Alpha 6, Pivot in Alpha 7, and all server/C# work deferred to 2.0. No packages are published.
+Gethen now has locally verified `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates, a completed Alpha 4 engine bake-off, and the implemented Alpha 4 grid-shell/default-theme foundation. TypeScript Worker is the selected production shaping engine at the accepted 500,000-row fallback capacity; Rust/WASM remains an internal parity/benchmark oracle. Alpha 3 passed automated verification and a manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome validation remains open; it is optional during alpha and mandatory before Beta/1.0. The accepted roadmap is client-first through 1.0, with Read-only Grid Table in Alpha 5, Formula in Alpha 6, Pivot in Alpha 7, and all server/C# work deferred to 2.0. No packages are published.
 
 The repository currently contains product, architecture, research, ADR, quality, project-management, active-plan documentation, pnpm workspace configuration, initial packages, demo apps, research prototypes, benchmark scaffolds, and CI configuration. Architecture documents describe proposed target design unless a document explicitly says a behavior is implemented.
 
@@ -40,12 +40,13 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Alpha 3 host-persisted `GridLayoutState`, variable widths/order, and multiple virtualized frozen top rows/leading columns.
 - Alpha 4 canonical filter/sort/group/aggregate/flatten/viewport pipeline with deterministic mixed-type comparisons, stable readonly synthetic group rows, and client-only custom reducers.
 - Alpha 4 transferable mixed-type columnar schema and shared worker contract with progress and cancellation messages.
-- Alpha 4 TypeScript Worker and dependency-free Rust/WASM Worker candidates, shared numeric formula/pivot-style kernels, browser parity smoke coverage, and a diagnostic 100,000-row numeric boundary comparison. Full end-to-end selection evidence remains open.
-- Alpha 4 A4-01 deterministic mixed-type fixture generator with stable seeded 10,000-row, 500,000-row, and 1,000,000-row by 50-column profiles. Normal validation allocates the 10,000-row profile; full end-to-end Worker execution remains open.
+- Alpha 4 production `createGridWorkerEngine()` backed by TypeScript Worker at the accepted 500,000-row fallback capacity. Candidate-specific TypeScript and Rust/WASM factories are internal; Rust/WASM remains a parity/benchmark oracle and its assets are excluded from publishable Core artifacts.
+- Alpha 4 A4-01 deterministic mixed-type fixture generator with stable seeded 10,000-row, 500,000-row, and 1,000,000-row by 50-column profiles, all exercised by the completed engine-selection process.
 - Alpha 4 A4-02 canonical TypeScript parity oracle with deterministic full-result digests for the 10,000-row fixture and compact checksum/count/aggregate output prepared for later 500,000-row and 1,000,000-row capacity runs.
-- Alpha 4 A4-03 staged TypeScript Worker execution with ordered decode, filter, sort, group, aggregate, flatten, and completion progress. Each stage yields to the Worker event loop; canonical parity, 69 unit/contract/adapter tests, and 26 Chromium scenarios pass locally. Cooperative batching within long stages remains open.
+- Alpha 4 A4-03 staged TypeScript Worker execution with ordered decode, filter, sort, group, aggregate, flatten, and completion progress. Downstream stages report filtered-work totals consistently with the Rust/WASM oracle.
 - Alpha 4 A4-04 dependency-free Rust/WASM relational/UTF-8 filter masks and stable multi-sort indices behind TypeScript-normalized mixed-type comparison ranks. The 10,000-row mixed fixture passes full TypeScript/Rust-WASM filter/sort parity in Chromium.
 - Alpha 4 A4-05 dependency-free Rust/WASM hierarchical group assignment, built-in count/sum/min/max/average aggregation, and expanded/collapsed viewport flatten tokens. TypeScript retains deterministic mixed-type key normalization and public row hydration; the full 10,000-row group/aggregate fixture passes TypeScript/Rust-WASM parity in Chromium.
+- Alpha 4 engine-selection closure passes workspace check/build, 102 unit/contract/adapter tests, 48 Chromium scenarios in a single-worker run, the standard benchmark suite, and Core package dry-run inspection. The first parallel browser attempt encountered a docs navigation timeout under post-benchmark resource pressure; the complete serialized rerun passed 48/48.
 - Alpha 4 grid shell with visible column headers, dedicated row-number gutter, correct body/header ARIA offsets, focus-safe empty state, readonly pinned bottom rows, client status bar, and host/aggregate-backed summary rows.
 - Dependency-free modern-enterprise light default theme with comfortable default density, compact/spacious presets, expanded shell/state tokens, header class/callback customization, labelled built-in editors, and readonly cell semantics.
 - Core and Angular grid-shell passthrough plus Chromium coverage and manual visual QA at 1280 x 720 and 1440 x 900. Representative-user walkthroughs and manual NVDA/Chrome remain open.
@@ -101,9 +102,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 
 ## Proposed But Not Accepted
 
-- TypeScript as public API and control layer.
-- Optional Rust compute behind an internal contract.
-- TypeScript Worker and Rust/WASM Worker candidates are accepted for the Alpha 4 bake-off; only the measured winner ships, with Rust selected for a difference of at most 10%.
+- TypeScript as public API and control layer, with TypeScript Worker selected for production shaping.
+- Optional Rust compute retained behind an internal parity/benchmark boundary.
 - Virtualized DOM as the default renderer recommendation, pending Canvas comparison and accessibility evidence.
 - Row-oriented public data with conditional internal columnar or typed-vector representation.
 - JSON Schema as protocol source of truth.
@@ -117,8 +117,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Milestone 2 protocol and public TypeScript contracts are initially complete.
 - Milestone 3 minimal TypeScript reference engine is initially complete.
 - Renderer strategy is accepted for alpha as virtualized DOM; Canvas is deferred.
-- Rust language boundary is accepted for alpha as TypeScript public/control layer with Rust research-only.
-- The Alpha 4 shaping pipeline, both Worker candidates, deterministic 10K/500K/1M mixed-type fixture profiles, and the canonical TypeScript parity oracle exist. Rust/WASM now owns filter, stable sort, hierarchical grouping, built-in aggregation, and flatten token generation. Running the larger profiles end to end, aligning cancellation/progress behavior, adding representative formula/pivot workloads, collecting browser memory/bundle evidence, rendered group-row accessibility, and production-engine selection remain active work.
+- Rust language boundary is accepted as an internal parity/benchmark oracle; TypeScript remains the public/control layer and production Worker engine.
+- The Alpha 4 engine bake-off is complete. The 1M workload completed but missed responsiveness/cancellation thresholds; TypeScript Worker passed the complete 500K fallback gate. Rendered group-row accessibility remains part of the grid-shell evidence rather than engine selection.
 - Milestones 6-9 are initially complete. Server-side DataSource is deferred for alpha.
 - Milestone 11 first framework adapter is complete for alpha.1 with Angular as selected adapter and browser-tested demo path.
 - Milestone 12 second adapter is deferred from alpha.1; React remains a follow-up candidate.
@@ -128,15 +128,15 @@ The repository currently contains product, architecture, research, ADR, quality,
 - Preliminary Rust GNU native benchmark exists; default MSVC release execution is blocked by local MSVC linker configuration: `LINK : fatal error LNK1104: cannot open file 'msvcrt.lib'`.
 - First alpha adapter path is selected as Angular first; React is deferred until after Angular-backed alpha path or later reassessment.
 - Initial dependency/license candidate review is complete; Alpha 2 adds no runtime dependency, so the verified permissive Alpha 1 dependency set is unchanged.
-- Accepted ADRs for alpha: ADR-0001 TypeScript public/control layer with Rust research-only, ADR-0002 virtualized DOM renderer for alpha, and ADR-0003 Worker/WASM deferral for alpha.
+- Accepted engine boundary: ADR-0006 selects TypeScript Worker at 500K and supersedes the Rust research-only/Worker deferral portions of ADR-0001 and ADR-0003. ADR-0002 retains the virtualized DOM renderer decision.
 - Post-plan issues and change requests should be captured in [ISSUE_AND_CHANGE_REQUESTS.md](ISSUE_AND_CHANGE_REQUESTS.md) before they are promoted into roadmap versions or active implementation plans. Conversation-derived feedback must not be added to the intake log until the maintainer approves whether it is an issue or change request.
 - The first hands-on issues are fixed with browser regression coverage: deep vertical scrolling, double-click editing, type-to-edit, and automatic browser-test port allocation.
 - The local Alpha 2 release candidate is implemented and verified. Application-owned classes, conditional styling, alignment, hidden columns, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping, headless row transactions, opt-in validated direct clipboard paste, host-dialog preparation, and Angular passthrough are included. JavaScript, repeated-render, and local CDP frame-trace baselines exist. Headed/cross-hardware evidence remains required before external performance claims. Renderer-owned row/paste-dialog controls, a second adapter, custom renderers/editors, raw HTML formatters, XLSX import/export, and rich clipboard content are deliberately omitted or deferred.
-- Work remains sequential after the completed `0.0.0-alpha.3` local candidate: finish the Alpha 4 engine bake-off, implement Read-only Grid Table in Alpha 5, Formula in Alpha 6, Pivot in Alpha 7, then complete deferred NVDA/Chrome validation during client-side beta hardening before client 1.0. Server DataSource, a server wire protocol, and C#/EF Core integration move to 2.0.
+- Work remains sequential after the completed Alpha 4 engine bake-off: close the remaining grid-shell walkthrough evidence, implement Read-only Grid Table in Alpha 5, Formula in Alpha 6, Pivot in Alpha 7, then complete deferred NVDA/Chrome validation during client-side beta hardening before client 1.0. Server DataSource, a server wire protocol, and C#/EF Core integration move to 2.0.
 - The Alpha 4 grid-shell foundation is implemented. ISSUE-20260811-001 through ISSUE-20260811-003 and CR-20260811-001 are done; the client portion of CR-20260811-002 is done and its server-status extension is deferred to 2.0. User walkthroughs and manual NVDA/Chrome evidence remain open and no validated-usability claim is made.
 - The Phase 1 documentation and interactive-demo workbench is implemented under `apps/docs-site/` as a standalone Angular application and participates in workspace check/build plus Chromium verification. Phase 2 must add examples with Alpha 5-7 milestones; public marketing, hosting, search, versioning, analytics, social previews, and launch polish remain deferred to Phase 3 and require a separate publishing plan.
 - Gethen Corporate Identity is implemented locally with Emerald Light and Emerald Dark, emerald/teal/violet focused accents, explicit public light/dark Grid presets, unchanged no-theme Grid defaults, developer-owned overrides, non-remounting Angular theme updates, documentation theme switching, route search, a single collapsible icon-and-text hierarchical sidebar, context bar, and a right-side page table of contents. Workspace check, build, 77 unit tests, and static contrast checks pass; browser interaction and manual visual verification remain open pending explicit approval.
-- The Core public root now intentionally excludes raw Rust/WASM kernels and loaders, the low-level numeric Rust Worker, raw Worker request/response messages, and internal decode/execute/transfer helpers. Supported TypeScript and Rust/WASM grid-engine entry points remain public; repository benchmarks use internal emitted paths where required.
+- The Core public root exposes only the implementation-neutral `GridWorkerEngine`/`createGridWorkerEngine()` production surface. Candidate-specific TypeScript/Rust-WASM factories, raw kernels/loaders, numeric Workers, messages, and decode/execute/transfer helpers remain internal; non-production assets are excluded from package artifacts.
 
 ## Verified Commands
 
@@ -150,6 +150,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `pnpm run test`
 - `pnpm exec playwright install chromium`
 - `pnpm run test:browser`
+- `pnpm run test:browser -- --workers=1`
 - `pnpm run docs`, serving clean documentation routes such as `http://127.0.0.1:4173/docs/introduction` through the repository-local static server.
 - `pnpm run test:browser` with automatic allocation of an available loopback port, including when `127.0.0.1:4173` is already in use.
 - `pnpm run bench`
@@ -157,6 +158,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `node benchmarks/renderer-prototype/measure-alpha2-customization.mjs`
 - `node benchmarks/renderer-prototype/measure-alpha2-frame-trace.mjs`
 - `node benchmarks/engine-bakeoff/measure-worker-boundary.mjs`
+- `node benchmarks/engine-bakeoff/measure-alpha4-engine-selection.mjs --profile=primary`
+- `node benchmarks/engine-bakeoff/measure-alpha4-engine-selection.mjs --profile=fallback`
 - `cargo +stable-x86_64-pc-windows-gnu test --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo build --manifest-path crates/gethen-engine/Cargo.toml --release --target wasm32-unknown-unknown`
 - `npm.cmd pack --dry-run --json` from `packages/protocol`, `packages/core`, and `packages/gethen-angular` with `npm_config_cache=..\..\tmp\npm-cache`
@@ -235,3 +238,4 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-09-07 | Implemented the Frost Light/Winter Night documentation identity, Aspire-informed collapsible icon-and-text sidebar, persisted theme selection, route search, page table of contents, public readonly Grid presets, and non-remounting Angular theme updates. Workspace check, build, 76 unit tests, and static contrast verification pass; browser and manual visual checks remain pending explicit approval. | `apps/docs-site/`, `packages/core/src/renderer/dom/grid-themes.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, [../product/CORPORATE_IDENTITY.md](../product/CORPORATE_IDENTITY.md), [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md) |
 | 2026-09-07 | Replaced the Frost/Winter palette with the Emerald Intelligence direction: Gethen content and temporary `G` mark remain, Emerald Light/Dark presets use accessible semantic roles, gradients are limited to focused brand moments, and desktop navigation remains one collapsible icon-and-text sidebar. Workspace check, build, 77 unit tests, and static contrast verification pass; browser and manual visual checks remain pending explicit approval. | `apps/docs-site/`, `packages/core/src/renderer/dom/grid-themes.ts`, [../product/CORPORATE_IDENTITY.md](../product/CORPORATE_IDENTITY.md), [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md) |
 | 2026-09-08 | Closed seven confirmed Clean Code findings across editor concurrency, DataSource descriptor handling, active-cell/editor geometry, Rust/WASM FFI validation, renderer responsibility boundaries, cross-engine value semantics, and Core public exports. Added focused unit/browser/Rust regressions and automated public-boundary verification; no package was published and no runtime dependency was added. | `packages/core/src/`, `apps/core-demo/src/main.ts`, `crates/gethen-engine/src/`, `tests/browser/renderer-prototypes.spec.ts`, [../architecture/PACKAGE_BOUNDARIES.md](../architecture/PACKAGE_BOUNDARIES.md), [../architecture/RUST_WASM_BOUNDARY.md](../architecture/RUST_WASM_BOUNDARY.md), [../architecture/DATA_SOURCE.md](../architecture/DATA_SOURCE.md) |
+| 2026-09-08 | Completed the Alpha 4 engine bake-off. The 1M gate completed but missed responsiveness/cancellation thresholds; TypeScript Worker passed the complete 500K fallback gate and is the implementation behind public `createGridWorkerEngine()`. Rust/WASM remains an internal oracle and is excluded from package artifacts. | [../research/findings/2026-09-08-alpha4-engine-selection.md](../research/findings/2026-09-08-alpha4-engine-selection.md), [../adr/0006-alpha4-production-engine.md](../adr/0006-alpha4-production-engine.md), `benchmarks/engine-bakeoff/measure-alpha4-engine-selection.mjs`, `packages/core/src/engine/grid-worker-engine.ts` |
