@@ -154,26 +154,27 @@ export async function shapeGridDataInStages(
     () => filterGridRows(options.rows, options.filter ?? []),
     pipelineOptions
   );
+  const shapedRowTotal = filtered.length;
   const sorted = await runPipelineStage(
     "sort",
-    total,
+    shapedRowTotal,
     () => stableMultiSort(filtered, options.sort ?? []),
     pipelineOptions
   );
   const groups = options.group ?? [];
   const groupNodes = await runPipelineStage(
     "group",
-    total,
+    shapedRowTotal,
     () => groups.length === 0 ? [] : createGroupNodes(sorted, groups, 0),
     pipelineOptions
   );
   const aggregatedNodes = await runPipelineStage(
     "aggregate",
-    total,
+    shapedRowTotal,
     () => applyGroupAggregates(groupNodes, options.aggregate ?? []),
     pipelineOptions
   );
-  return runPipelineStage("flatten", total, () => {
+  return runPipelineStage("flatten", shapedRowTotal, () => {
     if (groups.length === 0) {
       const viewport = normalizeViewport(options.viewport, sorted.length);
       return {

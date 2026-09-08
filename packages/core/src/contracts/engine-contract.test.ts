@@ -90,6 +90,44 @@ describe("grid engine columnar contract", () => {
     expect(yields).toBe(13);
   });
 
+  it("reports filtered work totals for downstream shaping stages", async () => {
+    const data = createGridColumnarBuffer(rows, [
+      { columnId: "amount", storage: "float64" },
+      { columnId: "active", storage: "boolean" }
+    ]);
+    const progress: string[] = [];
+
+    await executeGridEngineShapeRequestInStages({
+      type: "shape",
+      requestId: "filtered-progress-test",
+      data,
+      definition: createGridWorkerShapeDefinition({
+        filter: [{ columnId: "active", operator: "equals", value: true, comparisonType: "boolean" }],
+        sort: [{ columnId: "amount", direction: "desc", comparisonType: "number" }],
+        group: [{ columnId: "active", comparisonType: "boolean" }],
+        aggregate: [{ id: "total", operation: "sum", columnId: "amount" }]
+      })
+    }, {
+      onProgress: (stage, completed, total) => progress.push(`${stage}:${completed}/${total}`)
+    });
+
+    expect(progress).toEqual([
+      "decode:0/2",
+      "decode:2/2",
+      "filter:0/2",
+      "filter:2/2",
+      "sort:0/1",
+      "sort:1/1",
+      "group:0/1",
+      "group:1/1",
+      "aggregate:0/1",
+      "aggregate:1/1",
+      "flatten:0/1",
+      "flatten:1/1",
+      "complete:2/2"
+    ]);
+  });
+
   it("rejects callbacks at the worker boundary", () => {
     expect(() => createGridWorkerShapeDefinition({
       aggregate: [{ id: "custom", operation: "custom", reducer: () => 1 }]
