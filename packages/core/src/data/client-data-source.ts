@@ -38,6 +38,7 @@ export class ClientDataSource<TRow extends ClientDataSourceRow> {
 
   async getRows(request: GetRowsRequest, signal?: AbortSignal): Promise<GetRowsResult> {
     throwIfAborted(signal);
+    assertShapingDescriptorsUnsupported(request);
 
     const startRow = request.startRow;
     const endRow = Math.min(startRow + request.rowCount, this.#rows.length);
@@ -74,6 +75,14 @@ export class ClientDataSource<TRow extends ClientDataSourceRow> {
       accepted: rejectedChanges.length === 0,
       rejectedChanges
     };
+  }
+}
+
+function assertShapingDescriptorsUnsupported(request: GetRowsRequest): void {
+  if (request.sort.length > 0 || request.filter.length > 0) {
+    throw new Error(
+      "ClientDataSource shaping descriptors are not supported; use the canonical shaping pipeline before range retrieval."
+    );
   }
 }
 

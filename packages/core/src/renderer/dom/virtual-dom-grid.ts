@@ -4,12 +4,11 @@ import type { GridRow } from "../../contracts/grid-types.js";
 import type { GridClipboardOptions, GridPasteResult } from "../../state/grid-clipboard.js";
 import { prepareGridPaste } from "../../state/grid-clipboard.js";
 import type { GridColumnView, GridStylingOptions, VirtualDomGridTheme } from "./grid-customization.js";
-import { getVisibleColumns, resolveGridClassNames } from "./grid-customization.js";
+import { getVisibleColumns } from "./grid-customization.js";
 import type { GridCellEditor, GridEditorSnapshot, GridValidationResult } from "../../state/grid-editing.js";
 import { createGridEditorStateMachine } from "../../state/grid-editing.js";
 import type { GridHistoryEvent, GridHistoryOptions } from "../../state/grid-history.js";
 import type { GridRowNumberOptions, GridStatusBarOptions } from "./grid-shell.js";
-import { formatGridStatus } from "./grid-shell.js";
 import { createGridHistory, invertCellChange } from "../../state/grid-history.js";
 import type { GridLayoutEvent, GridLayoutState } from "../../state/grid-layout.js";
 import {
@@ -21,7 +20,23 @@ import {
   resizeGridColumn
 } from "../../state/grid-layout.js";
 import { createVirtualDomGridCell } from "./virtual-dom-grid-cell.js";
+import {
+  appendGridRowNumber,
+  appendGridShellAfterRows,
+  appendGridShellBeforeRows
+} from "./virtual-dom-grid-shell.js";
 import { clamp, isTypeToEditKey } from "./virtual-dom-grid-values.js";
+import {
+  applyVirtualDomGridTheme,
+  cssGridPixelValue,
+  findGridColumnIndex,
+  getGridDensityDefaults,
+  getRenderedGridColumnIndexes,
+  getRenderedGridRowIndexes,
+  orderGridColumns
+} from "./virtual-dom-grid-geometry.js";
+import type { GridEditorOperationToken } from "./virtual-dom-grid-editor-coordinator.js";
+import { VirtualDomGridEditorCoordinator } from "./virtual-dom-grid-editor-coordinator.js";
 
 export interface VirtualDomGridRenderMetrics {
   readonly renderedCellCount: number;
@@ -94,21 +109,21 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const spacer = document.createElement("div");
   const viewport = document.createElement("div");
   const density = options.theme?.density ?? "comfortable";
-  const densityDefaults = getDensityDefaults(density);
-  const rowHeight = options.rowHeight ?? cssPixelValue(options.theme?.rowHeight, densityDefaults.rowHeight);
+  const densityDefaults = getGridDensityDefaults(density);
+  const rowHeight = options.rowHeight ?? cssGridPixelValue(options.theme?.rowHeight, densityDefaults.rowHeight);
   const columnWidth = options.columnWidth ?? densityDefaults.columnWidth;
   const showColumnHeaders = options.showColumnHeaders !== false;
   const rowNumberOptions = typeof options.rowNumbers === "object" ? options.rowNumbers : undefined;
   const showRowNumbers = options.rowNumbers !== false && rowNumberOptions?.visible !== false;
   const showStatusBar = options.statusBar !== false && options.statusBar?.visible !== false;
   const headerHeight = showColumnHeaders
-    ? cssPixelValue(options.theme?.headerHeight, densityDefaults.headerHeight)
+    ? cssGridPixelValue(options.theme?.headerHeight, densityDefaults.headerHeight)
     : 0;
   const rowNumberWidth = showRowNumbers
-    ? rowNumberOptions?.width ?? cssPixelValue(options.theme?.rowNumberWidth, densityDefaults.rowNumberWidth)
+    ? rowNumberOptions?.width ?? cssGridPixelValue(options.theme?.rowNumberWidth, densityDefaults.rowNumberWidth)
     : 0;
   const statusHeight = showStatusBar
-    ? cssPixelValue(options.theme?.statusHeight, densityDefaults.statusHeight)
+    ? cssGridPixelValue(options.theme?.statusHeight, densityDefaults.statusHeight)
     : 0;
   const overscanRows = options.overscanRows ?? 6;
   const overscanColumns = options.overscanColumns ?? 2;
@@ -130,10 +145,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     rowCount: rows.length,
     ...(options.layoutState ? { state: options.layoutState } : {})
   });
-  let columns = orderColumns(sourceColumns, layoutState);
+  let columns = orderGridColumns(sourceColumns, layoutState);
   const history = options.history === false ? undefined : createGridHistory(options.history);
   const editorState = createGridEditorStateMachine();
-  let editorAbortController = new AbortController();
+  const editorCoordinator = new VirtualDomGridEditorCoordinator();
   let mountedLifecycles: Array<() => void> = [];
   let requestActiveEditorCommit: (() => Promise<boolean>) | undefined;
   const activeCell = {
@@ -164,7 +179,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   grid.style.color = "var(--gethen-text-color, #17212b)";
   grid.style.fontFamily = "var(--gethen-font-family, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif)";
   grid.style.fontSize = "var(--gethen-font-size, 13px)";
-  applyGridTheme(grid, options.theme);
+  applyVirtualDomGridTheme(grid, options.theme);
 
   spacer.style.position = "absolute";
   spacer.style.inset = "0 auto auto 0";
@@ -183,11 +198,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
 
   function render(): void {
     animationFrame = 0;
+    invalidatePendingEditorOperationForRemount();
     const started = performance.now();
     destroyMountedLifecycles();
     requestActiveEditorCommit = undefined;
     const columnOffsets = getGridColumnOffsets(layoutState);
-    const rowIndexes = getRenderedRowIndexes(
+    const rowIndexes = getRenderedGridRowIndexes(
       rows.length,
       rowHeight,
       Math.max(0, grid.scrollTop - headerHeight),
@@ -195,7 +211,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       layoutState.frozenRowCount,
       overscanRows
     );
-    const columnIndexes = getRenderedColumnIndexes(
+    const columnIndexes = getRenderedGridColumnIndexes(
       layoutState,
       columnOffsets,
       Math.max(0, grid.scrollLeft - rowNumberWidth),
@@ -203,11 +219,28 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       overscanColumns
     );
     const fragment = document.createDocumentFragment();
+    const shellContext = {
+      grid,
+      rows,
+      columns,
+      pinnedBottomRows,
+      layoutState,
+      styling: options.styling,
+      statusBar: options.statusBar,
+      activeCell,
+      anchorCell,
+      rowHeight,
+      rowNumberWidth,
+      headerHeight,
+      statusHeight,
+      pinnedHeight,
+      showColumnHeaders,
+      showRowNumbers,
+      showStatusBar
+    };
 
     viewport.replaceChildren();
-    appendColumnHeaders(fragment, columnIndexes, columnOffsets);
-    appendRowNumberCorner(fragment);
-    appendEmptyState(fragment);
+    appendGridShellBeforeRows(fragment, columnIndexes, columnOffsets, shellContext);
     for (const rowIndex of rowIndexes) {
       const row = rows[rowIndex];
 
@@ -244,7 +277,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
             void handleEditorCancel(editor);
           },
           styling: options.styling,
-          editorSignal: editorAbortController.signal,
+          editorSignal: editorCoordinator.signal,
           registerLifecycle: (destroy: () => void) => mountedLifecycles.push(destroy),
           registerEditorCommit: (commit: () => Promise<boolean>) => {
             requestActiveEditorCommit = commit;
@@ -265,11 +298,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           )
         );
       }
-      appendRowNumber(fragment, row, rowIndex, rowIndex < layoutState.frozenRowCount);
+      appendGridRowNumber(fragment, row, rowIndex, rowIndex < layoutState.frozenRowCount, shellContext);
     }
 
-    appendPinnedBottomRows(fragment, columnIndexes, columnOffsets);
-    appendStatusBar(fragment);
+    appendGridShellAfterRows(fragment, columnIndexes, columnOffsets, shellContext);
     viewport.appendChild(fragment);
     options.onRender?.({
       renderedCellCount: rowIndexes.length * columnIndexes.length,
@@ -278,232 +310,6 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     if (editorState.snapshot.phase === "suspended") {
       editorState.resumeAfterScroll();
     }
-  }
-
-  function appendColumnHeaders(
-    fragment: DocumentFragment,
-    columnIndexes: readonly number[],
-    columnOffsets: readonly number[]
-  ): void {
-    if (!showColumnHeaders) return;
-    for (const columnIndex of columnIndexes) {
-      const column = columns[columnIndex];
-      const layoutColumn = layoutState.columns[columnIndex];
-      if (!column || !layoutColumn) continue;
-      const frozenColumn = columnIndex < layoutState.frozenColumnCount;
-      const header = document.createElement("div");
-      header.setAttribute("role", "columnheader");
-      header.setAttribute("aria-rowindex", "1");
-      header.setAttribute("aria-colindex", String(columnIndex + 1 + (showRowNumbers ? 1 : 0)));
-      header.dataset.columnIndex = String(columnIndex);
-      header.textContent = column.title;
-      header.title = column.title;
-      header.classList.add(...resolveGridClassNames(
-        column.headerClassName,
-        options.styling?.getHeaderClass?.({ column, columnIndex })
-      ));
-      Object.assign(header.style, {
-        position: "absolute",
-        left: `${rowNumberWidth + columnOffsets[columnIndex]! + (frozenColumn ? grid.scrollLeft : 0)}px`,
-        top: `${grid.scrollTop}px`,
-        width: `${layoutColumn.width}px`,
-        height: `${headerHeight}px`,
-        display: "flex",
-        alignItems: "center",
-        overflow: "hidden",
-        whiteSpace: "nowrap",
-        textOverflow: "ellipsis",
-        padding: "var(--gethen-header-padding, 0 10px)",
-        borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-        borderBottom: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-        background: "var(--gethen-header-background, #f3f6f9)",
-        color: "var(--gethen-header-text-color, #344054)",
-        fontWeight: "650",
-        zIndex: frozenColumn ? "9" : "8"
-      });
-      fragment.appendChild(header);
-    }
-  }
-
-  function appendRowNumberCorner(fragment: DocumentFragment): void {
-    if (!showRowNumbers || !showColumnHeaders) return;
-    const corner = document.createElement("div");
-    corner.setAttribute("role", "columnheader");
-    corner.setAttribute("aria-label", "Row numbers");
-    corner.setAttribute("aria-rowindex", "1");
-    corner.setAttribute("aria-colindex", "1");
-    Object.assign(corner.style, {
-      position: "absolute",
-      left: `${grid.scrollLeft}px`,
-      top: `${grid.scrollTop}px`,
-      width: `${rowNumberWidth}px`,
-      height: `${headerHeight}px`,
-      borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-      borderBottom: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-      background: "var(--gethen-row-number-background, #eef2f6)",
-      zIndex: "10"
-    });
-    fragment.appendChild(corner);
-  }
-
-  function appendRowNumber(
-    fragment: DocumentFragment,
-    row: TRow,
-    rowIndex: number,
-    frozenRow: boolean
-  ): void {
-    if (!showRowNumbers) return;
-    const rowHeader = document.createElement("div");
-    const isGroup = "kind" in row && row.kind === "group";
-    rowHeader.setAttribute("role", "rowheader");
-    rowHeader.setAttribute("aria-rowindex", String(rowIndex + 1 + (showColumnHeaders ? 1 : 0)));
-    rowHeader.setAttribute("aria-colindex", "1");
-    rowHeader.textContent = isGroup ? "" : String(rowIndex + 1);
-    rowHeader.title = isGroup ? "Group row" : `Row ${rowIndex + 1}`;
-    Object.assign(rowHeader.style, {
-      position: "absolute",
-      left: `${grid.scrollLeft}px`,
-      top: `${headerHeight + rowIndex * rowHeight + (frozenRow ? grid.scrollTop : 0)}px`,
-      width: `${rowNumberWidth}px`,
-      height: `${rowHeight}px`,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-end",
-      padding: "0 10px",
-      borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-      borderBottom: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-      background: "var(--gethen-row-number-background, #f7f9fb)",
-      color: "var(--gethen-row-number-text-color, #667085)",
-      fontVariantNumeric: "tabular-nums",
-      userSelect: "none",
-      zIndex: frozenRow ? "7" : "6"
-    });
-    fragment.appendChild(rowHeader);
-  }
-
-  function appendEmptyState(fragment: DocumentFragment): void {
-    if (rows.length > 0 && columns.length > 0) return;
-    const empty = document.createElement("div");
-    empty.dataset.gethenEmptyState = "true";
-    empty.textContent = columns.length === 0 ? "No visible columns" : "No rows to display";
-    Object.assign(empty.style, {
-      position: "absolute",
-      left: `${grid.scrollLeft}px`,
-      top: `${grid.scrollTop + headerHeight}px`,
-      width: `${grid.clientWidth}px`,
-      height: `${Math.max(80, grid.clientHeight - headerHeight - statusHeight)}px`,
-      display: "grid",
-      placeItems: "center",
-      color: "var(--gethen-readonly-text-color, #667085)",
-      background: "var(--gethen-background, #ffffff)",
-      zIndex: "5"
-    });
-    fragment.appendChild(empty);
-  }
-
-  function appendPinnedBottomRows(
-    fragment: DocumentFragment,
-    columnIndexes: readonly number[],
-    columnOffsets: readonly number[]
-  ): void {
-    if (pinnedBottomRows.length === 0) return;
-    const baseTop = grid.scrollTop + Math.max(headerHeight, grid.clientHeight - statusHeight - pinnedHeight);
-    pinnedBottomRows.forEach((row, pinnedIndex) => {
-      const ariaRowIndex = rows.length + pinnedIndex + 1 + (showColumnHeaders ? 1 : 0);
-      if (showRowNumbers) {
-        const label = document.createElement("div");
-        label.setAttribute("role", "rowheader");
-        label.setAttribute("aria-rowindex", String(ariaRowIndex));
-        label.setAttribute("aria-colindex", "1");
-        label.textContent = "Σ";
-        label.title = "Pinned summary row";
-        Object.assign(label.style, {
-          position: "absolute",
-          left: `${grid.scrollLeft}px`,
-          top: `${baseTop + pinnedIndex * rowHeight}px`,
-          width: `${rowNumberWidth}px`,
-          height: `${rowHeight}px`,
-          display: "grid",
-          placeItems: "center",
-          borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-          borderTop: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-          background: "var(--gethen-pinned-row-background, #eef4ff)",
-          color: "var(--gethen-row-number-text-color, #667085)",
-          fontWeight: "700",
-          zIndex: "10"
-        });
-        fragment.appendChild(label);
-      }
-      for (const columnIndex of columnIndexes) {
-        const column = columns[columnIndex];
-        const layoutColumn = layoutState.columns[columnIndex];
-        if (!column || !layoutColumn) continue;
-        const frozenColumn = columnIndex < layoutState.frozenColumnCount;
-        const cell = document.createElement("div");
-        const context = {
-          row,
-          rowId: row.id,
-          rowIndex: rows.length + pinnedIndex,
-          column,
-          columnIndex,
-          value: row.cells[column.id]
-        };
-        cell.setAttribute("role", "gridcell");
-        cell.setAttribute("aria-readonly", "true");
-        cell.setAttribute("aria-rowindex", String(ariaRowIndex));
-        cell.setAttribute("aria-colindex", String(columnIndex + 1 + (showRowNumbers ? 1 : 0)));
-        cell.dataset.gethenPinnedBottom = "true";
-        cell.textContent = column.formatter?.(context) ?? String(context.value ?? "");
-        Object.assign(cell.style, {
-          position: "absolute",
-          left: `${rowNumberWidth + columnOffsets[columnIndex]! + (frozenColumn ? grid.scrollLeft : 0)}px`,
-          top: `${baseTop + pinnedIndex * rowHeight}px`,
-          width: `${layoutColumn.width}px`,
-          height: `${rowHeight}px`,
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          textOverflow: "ellipsis",
-          padding: "var(--gethen-cell-padding, 7px 10px)",
-          borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-          borderTop: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-          background: "var(--gethen-pinned-row-background, #eef4ff)",
-          color: "var(--gethen-text-color, #17212b)",
-          fontWeight: "650",
-          textAlign: column.align ?? "inherit",
-          zIndex: frozenColumn ? "9" : "8"
-        });
-        fragment.appendChild(cell);
-      }
-    });
-  }
-
-  function appendStatusBar(fragment: DocumentFragment): void {
-    if (!showStatusBar) return;
-    const rowSpan = Math.abs(activeCell.rowIndex - anchorCell.rowIndex) + 1;
-    const columnSpan = Math.abs(activeCell.columnIndex - anchorCell.columnIndex) + 1;
-    const selectedCellCount = rows.length > 0 && columns.length > 0 ? rowSpan * columnSpan : 0;
-    const status = document.createElement("div");
-    status.setAttribute("role", "status");
-    status.setAttribute("aria-live", "polite");
-    status.dataset.gethenStatusBar = "true";
-    status.textContent = formatGridStatus(rows.length, selectedCellCount, options.statusBar || undefined);
-    Object.assign(status.style, {
-      position: "absolute",
-      left: `${grid.scrollLeft}px`,
-      top: `${grid.scrollTop + Math.max(0, grid.clientHeight - statusHeight)}px`,
-      width: `${grid.clientWidth}px`,
-      height: `${statusHeight}px`,
-      display: "flex",
-      alignItems: "center",
-      padding: "0 12px",
-      borderTop: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
-      background: "var(--gethen-status-background, #f8fafc)",
-      color: "var(--gethen-status-text-color, #475467)",
-      fontSize: "12px",
-      fontVariantNumeric: "tabular-nums",
-      zIndex: "12"
-    });
-    fragment.appendChild(status);
   }
 
   function destroyMountedLifecycles(): void {
@@ -517,7 +323,13 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       return;
     }
 
-    if (editorState.snapshot.phase === "editing" || editorState.snapshot.phase === "failed") {
+    if (
+      editorState.snapshot.phase === "editing"
+      || editorState.snapshot.phase === "validating"
+      || editorState.snapshot.phase === "committing"
+      || editorState.snapshot.phase === "failed"
+    ) {
+      editorCoordinator.invalidateOperation();
       editorState.suspendForScroll();
     }
     animationFrame = requestAnimationFrame(render);
@@ -728,6 +540,9 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function startEdit(initialDraftValue?: string): void {
+    if (editorState.snapshot.phase !== "inactive") {
+      return;
+    }
     const column = columns[activeCell.columnIndex];
     const row = rows[activeCell.rowIndex];
 
@@ -741,8 +556,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
 
     const initialValue = row.cells[column.id] ?? null;
-    editorAbortController.abort("replaced");
-    editorAbortController = new AbortController();
+    editorCoordinator.beginSession();
     editState = {
       rowIndex: activeCell.rowIndex,
       columnIndex: activeCell.columnIndex,
@@ -769,31 +583,70 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     editor?: GridCellEditor<TRow>,
     navigation?: "next" | "previous"
   ): Promise<boolean> {
+    if (editorCoordinator.pendingCommit) {
+      return editorCoordinator.pendingCommit;
+    }
     if (!editState) {
       return false;
     }
 
+    const rowIndex = editState.rowIndex;
+    const columnIndex = editState.columnIndex;
     editState = { ...editState, draftValue: value };
     editorState.updateDraft(value);
     editorState.beginValidation();
-    const column = columns[editState.columnIndex];
-    const row = rows[editState.rowIndex];
+    return editorCoordinator.runExclusiveCommit((token) => completeEditorCommit(
+      { ...token, rowIndex, columnIndex },
+      value,
+      editor,
+      navigation
+    ));
+  }
+
+  async function completeEditorCommit(
+    operation: {
+      readonly sessionGeneration: number;
+      readonly operationGeneration: number;
+      readonly rowIndex: number;
+      readonly columnIndex: number;
+      readonly signal: AbortSignal;
+    },
+    value: CellChangeEvent["newValue"],
+    editor?: GridCellEditor<TRow>,
+    navigation?: "next" | "previous"
+  ): Promise<boolean> {
+    const column = columns[operation.columnIndex];
+    const row = rows[operation.rowIndex];
     if (!column || !row) {
-      editorState.validationFailed({ valid: false, message: "The edited cell is no longer available." });
+      if (isCurrentEditorOperation(operation)) {
+        editorState.validationFailed({ valid: false, message: "The edited cell is no longer available." });
+      }
       return false;
     }
     const context = {
       row,
       rowId: row.id,
-      rowIndex: editState.rowIndex,
+      rowIndex: operation.rowIndex,
       column,
-      columnIndex: editState.columnIndex,
+      columnIndex: operation.columnIndex,
       value
     };
-    const editorValidation = editor ? await editor.validate(value) : { valid: true } as const;
-    const validation: GridValidationResult = editorValidation.valid
-      ? await (column.validate?.(value, context) ?? { valid: true })
-      : editorValidation;
+    let editorValidation: GridValidationResult;
+    try {
+      editorValidation = editor ? await editor.validate(value) : { valid: true };
+    } catch (error) {
+      return failEditorValidation(operation, error, "Editor validation failed.");
+    }
+    if (!isCurrentEditorOperation(operation)) return false;
+    let validation: GridValidationResult = editorValidation;
+    if (editorValidation.valid) {
+      try {
+        validation = await (column.validate?.(value, context) ?? { valid: true });
+      } catch (error) {
+        return failEditorValidation(operation, error, "Column validation failed.");
+      }
+    }
+    if (!isCurrentEditorOperation(operation)) return false;
     if (!validation.valid) {
       editorState.validationFailed(validation);
       render();
@@ -802,15 +655,19 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     editorState.beginCommit();
     try {
       await editor?.commit(value);
-      commitValue(editState.rowIndex, editState.columnIndex, value, "cell-edit");
+      if (!isCurrentEditorOperation(operation)) return false;
+      commitValue(operation.rowIndex, operation.columnIndex, value, "cell-edit");
       editorState.committed();
     } catch (error) {
-      editorState.commitFailed(error instanceof Error ? error.message : "Editor commit failed.");
-      render();
+      if (isCurrentEditorOperation(operation)) {
+        editorState.commitFailed(error instanceof Error ? error.message : "Editor commit failed.");
+        render();
+      }
       return false;
     }
+    if (!isCurrentEditorOperation(operation)) return false;
     editState = null;
-    editorAbortController.abort("commit");
+    editorCoordinator.completeSession();
     if (navigation) {
       const delta = navigation === "next" ? 1 : -1;
       const linearIndex = activeCell.rowIndex * columns.length + activeCell.columnIndex + delta;
@@ -824,15 +681,51 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   async function handleEditorCancel(editor?: GridCellEditor<TRow>): Promise<void> {
-    if (editorState.snapshot.phase !== "inactive") {
-      editorState.beginCancel();
-      await editor?.cancel();
-      editorState.cancelled();
-    }
+    if (!editState || editorCoordinator.destroyed) return;
+    editorCoordinator.cancelSession();
     editState = null;
-    editorAbortController.abort("cancel");
+    if (editorState.snapshot.phase !== "inactive" && editorState.snapshot.phase !== "disposed") {
+      editorState.beginCancel();
+      try {
+        await editor?.cancel();
+      } catch {
+        // Cancellation remains final; custom editor cleanup failures must not revive the session.
+      }
+      if (!editorCoordinator.destroyed && editorState.snapshot.phase === "cancelling") {
+        editorState.cancelled();
+      }
+    }
+    if (editorCoordinator.destroyed) return;
     grid.focus();
     render();
+  }
+
+  function failEditorValidation(
+    operation: GridEditorOperationToken,
+    error: unknown,
+    fallbackMessage: string
+  ): false {
+    if (isCurrentEditorOperation(operation)) {
+      editorState.validationFailed({
+        valid: false,
+        message: error instanceof Error ? error.message : fallbackMessage,
+        code: "validation"
+      });
+      render();
+    }
+    return false;
+  }
+
+  function isCurrentEditorOperation(operation: GridEditorOperationToken): boolean {
+    return editorCoordinator.isCurrent(operation) && editState !== null;
+  }
+
+  function invalidatePendingEditorOperationForRemount(): void {
+    if (editorState.snapshot.phase !== "validating" && editorState.snapshot.phase !== "committing") {
+      return;
+    }
+    editorCoordinator.invalidateOperation();
+    editorState.suspendForScroll();
   }
 
   function toggleBooleanCell(): void {
@@ -909,13 +802,13 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       rowCount: rows.length,
       state
     });
-    columns = orderColumns(sourceColumns, layoutState);
-    activeCell.columnIndex = findColumnIndex(columns, activeColumnId, activeCell.columnIndex);
-    anchorCell.columnIndex = findColumnIndex(columns, anchorColumnId, anchorCell.columnIndex);
+    columns = orderGridColumns(sourceColumns, layoutState);
+    activeCell.columnIndex = findGridColumnIndex(columns, activeColumnId, activeCell.columnIndex);
+    anchorCell.columnIndex = findGridColumnIndex(columns, anchorColumnId, anchorCell.columnIndex);
     if (editState) {
       editState = {
         ...editState,
-        columnIndex: findColumnIndex(columns, editColumnId, editState.columnIndex)
+        columnIndex: findGridColumnIndex(columns, editColumnId, editState.columnIndex)
       };
     }
     spacer.style.width = `${rowNumberWidth + getGridLayoutWidth(layoutState)}px`;
@@ -934,6 +827,8 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   return {
     element: grid,
     destroy() {
+      editorCoordinator.destroy();
+      editState = null;
       if (animationFrame !== 0) {
         cancelAnimationFrame(animationFrame);
       }
@@ -943,7 +838,6 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       grid.removeEventListener("click", handleClick);
       grid.removeEventListener("paste", handlePaste);
       window.removeEventListener("resize", scheduleRender);
-      editorAbortController.abort("unmount");
       editorState.unmount();
       unsubscribeEditor();
       unsubscribeHistory?.();
@@ -951,7 +845,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       container.replaceChildren();
     },
     render,
-    setTheme: (theme) => applyGridTheme(grid, theme),
+    setTheme: (theme) => applyVirtualDomGridTheme(grid, theme),
     getLayoutState: () => layoutState,
     applyLayoutState: (state) => setLayoutState(state, "apply"),
     resizeColumn: (columnId, width) => setLayoutState(
@@ -969,123 +863,4 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     undo,
     redo
   };
-}
-
-function orderColumns<TRow extends GridRow>(
-  columns: readonly GridColumnView<TRow>[],
-  layout: GridLayoutState
-): readonly GridColumnView<TRow>[] {
-  const byId = new Map(columns.map((column) => [column.id, column] as const));
-  return layout.columns.map((column) => byId.get(column.columnId)!).filter(Boolean);
-}
-
-function findColumnIndex<TRow extends GridRow>(
-  columns: readonly GridColumnView<TRow>[],
-  columnId: string | undefined,
-  fallback: number
-): number {
-  const index = columnId === undefined ? -1 : columns.findIndex((column) => column.id === columnId);
-  return index >= 0 ? index : clamp(fallback, 0, Math.max(0, columns.length - 1));
-}
-
-function getRenderedRowIndexes(
-  rowCount: number,
-  rowHeight: number,
-  scrollTop: number,
-  viewportHeight: number,
-  frozenRowCount: number,
-  overscan: number
-): readonly number[] {
-  const indexes = new Set<number>();
-  for (let index = 0; index < Math.min(rowCount, frozenRowCount); index += 1) {
-    indexes.add(index);
-  }
-  const first = Math.max(frozenRowCount, Math.floor(scrollTop / rowHeight) - overscan);
-  const last = Math.min(rowCount - 1, Math.ceil((scrollTop + viewportHeight) / rowHeight) + overscan);
-  for (let index = first; index <= last; index += 1) {
-    indexes.add(index);
-  }
-  return [...indexes].sort((left, right) => left - right);
-}
-
-function getRenderedColumnIndexes(
-  layout: GridLayoutState,
-  offsets: readonly number[],
-  scrollLeft: number,
-  viewportWidth: number,
-  overscan: number
-): readonly number[] {
-  const indexes = new Set<number>();
-  for (let index = 0; index < layout.frozenColumnCount; index += 1) {
-    indexes.add(index);
-  }
-  const visible: number[] = [];
-  for (let index = layout.frozenColumnCount; index < layout.columns.length; index += 1) {
-    const left = offsets[index]!;
-    const right = left + layout.columns[index]!.width;
-    if (right >= scrollLeft && left <= scrollLeft + viewportWidth) {
-      visible.push(index);
-    }
-  }
-  const first = visible[0] ?? layout.frozenColumnCount;
-  const last = visible.at(-1) ?? first - 1;
-  for (let index = Math.max(layout.frozenColumnCount, first - overscan); index <= Math.min(layout.columns.length - 1, last + overscan); index += 1) {
-    indexes.add(index);
-  }
-  return [...indexes].sort((left, right) => left - right);
-}
-
-function applyGridTheme(grid: HTMLElement, theme: VirtualDomGridTheme | undefined): void {
-  const variables: ReadonlyArray<readonly [string, string | undefined]> = [
-    ["--gethen-background", theme?.background],
-    ["--gethen-text-color", theme?.textColor],
-    ["--gethen-grid-line-color", theme?.gridLineColor],
-    ["--gethen-header-background", theme?.headerBackground],
-    ["--gethen-header-text-color", theme?.headerTextColor],
-    ["--gethen-row-number-background", theme?.rowNumberBackground],
-    ["--gethen-row-number-text-color", theme?.rowNumberTextColor],
-    ["--gethen-pinned-row-background", theme?.pinnedRowBackground],
-    ["--gethen-status-background", theme?.statusBackground],
-    ["--gethen-status-text-color", theme?.statusTextColor],
-    ["--gethen-active-cell-border", theme?.activeCellBorder],
-    ["--gethen-active-cell-background", theme?.activeCellBackground],
-    ["--gethen-selection-background", theme?.selectionBackground],
-    ["--gethen-readonly-text-color", theme?.readonlyTextColor],
-    ["--gethen-invalid-color", theme?.invalidColor],
-    ["--gethen-editor-focus-color", theme?.editorFocusColor],
-    ["--gethen-cell-padding", theme?.cellPadding],
-    ["--gethen-font-family", theme?.fontFamily],
-    ["--gethen-font-size", theme?.fontSize]
-  ];
-
-  for (const [name, value] of variables) {
-    if (value !== undefined) {
-      grid.style.setProperty(name, value);
-    } else {
-      grid.style.removeProperty(name);
-    }
-  }
-}
-
-function getDensityDefaults(density: NonNullable<VirtualDomGridTheme["density"]>): {
-  readonly rowHeight: number;
-  readonly columnWidth: number;
-  readonly headerHeight: number;
-  readonly rowNumberWidth: number;
-  readonly statusHeight: number;
-} {
-  switch (density) {
-    case "compact":
-      return { rowHeight: 28, columnWidth: 124, headerHeight: 32, rowNumberWidth: 44, statusHeight: 28 };
-    case "spacious":
-      return { rowHeight: 40, columnWidth: 148, headerHeight: 44, rowNumberWidth: 56, statusHeight: 36 };
-    case "comfortable":
-      return { rowHeight: 34, columnWidth: 136, headerHeight: 38, rowNumberWidth: 48, statusHeight: 32 };
-  }
-}
-
-function cssPixelValue(value: string | undefined, fallback: number): number {
-  if (value === undefined) return fallback;
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }

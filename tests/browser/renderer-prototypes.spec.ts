@@ -306,6 +306,59 @@ test("Alpha 3 custom editor lifecycle validates and commits trusted host code", 
   );
 });
 
+test("Alpha 3 cancels an editor while asynchronous validation is pending", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?alpha3=on&asyncEditor=on");
+  await dataCell(page, 0, 6).dblclick();
+  const editor = page.locator("[data-custom-editor='true']");
+  await editor.fill("custom:cancelled");
+  await editor.press("Enter");
+  await expect(page.locator("#editorStatus")).toHaveText("validating");
+  await editor.press("Escape");
+
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator("#editorStatus")).toHaveText("inactive");
+  await page.waitForTimeout(150);
+  await expect(page.locator("#lastChange")).not.toContainText("custom:cancelled");
+});
+
+test("Alpha 3 ignores asynchronous validation after grid destruction", async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+  await page.goto("/apps/core-demo/index.html?alpha3=on&asyncEditor=on");
+  await dataCell(page, 0, 6).dblclick();
+  const editor = page.locator("[data-custom-editor='true']");
+  await editor.fill("custom:destroyed");
+  await editor.press("Enter");
+  await expect(page.locator("#editorStatus")).toHaveText("validating");
+  await page.evaluate(() => window.dispatchEvent(new Event("gethen-demo-destroy-grid")));
+
+  await expect(page.getByRole("grid")).toHaveCount(0);
+  await page.waitForTimeout(150);
+  expect(pageErrors).toEqual([]);
+});
+
+test("Alpha 3 coalesces double commit and contains rejected custom-editor commits", async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+  await page.goto("/apps/core-demo/index.html?alpha3=on&asyncEditor=on");
+  await dataCell(page, 0, 6).dblclick();
+  let editor = page.locator("[data-custom-editor='true']");
+  await editor.fill("custom:double");
+  await editor.press("Enter");
+  await editor.press("Enter");
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator("#historyStatus")).toHaveText("1 undo / 0 redo");
+  await expect(page.locator("#lastChange")).toContainText("custom:double");
+
+  await dataCell(page, 0, 6).dblclick();
+  editor = page.locator("[data-custom-editor='true']");
+  await editor.fill("custom:reject");
+  await editor.press("Enter");
+  await expect(page.locator("#editorStatus")).toHaveText("failed");
+  await expect(editor).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("Alpha 4 TypeScript Worker shapes transferable columnar data", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
   await page.locator("#runWorker").click();

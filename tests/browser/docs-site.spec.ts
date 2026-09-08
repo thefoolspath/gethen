@@ -43,7 +43,7 @@ test("documentation clean-path navigation preserves history and focus", async ({
 test("documentation not-found route keeps the site shell", async ({ page }) => {
   await page.goto("/docs/not-a-real-page");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Documentation" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Documentation", exact: true })).toBeVisible();
 });
 
 test("basic grid mounts from the built Angular adapter and resets deterministically", async ({ page }) => {
@@ -155,7 +155,7 @@ test("narrow viewport exposes keyboard-accessible documentation navigation", asy
   await toggle.focus();
   await page.keyboard.press("Enter");
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("navigation", { name: "Documentation" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Documentation", exact: true })).toBeVisible();
 });
 
 test("documentation theme follows the system, persists an override, and updates the grid without remounting", async ({ page }) => {
@@ -211,7 +211,7 @@ test("documentation page exposes stable section anchors through the desktop tabl
 test("desktop documentation sidebar collapses from icon-and-text navigation to icons only", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/docs/introduction");
-  const sidebar = page.getByRole("navigation", { name: "Documentation" });
+  const sidebar = page.getByRole("navigation", { name: "Documentation", exact: true });
   await expect(sidebar).toHaveCSS("width", "300px");
   await expect(sidebar.getByText("Getting Started", { exact: true })).toBeVisible();
   await expect(sidebar.locator(".group-icon").first()).toBeVisible();

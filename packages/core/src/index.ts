@@ -69,10 +69,7 @@ export {
 
 export {
   createGridColumnarBuffer,
-  createGridWorkerShapeDefinition,
-  decodeGridColumnarBuffer,
-  executeGridEngineShapeRequest,
-  getGridColumnarTransferables
+  createGridWorkerShapeDefinition
 } from "./contracts/engine-contract.js";
 
 export {
@@ -80,23 +77,7 @@ export {
   createTypeScriptWorkerGridEngine
 } from "./engine/typescript-worker/typescript-worker-grid-engine.js";
 
-export {
-  RustWasmKernels,
-  loadRustWasmKernels
-} from "./engine/rust-wasm-worker/rust-wasm-kernels.js";
-
-export {
-  RustWasmWorkerEngine,
-  createRustWasmWorkerEngine
-} from "./engine/rust-wasm-worker/rust-wasm-worker-engine.js";
-
 export { createRustWasmWorkerGridEngine } from "./engine/rust-wasm-worker/rust-wasm-worker-grid-engine.js";
-
-export {
-  typescriptFilterAggregate,
-  typescriptFormulaSumProduct,
-  typescriptGroupSum
-} from "./shaping/typescript-kernels.js";
 
 export {
   mountVirtualDomGrid
@@ -215,11 +196,7 @@ export type {
   GridColumnarSchemaColumn,
   GridColumnarStorage,
   GridColumnarTextColumn,
-  GridEngineCancelRequest,
   GridEngineProgressStage,
-  GridEngineShapeRequest,
-  GridEngineWorkerRequest,
-  GridEngineWorkerResponse,
   GridPortableAggregateDescriptor,
   GridWorkerShapeDefinition
 } from "./contracts/engine-contract.js";
@@ -228,18 +205,6 @@ export type {
   GridWorkerExecutionOptions,
   TypeScriptWorkerGridEngineOptions
 } from "./engine/typescript-worker/typescript-worker-grid-engine.js";
-
-export type {
-  RustWasmFilterAggregateResult,
-  RustWasmKernelExports
-} from "./engine/rust-wasm-worker/rust-wasm-kernels.js";
-
-export type {
-  RustWasmWorkerCallOptions,
-  RustWasmWorkerEngineOptions,
-  RustWasmWorkerRequest,
-  RustWasmWorkerResponse
-} from "./engine/rust-wasm-worker/rust-wasm-worker-engine.js";
 
 export type {
   ClientDataSourceOptions,

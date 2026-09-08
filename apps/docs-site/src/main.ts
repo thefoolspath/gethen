@@ -142,7 +142,7 @@ export class DocsAppComponent implements OnDestroy {
       this.searchOpen.set(true);
       this.searchQuery.set("");
       this.activeSearchIndex.set(0);
-      queueMicrotask(() => this.searchInput?.nativeElement.focus());
+      requestAnimationFrame(() => this.searchInput?.nativeElement.focus());
     }
   }
 

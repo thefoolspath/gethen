@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm -r --if-present check && node scripts/verify-docs-site-boundary.mjs",
+    "check": "pnpm -r --if-present check && node scripts/verify-docs-site-boundary.mjs && node scripts/verify-core-public-boundary.mjs",
     "demo": "pnpm build && node scripts/serve-static.mjs",
     "docs": "pnpm build && node scripts/serve-static.mjs",
     "test": "vitest run --passWithNoTests",

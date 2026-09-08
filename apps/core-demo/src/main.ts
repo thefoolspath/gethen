@@ -2,11 +2,9 @@ import {
   createGridColumnarBuffer,
   createGridAggregatePinnedRow,
   createGridWorkerShapeDefinition,
-  createRustWasmWorkerEngine,
   createRustWasmWorkerGridEngine,
   createTypeScriptWorkerGridEngine,
-  mountVirtualDomGrid,
-  typescriptFilterAggregate
+  mountVirtualDomGrid
 } from "@thefoolspath/gethen-core";
 import type { GridColumnView, GridRow } from "@thefoolspath/gethen-core";
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
@@ -14,6 +12,7 @@ import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 const searchParams = new URLSearchParams(window.location.search);
 const customizationEnabled = searchParams.get("customization") !== "off";
 const alpha3DemoEnabled = searchParams.get("alpha3") === "on";
+const asyncEditorDemoEnabled = searchParams.get("asyncEditor") === "on";
 const emptyDemoEnabled = searchParams.get("empty") === "on";
 const columns: readonly GridColumnView[] = [
   ...Array.from({ length: 50 }, (_, columnIndex): GridColumnView => ({
@@ -71,11 +70,18 @@ const columns: readonly GridColumnView[] = [
               focus() { input?.focus(); },
               getValue() { return input?.value ?? null; },
               validate(value) {
-                return typeof value === "string" && value.startsWith("custom:")
+                const result = typeof value === "string" && value.startsWith("custom:")
                   ? { valid: true as const }
                   : { valid: false as const, message: "Custom values must start with custom:." };
+                return asyncEditorDemoEnabled
+                  ? new Promise<typeof result>((resolve) => setTimeout(() => resolve(result), 1_000))
+                  : result;
               },
-              commit() {},
+              commit(value) {
+                if (value === "custom:reject") {
+                  return Promise.reject(new Error("Custom editor commit rejected."));
+                }
+              },
               cancel() {},
               destroy() { input = undefined; }
             };
@@ -179,6 +185,8 @@ const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   }
 });
 
+window.addEventListener("gethen-demo-destroy-grid", () => gridApi.destroy(), { once: true });
+
 requireElement("resizeColumn").addEventListener("click", () => gridApi.resizeColumn("c0", 220));
 requireElement("reorderColumn").addEventListener("click", () => gridApi.reorderColumn("c1", 0));
 requireElement("freezePanes").addEventListener("click", () => gridApi.freezePanes(2, 2));
@@ -210,19 +218,22 @@ requireElement("runWorker").addEventListener("click", async () => {
   }
 });
 requireElement("runWasmWorker").addEventListener("click", async () => {
-  const engine = createRustWasmWorkerEngine();
+  const engine = createRustWasmWorkerGridEngine();
   try {
-    const values = Float64Array.from({ length: 100 }, (_, index) => index + 1);
-    const validity = new Uint8Array(100).fill(1);
-    const expected = typescriptFilterAggregate(values, validity, 50);
-    const result = await engine.filterAggregate(values, validity, 50, {
-      onProgress: (stage) => {
-        requireElement("wasmStatus").textContent = stage;
+    const result = await engine.shape({
+      data: createGridColumnarBuffer(rows.slice(0, 100), [
+        { columnId: "c0", storage: "float64" }
+      ]),
+      definition: createGridWorkerShapeDefinition({
+        filter: [{ columnId: "c0", operator: "greaterThan", value: 50, comparisonType: "number" }],
+        aggregate: [{ id: "sum", operation: "sum", columnId: "c0" }]
+      }),
+      onProgress: (progress) => {
+        requireElement("wasmStatus").textContent = progress.stage;
       }
     });
-    requireElement("wasmStatus").textContent = result.count === expected.count && result.sum === expected.sum
-      ? `parity: ${result.count} rows / sum ${result.sum}`
-      : "parity mismatch";
+    const sum = result.rows.reduce((total, row) => total + Number(row.cells.c0 ?? 0), 0);
+    requireElement("wasmStatus").textContent = `parity: ${result.filteredRowCount} rows / sum ${sum}`;
   } finally {
     engine.destroy();
   }

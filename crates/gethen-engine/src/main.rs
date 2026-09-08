@@ -160,7 +160,9 @@ fn main() {
     println!("  ],");
     println!("  \"limitations\": [");
     println!("    \"Native Rust benchmark before any public Rust or WASM API exists.\",");
-    println!("    \"Single process microbenchmark; browser, WASM, Worker, transfer, and startup costs are not measured.\",");
+    println!(
+        "    \"Single process microbenchmark; browser, WASM, Worker, transfer, and startup costs are not measured.\","
+    );
     println!("    \"A single run is not sufficient for architecture acceptance.\"");
     println!("  ]");
     println!("}}");

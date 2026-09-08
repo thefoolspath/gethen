@@ -152,7 +152,7 @@ function configureCellPosition<TRow extends GridRow>(
 
 function applyActiveCellStyles(cell: HTMLElement): void {
   Object.assign(cell.style, {
-    border: "2px solid var(--gethen-active-cell-border, #176b87)",
+    boxShadow: "inset 0 0 0 2px var(--gethen-active-cell-border, #176b87)",
     background: "var(--gethen-active-cell-background, #fff8df)",
     zIndex: "5"
   });
@@ -214,8 +214,8 @@ function createCellEditor<TRow extends GridRow>(
     control.value = String(draftValue ?? "");
   }
   Object.assign(control.style, {
-    width: "100%",
-    height: "100%",
+    width: "calc(100% + 1px)",
+    height: "calc(100% + 1px)",
     minWidth: "0",
     minHeight: "0",
     boxSizing: "border-box",

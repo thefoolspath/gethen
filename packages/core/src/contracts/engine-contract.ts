@@ -3,6 +3,7 @@ import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 import type { GridRow } from "./grid-types.js";
 import type {
   GridAggregateDescriptor,
+  GridComparisonType,
   GridDataShapingOptions,
   GridDataShapingResult,
   GridFilterDescriptor,
@@ -10,6 +11,7 @@ import type {
   GridSortDescriptor
 } from "../shaping/grid-data-shaping.js";
 import { shapeGridData, shapeGridDataInStages } from "../shaping/grid-data-shaping.js";
+import { readGridColumnarValue } from "../shaping/grid-value-semantics.js";
 
 export type GridColumnarStorage = "float64" | "boolean" | "utf8";
 
@@ -140,9 +142,7 @@ export function decodeGridColumnarBuffer(
   buffer: GridColumnarBuffer,
   includedColumnIds?: ReadonlySet<string>
 ): readonly GridRow[] {
-  if (buffer.rowIds.length !== buffer.rowCount) {
-    throw new Error("Columnar rowIds length does not match rowCount.");
-  }
+  validateGridColumnarBuffer(buffer);
   const decodedColumns = buffer.columns
     .filter((column) => !includedColumnIds || includedColumnIds.has(column.columnId))
     .map((column) => decodeColumn(column, buffer.rowCount));
@@ -174,6 +174,7 @@ export function createGridWorkerShapeDefinition(
 }
 
 export function executeGridEngineShapeRequest(request: GridEngineShapeRequest): GridDataShapingResult {
+  validateGridEngineShapeRequest(request);
   const computationColumnIds = getComputationColumnIds(request.definition);
   const result = shapeGridData({
     rows: decodeGridColumnarBuffer(request.data, computationColumnIds),
@@ -193,6 +194,7 @@ export async function executeGridEngineShapeRequestInStages(
   request: GridEngineShapeRequest,
   options: GridEngineStagedExecutionOptions = {}
 ): Promise<GridDataShapingResult> {
+  validateGridEngineShapeRequest(request);
   const total = request.data.rowCount;
   options.onProgress?.("decode", 0, total);
   await options.yieldControl?.();
@@ -235,7 +237,7 @@ function hydrateGridEngineResult(
         ...row,
         cells: Object.fromEntries(request.data.columns.map((column) => [
           column.columnId,
-          readColumnValue(column, rowIndex)
+          readGridColumnarValue(column, rowIndex)
         ]))
       };
     })
@@ -315,13 +317,7 @@ function decodeColumn(
   column: GridColumnarColumn,
   rowCount: number
 ): { columnId: string; values: readonly CellValue[] } {
-  if (column.validity.length !== rowCount) {
-    throw new Error(`Column '${column.columnId}' validity length does not match rowCount.`);
-  }
   if (column.storage === "float64" || column.storage === "boolean") {
-    if (column.values.length !== rowCount) {
-      throw new Error(`Column '${column.columnId}' values length does not match rowCount.`);
-    }
     return {
       columnId: column.columnId,
       values: Array.from({ length: rowCount }, (_, index) =>
@@ -332,9 +328,6 @@ function decodeColumn(
             : column.values[index] === 1
       )
     };
-  }
-  if (column.offsets.length !== rowCount + 1 || column.offsets[rowCount] !== column.bytes.length) {
-    throw new Error(`Column '${column.columnId}' UTF-8 offsets are invalid.`);
   }
   const decoder = new TextDecoder("utf-8", { fatal: true });
   return {
@@ -347,13 +340,106 @@ function decodeColumn(
   };
 }
 
-function readColumnValue(column: GridColumnarColumn, rowIndex: number): CellValue {
-  if (column.validity[rowIndex] === 0) return null;
-  if (column.storage === "float64") return column.values[rowIndex]!;
-  if (column.storage === "boolean") return column.values[rowIndex] === 1;
-  return new TextDecoder("utf-8", { fatal: true }).decode(
-    column.bytes.subarray(column.offsets[rowIndex]!, column.offsets[rowIndex + 1]!)
-  );
+export function validateGridEngineShapeRequest(request: GridEngineShapeRequest): void {
+  if (request.type !== "shape" || typeof request.requestId !== "string" || request.requestId.length === 0) {
+    throw new Error("Grid engine shape requests require a non-empty requestId.");
+  }
+  validateGridColumnarBuffer(request.data);
+  for (const descriptor of request.definition.sort) {
+    if (!isOneOf(descriptor.direction, ["asc", "desc"])) {
+      throw new Error("Grid engine sort direction is invalid.");
+    }
+    validateComparisonType(descriptor.comparisonType);
+    if (descriptor.nulls !== undefined && !isOneOf(descriptor.nulls, ["first", "last"])) {
+      throw new Error("Grid engine null placement is invalid.");
+    }
+  }
+  for (const descriptor of request.definition.filter) {
+    if (!isOneOf(descriptor.operator, [
+      "equals", "notEquals", "contains", "startsWith", "greaterThan",
+      "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "in", "isNull", "isNotNull"
+    ])) {
+      throw new Error("Grid engine filter operation is invalid.");
+    }
+    validateComparisonType(descriptor.comparisonType);
+  }
+  for (const descriptor of request.definition.group) {
+    validateComparisonType(descriptor.comparisonType);
+  }
+  for (const descriptor of request.definition.aggregate) {
+    if (!isOneOf(descriptor.operation, ["count", "sum", "min", "max", "average"])) {
+      throw new Error("Grid engine aggregate operation is invalid.");
+    }
+  }
+  validateViewport(request.definition.viewport);
+}
+
+export function validateGridColumnarBuffer(buffer: GridColumnarBuffer): void {
+  if (!Number.isSafeInteger(buffer.rowCount) || buffer.rowCount < 0 || buffer.rowCount > 0xffff_ffff) {
+    throw new Error("Columnar rowCount must be an unsigned 32-bit integer.");
+  }
+  if (buffer.rowIds.length !== buffer.rowCount) {
+    throw new Error("Columnar rowIds length does not match rowCount.");
+  }
+  const columnIds = new Set<string>();
+  for (const column of buffer.columns) {
+    if (!column.columnId || columnIds.has(column.columnId)) {
+      throw new Error(`Columnar column IDs must be non-empty and unique; received '${column.columnId}'.`);
+    }
+    columnIds.add(column.columnId);
+    if (column.validity.length !== buffer.rowCount) {
+      throw new Error(`Column '${column.columnId}' validity length does not match rowCount.`);
+    }
+    if (column.validity.some((value) => value > 1)) {
+      throw new Error(`Column '${column.columnId}' validity values must be 0 or 1.`);
+    }
+    if (column.storage === "float64" || column.storage === "boolean") {
+      if (column.values.length !== buffer.rowCount) {
+        throw new Error(`Column '${column.columnId}' values length does not match rowCount.`);
+      }
+      if (column.storage === "boolean" && column.values.some((value) => value > 1)) {
+        throw new Error(`Column '${column.columnId}' boolean values must be 0 or 1.`);
+      }
+      continue;
+    }
+    if (column.offsets.length !== buffer.rowCount + 1 || column.offsets[0] !== 0) {
+      throw new Error(`Column '${column.columnId}' UTF-8 offsets are invalid.`);
+    }
+    let previous = 0;
+    for (const offset of column.offsets) {
+      if (offset < previous || offset > column.bytes.length) {
+        throw new Error(`Column '${column.columnId}' UTF-8 offsets are invalid.`);
+      }
+      previous = offset;
+    }
+    if (previous !== column.bytes.length) {
+      throw new Error(`Column '${column.columnId}' UTF-8 offsets are invalid.`);
+    }
+  }
+}
+
+function validateComparisonType(type: GridComparisonType | undefined): void {
+  if (type !== undefined && !isOneOf(type, ["text", "number", "boolean", "date", "json"])) {
+    throw new Error("Grid engine comparison type is invalid.");
+  }
+}
+
+function validateViewport(viewport: GridWorkerShapeDefinition["viewport"]): void {
+  if (
+    viewport
+    && (
+      !Number.isSafeInteger(viewport.start)
+      || viewport.start < 0
+      || !Number.isSafeInteger(viewport.count)
+      || viewport.count < 0
+    )
+  ) {
+    throw new Error("Grid engine viewport start and count must be non-negative safe integers.");
+  }
+}
+
+function isOneOf<T extends string>(value: unknown, accepted: readonly T[]): value is T {
+  return typeof value === "string" && accepted.includes(value as T);
 }
 
 function getComputationColumnIds(definition: GridWorkerShapeDefinition): ReadonlySet<string> {

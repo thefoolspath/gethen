@@ -110,4 +110,42 @@ describe("ClientDataSource", () => {
       })
     ).toThrow(/Duplicate rowId/);
   });
+
+  it.each([
+    {
+      label: "sort",
+      sort: [{ columnId: "score", direction: "asc" as const }],
+      filter: []
+    },
+    {
+      label: "filter",
+      sort: [],
+      filter: [{ columnId: "active", operator: "equals" as const, value: true }]
+    }
+  ])("rejects unsupported non-empty $label descriptors without returning a partial range", async ({ sort, filter }) => {
+    const dataSource = createClientDataSource({
+      rows,
+      getRowId: (row) => String(row.key)
+    });
+
+    await expect(dataSource.getRows({
+      protocolVersion: "v1",
+      startRow: 1,
+      rowCount: 1,
+      sort,
+      filter
+    })).rejects.toThrow(
+      "ClientDataSource shaping descriptors are not supported; use the canonical shaping pipeline before range retrieval."
+    );
+
+    await expect(dataSource.getRows({
+      protocolVersion: "v1",
+      startRow: 0,
+      rowCount: rows.length,
+      sort: [],
+      filter: []
+    })).resolves.toMatchObject({
+      rows: rows.map((row) => ({ id: row.key, cells: row }))
+    });
+  });
 });

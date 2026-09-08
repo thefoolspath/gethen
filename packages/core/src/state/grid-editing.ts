@@ -157,7 +157,7 @@ export class GridEditorStateMachine {
   }
 
   beginCancel(reason: Exclude<GridEditorExitReason, "commit"> = "cancel"): GridEditorSnapshot {
-    this.requirePhase("activating", "editing", "validating", "failed", "suspended");
+    this.requirePhase("activating", "editing", "validating", "committing", "failed", "suspended");
     return this.setSnapshot({ ...this.#snapshot, phase: "cancelling", exitReason: reason });
   }
 
@@ -167,7 +167,7 @@ export class GridEditorStateMachine {
   }
 
   suspendForScroll(): GridEditorSnapshot {
-    this.requirePhase("editing", "failed");
+    this.requirePhase("editing", "validating", "committing", "failed");
     return this.setSnapshot({ ...this.#snapshot, phase: "suspended", exitReason: "scroll" });
   }
 

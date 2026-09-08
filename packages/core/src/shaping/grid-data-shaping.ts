@@ -1,6 +1,7 @@
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
 import type { GridRow } from "../contracts/grid-types.js";
+import { canonicalGridJson, stableGridValueKey } from "./grid-value-semantics.js";
 
 export type GridSortDirection = "asc" | "desc";
 export type GridNullPlacement = "first" | "last";
@@ -237,7 +238,7 @@ export function compareGridValues(
     case "date":
       return compareFiniteNumbers(Date.parse(String(left)), Date.parse(String(right)), left, right);
     case "json":
-      return canonicalJson(String(left)).localeCompare(canonicalJson(String(right)), "en");
+      return canonicalGridJson(String(left)).localeCompare(canonicalGridJson(String(right)), "en");
     case "text":
       return String(left).localeCompare(String(right), "en");
   }
@@ -322,7 +323,7 @@ function createGroupNodes(
   const buckets = new Map<string, { value: CellValue; rows: GridRow[] }>();
   for (const row of rows) {
     const value = row.cells[descriptor.columnId] ?? null;
-    const key = stableValueKey(value, descriptor.comparisonType ?? "text");
+    const key = stableGridValueKey(value, descriptor.comparisonType ?? "text");
     const bucket = buckets.get(key) ?? { value, rows: [] };
     bucket.rows.push(row);
     buckets.set(key, bucket);
@@ -395,27 +396,6 @@ function flattenGroups(
 
 function toSourceViewRow(row: GridRow): GridSourceViewRow {
   return { ...row, kind: "source", sourceRowId: row.id, readonly: false };
-}
-
-function stableValueKey(value: CellValue, type: GridComparisonType): string {
-  if (value === null) return "null";
-  return `${type}:${type === "json" ? canonicalJson(String(value)) : String(value)}`;
-}
-
-function canonicalJson(value: string): string {
-  try {
-    return JSON.stringify(sortJson(JSON.parse(value)));
-  } catch {
-    return `!invalid:${value}`;
-  }
-}
-
-function sortJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortJson);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right, "en")).map(([key, entry]) => [key, sortJson(entry)]));
-  }
-  return value;
 }
 
 function requireAggregateValue(value: CellValue, aggregateId: string): CellValue {

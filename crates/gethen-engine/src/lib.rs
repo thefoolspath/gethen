@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap, slice};
+use std::{cmp::Ordering, collections::HashMap, ptr, slice};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn gethen_alloc(byte_length: usize) -> *mut u8 {
@@ -11,9 +11,17 @@ pub extern "C" fn gethen_alloc_f64(length: usize) -> *mut f64 {
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `pointer` must be the pointer returned by `gethen_alloc_f64` for exactly `length`
+/// elements and must not have been deallocated previously.
 pub unsafe extern "C" fn gethen_dealloc_f64(pointer: *mut f64, length: usize) {
-    if !pointer.is_null() && length > 0 {
-        unsafe { drop(Box::from_raw(slice::from_raw_parts_mut(pointer, length))) };
+    if !pointer.is_null() {
+        unsafe {
+            drop(Box::from_raw(ptr::slice_from_raw_parts_mut(
+                pointer, length,
+            )))
+        };
     }
 }
 
@@ -23,17 +31,29 @@ pub extern "C" fn gethen_alloc_u32(length: usize) -> *mut u32 {
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `pointer` must be the pointer returned by `gethen_alloc_u32` for exactly `length`
+/// elements and must not have been deallocated previously.
 pub unsafe extern "C" fn gethen_dealloc_u32(pointer: *mut u32, length: usize) {
-    if !pointer.is_null() && length > 0 {
-        unsafe { drop(Box::from_raw(slice::from_raw_parts_mut(pointer, length))) };
+    if !pointer.is_null() {
+        unsafe {
+            drop(Box::from_raw(ptr::slice_from_raw_parts_mut(
+                pointer, length,
+            )))
+        };
     }
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `pointer` must be the pointer returned by `gethen_alloc` for exactly `byte_length`
+/// bytes and must not have been deallocated previously.
 pub unsafe extern "C" fn gethen_dealloc(pointer: *mut u8, byte_length: usize) {
-    if !pointer.is_null() && byte_length > 0 {
+    if !pointer.is_null() {
         unsafe {
-            drop(Box::from_raw(slice::from_raw_parts_mut(
+            drop(Box::from_raw(ptr::slice_from_raw_parts_mut(
                 pointer,
                 byte_length,
             )))
@@ -42,6 +62,9 @@ pub unsafe extern "C" fn gethen_dealloc(pointer: *mut u8, byte_length: usize) {
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `values_pointer` and `validity_pointer` must each reference `length` readable elements.
 pub unsafe extern "C" fn gethen_filter_sum_f64(
     values_pointer: *const f64,
     validity_pointer: *const u8,
@@ -59,6 +82,9 @@ pub unsafe extern "C" fn gethen_filter_sum_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `values_pointer` and `validity_pointer` must each reference `length` readable elements.
 pub unsafe extern "C" fn gethen_filter_count_f64(
     values_pointer: *const f64,
     validity_pointer: *const u8,
@@ -75,6 +101,10 @@ pub unsafe extern "C" fn gethen_filter_count_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `values_pointer`, `validity_pointer`, and `groups_pointer` must each reference
+/// `length` readable elements.
 pub unsafe extern "C" fn gethen_group_sum_f64(
     values_pointer: *const f64,
     validity_pointer: *const u8,
@@ -95,6 +125,10 @@ pub unsafe extern "C" fn gethen_group_sum_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `left_pointer`, `right_pointer`, and `validity_pointer` must each reference
+/// `length` readable elements.
 pub unsafe extern "C" fn gethen_formula_sum_product_f64(
     left_pointer: *const f64,
     right_pointer: *const f64,
@@ -113,6 +147,10 @@ pub unsafe extern "C" fn gethen_formula_sum_product_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// The value and validity pointers must each reference `length` readable elements, and
+/// `output_pointer` must reference `length` writable bytes. `operation` must be in `0..=7`.
 pub unsafe extern "C" fn gethen_filter_mask_f64(
     values_pointer: *const f64,
     validity_pointer: *const u8,
@@ -155,6 +193,12 @@ pub unsafe extern "C" fn gethen_filter_mask_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `offsets_pointer` must reference `length + 1` monotonic offsets starting at zero and
+/// ending at `bytes_length`; all offsets must be within `bytes_pointer`. The validity and
+/// output pointers must reference `length` elements, `expected_pointer` must reference
+/// `expected_length` bytes, and `operation` must be 8 or 9.
 pub unsafe extern "C" fn gethen_filter_mask_utf8(
     offsets_pointer: *const u32,
     bytes_pointer: *const u8,
@@ -195,6 +239,11 @@ pub unsafe extern "C" fn gethen_filter_mask_utf8(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// `indices_pointer` must reference `indices_length` readable and writable indices. Every
+/// index must be valid for equally sized readable value and validity arrays. `direction`
+/// must be 0 or 1 and `nulls_first` must be 0 or 1.
 pub unsafe extern "C" fn gethen_stable_sort_indices_f64(
     values_pointer: *const f64,
     validity_pointer: *const u8,
@@ -236,6 +285,10 @@ pub unsafe extern "C" fn gethen_stable_sort_indices_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// Both input pointers and `row_group_ids_pointer` must reference `length` elements. Each
+/// group metadata output pointer must reference at least `length` writable elements.
 pub unsafe extern "C" fn gethen_assign_group_ids_u32(
     parent_ids_pointer: *const u32,
     key_ids_pointer: *const u32,
@@ -272,6 +325,11 @@ pub unsafe extern "C" fn gethen_assign_group_ids_u32(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// Each row input pointer must reference `row_count` readable elements, every group ID must
+/// be below `group_count`, and both output pointers must reference `group_count` writable
+/// elements. `operation` must be in `0..=4` and `count_all` must be 0 or 1.
 pub unsafe extern "C" fn gethen_aggregate_groups_f64(
     values_pointer: *const f64,
     validity_pointer: *const u8,
@@ -327,6 +385,12 @@ pub unsafe extern "C" fn gethen_aggregate_groups_f64(
 }
 
 #[unsafe(no_mangle)]
+/// # Safety
+///
+/// Row-group data must contain `row_count * level_count` readable IDs. Group offsets must
+/// contain `level_count + 1` monotonic entries and define the readable parent/expanded
+/// arrays. All group and parent IDs must be in range. Output arrays must each hold
+/// `viewport_count` elements and `output_count_pointer` must reference one writable `u32`.
 pub unsafe extern "C" fn gethen_flatten_group_tokens(
     row_group_ids_pointer: *const u32,
     row_count: usize,
@@ -376,8 +440,13 @@ pub unsafe extern "C" fn gethen_flatten_group_tokens(
         children_by_level.push(vec![Vec::new(); parent_count]);
         let child_start = group_offsets[level + 1] as usize;
         let child_end = group_offsets[level + 2] as usize;
-        for child_index in child_start..child_end {
-            let parent_id = group_parent_ids[child_index] as usize;
+        for (child_index, parent_id) in group_parent_ids
+            .iter()
+            .enumerate()
+            .take(child_end)
+            .skip(child_start)
+        {
+            let parent_id = *parent_id as usize;
             children_by_level[level][parent_id].push((child_index - child_start) as u32);
         }
     }
@@ -485,6 +554,36 @@ unsafe fn max_index(indices_pointer: *const u32, length: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn empty_allocations_and_numeric_kernels_are_safe_at_the_boundary() {
+        let bytes = gethen_alloc(0);
+        let numbers = gethen_alloc_f64(0);
+        let indices = gethen_alloc_u32(0);
+        unsafe {
+            gethen_dealloc(bytes, 0);
+            gethen_dealloc_f64(numbers, 0);
+            gethen_dealloc_u32(indices, 0);
+        }
+
+        let values: [f64; 0] = [];
+        let validity: [u8; 0] = [];
+        let mut output: [u8; 0] = [];
+        unsafe {
+            assert_eq!(
+                gethen_filter_mask_f64(
+                    values.as_ptr(),
+                    validity.as_ptr(),
+                    0,
+                    0,
+                    0.0,
+                    1,
+                    output.as_mut_ptr(),
+                ),
+                0
+            );
+        }
+    }
 
     #[test]
     fn numeric_kernels_respect_validity_and_group_keys() {

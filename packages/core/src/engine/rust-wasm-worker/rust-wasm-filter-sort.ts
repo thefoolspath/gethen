@@ -7,14 +7,18 @@ import type {
   GridColumnarColumn,
   GridEngineShapeRequest
 } from "../../contracts/engine-contract.js";
+import { validateGridEngineShapeRequest } from "../../contracts/engine-contract.js";
 import type { RustWasmKernels } from "./rust-wasm-kernels.js";
+import {
+  rawGridValueKey,
+  readGridColumnarValue,
+  resolveGridColumnarColumn
+} from "../../shaping/grid-value-semantics.js";
 
 type RustFilterSortKernels = Pick<
   RustWasmKernels,
   "filterNumeric" | "filterUtf8" | "stableSortNumeric"
 >;
-
-const UTF8_DECODER = new TextDecoder("utf-8", { fatal: true });
 
 export interface RustWasmFilterSortPreparation {
   readonly request: GridEngineShapeRequest;
@@ -26,11 +30,12 @@ export function prepareRustWasmFilterSortRequest(
   kernels: RustFilterSortKernels,
   onProgress?: (stage: "filter" | "sort", completed: number, total: number) => void
 ): RustWasmFilterSortPreparation {
+  validateGridEngineShapeRequest(request);
   const rowCount = request.data.rowCount;
   let combinedMask = new Uint8Array(rowCount).fill(1);
   onProgress?.("filter", 0, rowCount);
   for (const descriptor of request.definition.filter) {
-    const column = resolveColumn(request.data, descriptor.columnId);
+    const column = resolveGridColumnarColumn(request.data, descriptor.columnId);
     const descriptorMask = filterColumn(column, descriptor, kernels);
     for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
       combinedMask[rowIndex] = combinedMask[rowIndex]! & descriptorMask[rowIndex]!;
@@ -49,7 +54,7 @@ export function prepareRustWasmFilterSortRequest(
   onProgress?.("sort", 0, filteredIndices.length);
   let sortedIndices: Uint32Array<ArrayBufferLike> = filteredIndices;
   for (const descriptor of [...request.definition.sort].reverse()) {
-    const column = resolveColumn(request.data, descriptor.columnId);
+    const column = resolveGridColumnarColumn(request.data, descriptor.columnId);
     const ranks = createComparisonRankColumn(column, descriptor.comparisonType ?? "text", []);
     sortedIndices = kernels.stableSortNumeric(
       ranks.values,
@@ -154,11 +159,11 @@ function createComparisonRankColumn(
   const distinct = new Map<string, CellValue>();
   for (let rowIndex = 0; rowIndex < column.validity.length; rowIndex += 1) {
     if (column.validity[rowIndex] === 0) continue;
-    const value = readColumnValue(column, rowIndex);
-    distinct.set(rawValueKey(value), value);
+    const value = readGridColumnarValue(column, rowIndex);
+    distinct.set(rawGridValueKey(value), value);
   }
   for (const value of extraValues) {
-    if (value !== null) distinct.set(rawValueKey(value), value);
+    if (value !== null) distinct.set(rawGridValueKey(value), value);
   }
   const ordered = [...distinct.entries()].sort((left, right) =>
     compareGridValues(left[1], right[1], comparisonType)
@@ -174,7 +179,7 @@ function createComparisonRankColumn(
   const values = new Float64Array(column.validity.length);
   for (let rowIndex = 0; rowIndex < values.length; rowIndex += 1) {
     if (column.validity[rowIndex] === 0) continue;
-    values[rowIndex] = requireRank(ranks, readColumnValue(column, rowIndex));
+    values[rowIndex] = requireRank(ranks, readGridColumnarValue(column, rowIndex));
   }
   return { values, validity: column.validity, ranks };
 }
@@ -199,7 +204,7 @@ function createDirectComparisonColumn(
   const values = new Float64Array(column.validity.length);
   for (let rowIndex = 0; rowIndex < values.length; rowIndex += 1) {
     if (column.validity[rowIndex] === 0) continue;
-    const converted = convert(readColumnValue(column, rowIndex));
+    const converted = convert(readGridColumnarValue(column, rowIndex));
     if (!Number.isFinite(converted)) return undefined;
     values[rowIndex] = converted;
   }
@@ -208,7 +213,7 @@ function createDirectComparisonColumn(
     if (value === null) continue;
     const converted = convert(value);
     if (!Number.isFinite(converted)) return undefined;
-    ranks.set(rawValueKey(value), converted);
+    ranks.set(rawGridValueKey(value), converted);
   }
   return { values, validity: column.validity, ranks };
 }
@@ -222,7 +227,7 @@ function createNormalizedUtf8Column(
   const offsets = new Uint32Array(column.validity.length + 1);
   let byteLength = 0;
   for (let rowIndex = 0; rowIndex < column.validity.length; rowIndex += 1) {
-    const value = normalizeText(readColumnValue(column, rowIndex), caseSensitive);
+    const value = normalizeText(readGridColumnarValue(column, rowIndex), caseSensitive);
     let encoded = encodedByValue.get(value);
     if (!encoded) {
       encoded = encoder.encode(value);
@@ -234,7 +239,7 @@ function createNormalizedUtf8Column(
   const bytes = new Uint8Array(byteLength);
   let byteOffset = 0;
   for (let rowIndex = 0; rowIndex < column.validity.length; rowIndex += 1) {
-    const encoded = encodedByValue.get(normalizeText(readColumnValue(column, rowIndex), caseSensitive))!;
+    const encoded = encodedByValue.get(normalizeText(readGridColumnarValue(column, rowIndex), caseSensitive))!;
     bytes.set(encoded, byteOffset);
     byteOffset += encoded.byteLength;
   }
@@ -288,35 +293,13 @@ function selectColumnRows(column: GridColumnarColumn, indices: Uint32Array): Gri
   return { columnId: column.columnId, storage: "utf8", validity, offsets, bytes };
 }
 
-function resolveColumn(buffer: GridColumnarBuffer, columnId: string): GridColumnarColumn {
-  return buffer.columns.find((column) => column.columnId === columnId) ?? {
-    columnId,
-    storage: "float64",
-    values: new Float64Array(buffer.rowCount),
-    validity: new Uint8Array(buffer.rowCount)
-  };
-}
-
-function readColumnValue(column: GridColumnarColumn, rowIndex: number): CellValue {
-  if (column.validity[rowIndex] === 0) return null;
-  if (column.storage === "float64") return column.values[rowIndex]!;
-  if (column.storage === "boolean") return column.values[rowIndex] === 1;
-  return UTF8_DECODER.decode(
-    column.bytes.subarray(column.offsets[rowIndex]!, column.offsets[rowIndex + 1]!)
-  );
-}
-
 function normalizeText(value: CellValue, caseSensitive: boolean): string {
   const text = String(value ?? "");
   return caseSensitive ? text : text.toLocaleLowerCase("en");
 }
 
-function rawValueKey(value: CellValue): string {
-  return `${value === null ? "null" : typeof value}:${String(value)}`;
-}
-
 function requireRank(ranks: ReadonlyMap<string, number>, value: CellValue): number {
-  const rank = ranks.get(rawValueKey(value));
+  const rank = ranks.get(rawGridValueKey(value));
   if (rank === undefined) throw new Error(`Missing normalized comparison rank for '${String(value)}'.`);
   return rank;
 }

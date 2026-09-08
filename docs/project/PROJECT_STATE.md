@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-09-07.
+Last updated: 2026-09-08.
 
 ## Purpose
 
@@ -14,7 +14,10 @@ The repository currently contains product, architecture, research, ADR, quality,
 
 ## Implemented
 
-- Internal `@thefoolspath/gethen-core` source organization by contracts, data, state, shaping, Worker engine, Rust/WASM engine, and DOM renderer responsibility. The npm package boundary, public root exports, runtime execution model, Worker boundaries, and asset count remain unchanged.
+- Clean Code correctness closure for seven reviewed areas: generation-guarded mutually exclusive async editor operations; explicit `ClientDataSource` descriptor rejection; geometry-neutral active-cell focus styling; hardened Rust/WASM input validation and documented unsafe contracts; cohesive virtual-grid geometry, shell, and editor-coordination modules; shared canonical value/column semantics across TypeScript and Rust/WASM shaping; and removal of raw FFI/Worker internals from the Core public root. The focused TypeScript, browser, Rust, formatting, Clippy, package-boundary, and benchmark gates are recorded in the 2026-09-08 change-log entry.
+- Post-refactor local verification passes 101 TypeScript unit/contract/adapter tests, 50 Chromium scenarios, 7 GNU Rust tests, Cargo formatting and Clippy with warnings denied, Core package-root/deep-import checks, and a dry-run package inspection. The repeat-process renderer trace reports customization-off/on median frame intervals of 16.619/16.675 ms, median p95 intervals of 18.051/18.055 ms, and zero tasks over 50 ms. This remains local evidence, not a cross-hardware release claim.
+
+- Internal `@thefoolspath/gethen-core` source organization by contracts, data, state, shaping, Worker engine, Rust/WASM engine, and DOM renderer responsibility. The supported root surface is restricted by the package export map; the runtime execution model, Worker boundaries, and required runtime assets remain unchanged.
 - Three sequential local benchmark suites before and after the Core source reorganization found no material regression: median frame intervals improved by about 0.3%, median p95 frame intervals increased by 1.7-1.8%, and all traces had zero tasks over 50 ms. Targeted three-run follow-ups placed the initially noisy Core cell lookup and TypeScript Worker round-trip medians within the 5% acceptance threshold.
 - Initial protocol schemas and inferred TypeScript protocol contracts.
 - Initial TypeScript client grid engine and client DataSource.
@@ -133,6 +136,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - The Alpha 4 grid-shell foundation is implemented. ISSUE-20260811-001 through ISSUE-20260811-003 and CR-20260811-001 are done; the client portion of CR-20260811-002 is done and its server-status extension is deferred to 2.0. User walkthroughs and manual NVDA/Chrome evidence remain open and no validated-usability claim is made.
 - The Phase 1 documentation and interactive-demo workbench is implemented under `apps/docs-site/` as a standalone Angular application and participates in workspace check/build plus Chromium verification. Phase 2 must add examples with Alpha 5-7 milestones; public marketing, hosting, search, versioning, analytics, social previews, and launch polish remain deferred to Phase 3 and require a separate publishing plan.
 - Gethen Corporate Identity is implemented locally with Emerald Light and Emerald Dark, emerald/teal/violet focused accents, explicit public light/dark Grid presets, unchanged no-theme Grid defaults, developer-owned overrides, non-remounting Angular theme updates, documentation theme switching, route search, a single collapsible icon-and-text hierarchical sidebar, context bar, and a right-side page table of contents. Workspace check, build, 77 unit tests, and static contrast checks pass; browser interaction and manual visual verification remain open pending explicit approval.
+- The Core public root now intentionally excludes raw Rust/WASM kernels and loaders, the low-level numeric Rust Worker, raw Worker request/response messages, and internal decode/execute/transfer helpers. Supported TypeScript and Rust/WASM grid-engine entry points remain public; repository benchmarks use internal emitted paths where required.
 
 ## Verified Commands
 
@@ -159,6 +163,8 @@ The repository currently contains product, architecture, research, ADR, quality,
 - `cargo check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu check --manifest-path crates/gethen-engine/Cargo.toml`
 - `cargo +stable-x86_64-pc-windows-gnu run --manifest-path crates/gethen-engine/Cargo.toml --release`
+- `cargo clippy --manifest-path crates/gethen-engine/Cargo.toml --all-targets -- -D warnings`
+- `cargo fmt --manifest-path crates/gethen-engine/Cargo.toml -- --check`
 
 The repository still has no Cargo workspace. `cargo run --manifest-path crates/gethen-engine/Cargo.toml --release` with the default MSVC toolchain is not verified because linking fails with missing `msvcrt.lib`.
 
@@ -228,3 +234,4 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 | 2026-09-03 | Added a self-contained prompt package for a 12-second vertical clever-fusion Gethen logo-reveal concept, including master and per-shot generation prompts, post-production typography, sound design, negative prompts, light/dark variants, quality gates, and deliverables. | [../product/GETHEN_LOGO_REVEAL_VIDEO_PROMPT.md](../product/GETHEN_LOGO_REVEAL_VIDEO_PROMPT.md) |
 | 2026-09-07 | Implemented the Frost Light/Winter Night documentation identity, Aspire-informed collapsible icon-and-text sidebar, persisted theme selection, route search, page table of contents, public readonly Grid presets, and non-remounting Angular theme updates. Workspace check, build, 76 unit tests, and static contrast verification pass; browser and manual visual checks remain pending explicit approval. | `apps/docs-site/`, `packages/core/src/renderer/dom/grid-themes.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, [../product/CORPORATE_IDENTITY.md](../product/CORPORATE_IDENTITY.md), [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md) |
 | 2026-09-07 | Replaced the Frost/Winter palette with the Emerald Intelligence direction: Gethen content and temporary `G` mark remain, Emerald Light/Dark presets use accessible semantic roles, gradients are limited to focused brand moments, and desktop navigation remains one collapsible icon-and-text sidebar. Workspace check, build, 77 unit tests, and static contrast verification pass; browser and manual visual checks remain pending explicit approval. | `apps/docs-site/`, `packages/core/src/renderer/dom/grid-themes.ts`, [../product/CORPORATE_IDENTITY.md](../product/CORPORATE_IDENTITY.md), [../plans/active/0008-corporate-identity-and-theme-system.md](../plans/active/0008-corporate-identity-and-theme-system.md) |
+| 2026-09-08 | Closed seven confirmed Clean Code findings across editor concurrency, DataSource descriptor handling, active-cell/editor geometry, Rust/WASM FFI validation, renderer responsibility boundaries, cross-engine value semantics, and Core public exports. Added focused unit/browser/Rust regressions and automated public-boundary verification; no package was published and no runtime dependency was added. | `packages/core/src/`, `apps/core-demo/src/main.ts`, `crates/gethen-engine/src/`, `tests/browser/renderer-prototypes.spec.ts`, [../architecture/PACKAGE_BOUNDARIES.md](../architecture/PACKAGE_BOUNDARIES.md), [../architecture/RUST_WASM_BOUNDARY.md](../architecture/RUST_WASM_BOUNDARY.md), [../architecture/DATA_SOURCE.md](../architecture/DATA_SOURCE.md) |

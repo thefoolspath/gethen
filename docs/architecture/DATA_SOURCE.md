@@ -1,6 +1,6 @@
 # DataSource
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-09-08.
 
 Status: Initial client-side DataSource implemented.
 
@@ -31,5 +31,10 @@ Required server-mode behaviors will be specified in the dedicated 2.0 plan and i
 - bounded block cache
 
 Initial implementation: `packages/core/src/data/client-data-source.ts` provides client-side row ID extraction, range retrieval, and stale-safe cell updates. Client-side execution is the only runtime scope through 1.0. Server DataSource, its wire protocol, cache semantics, and backend integration move to 2.0.
+
+`ClientDataSource.getRows` preserves its original range/paging behavior for empty sort/filter arrays.
+Because the protocol request does not carry enough column metadata to reproduce the canonical
+mixed-type comparison semantics, it fails fast when either descriptor array is non-empty and directs
+the caller to the canonical shaping pipeline. It never silently returns an unshaped partial range.
 
 Client-side range/paging, sort, filter, group, aggregate, formula, pivot, update, and row-transaction intent must use transport-neutral descriptors or typed ASTs where those features exist. This preserves a future server execution boundary without freezing the server transport during 1.0.

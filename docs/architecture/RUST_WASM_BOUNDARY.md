@@ -1,6 +1,6 @@
 # Rust/WASM Boundary
 
-Last reviewed: 2026-08-25.
+Last reviewed: 2026-09-08.
 
 Status: Alpha 4 research implementation exists; production-engine selection remains pending end-to-end benchmarks.
 
@@ -16,6 +16,11 @@ Do not call WASM per cell. If adopted, communication must be coarse-grained:
 - dispose dataset
 
 The current A4-05 checkpoint follows this boundary: TypeScript normalizes mixed-type comparison and grouping values, then dependency-free Rust/WASM kernels compute filter masks, stable multi-sort row indices, hierarchical group assignments, built-in aggregates, and flattened viewport tokens in coarse column batches. TypeScript hydrates the public source/group row objects. Full-capacity, memory, cancellation, formula/pivot, and production-engine-selection evidence remain open; the implementation is not yet an accepted production runtime.
+
+The TypeScript boundary validates equal column lengths, UTF-8 offset length/start/order/bounds/end,
+sort indices, group IDs/counts, hierarchy metadata, viewport values, and operation codes before an FFI
+call. Public unsafe Rust exports document their pointer and length safety contracts, and typed
+allocators must be paired with the matching typed deallocator for both empty and non-empty buffers.
 
 ## Conditional Data Format
 

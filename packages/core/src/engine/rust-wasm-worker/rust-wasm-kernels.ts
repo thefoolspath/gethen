@@ -130,6 +130,8 @@ export class RustWasmKernels {
     threshold: number
   ): RustWasmFilterAggregateResult {
     requireEqualLength(values, validity);
+    requireKernelLength(values.length);
+    requireFinite("filter threshold", threshold);
     const valuesPointer = this.exports.gethen_alloc_f64(values.length);
     const validityPointer = this.exports.gethen_alloc(validity.length);
     try {
@@ -152,6 +154,8 @@ export class RustWasmKernels {
     selectedGroup: number
   ): number {
     requireEqualLength(values, validity, groups);
+    requireKernelLength(values.length);
+    requireUint32("selected group", selectedGroup);
     const valuesPointer = this.exports.gethen_alloc_f64(values.length);
     const validityPointer = this.exports.gethen_alloc(validity.length);
     const groupsPointer = this.exports.gethen_alloc_u32(groups.length);
@@ -179,6 +183,7 @@ export class RustWasmKernels {
     validity: Uint8Array
   ): number {
     requireEqualLength(left, right, validity);
+    requireKernelLength(left.length);
     const leftPointer = this.exports.gethen_alloc_f64(left.length);
     const rightPointer = this.exports.gethen_alloc_f64(right.length);
     const validityPointer = this.exports.gethen_alloc(validity.length);
@@ -207,6 +212,9 @@ export class RustWasmKernels {
     expectedValid: boolean
   ): Uint8Array {
     requireEqualLength(values, validity);
+    requireKernelLength(values.length);
+    requireOperation("numeric filter operation", operation, 0, 7);
+    requireFinite("numeric filter expected value", expected);
     const valuesPointer = this.exports.gethen_alloc_f64(values.length);
     const validityPointer = this.exports.gethen_alloc(validity.length);
     const outputPointer = this.exports.gethen_alloc(validity.length);
@@ -237,9 +245,8 @@ export class RustWasmKernels {
     expected: Uint8Array,
     operation: number
   ): Uint8Array {
-    if (offsets.length !== validity.length + 1 || offsets.at(-1) !== bytes.length) {
-      throw new Error("Rust/WASM UTF-8 filter offsets are invalid.");
-    }
+    validateUtf8Column(offsets, bytes, validity);
+    requireOperation("UTF-8 filter operation", operation, 8, 9);
     const offsetsPointer = this.exports.gethen_alloc_u32(offsets.length);
     const bytesAllocationLength = Math.max(1, bytes.length);
     const bytesPointer = this.exports.gethen_alloc(bytesAllocationLength);
@@ -281,6 +288,8 @@ export class RustWasmKernels {
     nulls: "first" | "last"
   ): Uint32Array {
     requireEqualLength(values, validity);
+    requireKernelLength(values.length);
+    requireKernelLength(indices.length);
     if (indices.length === 0) return indices.slice();
     if (indices.some((index) => index >= values.length)) {
       throw new Error("Rust/WASM sort indices must reference the supplied rank column.");
@@ -310,6 +319,7 @@ export class RustWasmKernels {
 
   assignGroups(parentIds: Uint32Array, keyIds: Uint32Array): RustWasmGroupAssignmentResult {
     requireEqualLength(parentIds, keyIds);
+    requireKernelLength(parentIds.length);
     const allocationLength = Math.max(1, parentIds.length);
     const parentIdsPointer = this.exports.gethen_alloc_u32(allocationLength);
     const keyIdsPointer = this.exports.gethen_alloc_u32(allocationLength);
@@ -331,6 +341,9 @@ export class RustWasmKernels {
         groupFirstRowsPointer,
         groupCountsPointer
       );
+      if (!Number.isInteger(groupCount) || groupCount < 0 || groupCount > parentIds.length) {
+        throw new Error("Rust/WASM group assignment returned an invalid group count.");
+      }
       return {
         rowGroupIds: new Uint32Array(
           this.exports.memory.buffer,
@@ -378,7 +391,9 @@ export class RustWasmKernels {
     countAll: boolean
   ): RustWasmGroupAggregateResult {
     requireEqualLength(values, validity, groupIds);
+    requireKernelLength(values.length);
     requireUint32("group count", groupCount);
+    requireOperation("aggregate operation", operation, 0, 4);
     if (groupIds.some((groupId) => groupId >= groupCount)) {
       throw new Error("Rust/WASM aggregate group IDs must reference an existing group.");
     }
@@ -444,6 +459,21 @@ export class RustWasmKernels {
         throw new Error("Rust/WASM flatten row group levels must match rowCount.");
       }
       requireEqualLength(groupParentIdsByLevel[level]!, expandedByLevel[level]!);
+      const groupCount = groupParentIdsByLevel[level]!.length;
+      if (rowGroupIdsByLevel[level]!.some((groupId) => groupId >= groupCount)) {
+        throw new Error("Rust/WASM flatten row group IDs must reference an existing group.");
+      }
+      if (expandedByLevel[level]!.some((value) => value > 1)) {
+        throw new Error("Rust/WASM flatten expansion flags must be 0 or 1.");
+      }
+      if (
+        level > 0
+        && groupParentIdsByLevel[level]!.some(
+          (parentId) => parentId >= groupParentIdsByLevel[level - 1]!.length
+        )
+      ) {
+        throw new Error("Rust/WASM flatten parent IDs must reference the previous level.");
+      }
     }
     const rowGroupIds = concatenateUint32(rowGroupIdsByLevel);
     const groupParentIds = concatenateUint32(groupParentIdsByLevel);
@@ -489,6 +519,9 @@ export class RustWasmKernels {
         outputCountPointer
       );
       const outputCount = new Uint32Array(this.exports.memory.buffer, outputCountPointer, 1)[0]!;
+      if (outputCount > outputCapacity || totalViewRowCount > maximumTotal) {
+        throw new Error("Rust/WASM flatten returned invalid output counts.");
+      }
       return {
         totalViewRowCount,
         kinds: new Uint8Array(this.exports.memory.buffer, outputKindsPointer, outputCount).slice(),
@@ -529,6 +562,42 @@ function requireEqualLength(...arrays: readonly ArrayLike<unknown>[]): void {
   const length = arrays[0]?.length ?? 0;
   if (arrays.some((array) => array.length !== length)) {
     throw new Error("Rust/WASM kernel columns must have equal lengths.");
+  }
+}
+
+function requireKernelLength(length: number): void {
+  requireUint32("column length", length);
+}
+
+function requireFinite(label: string, value: number): void {
+  if (!Number.isFinite(value)) {
+    throw new Error(`Rust/WASM ${label} must be finite.`);
+  }
+}
+
+function requireOperation(label: string, operation: number, minimum: number, maximum: number): void {
+  if (!Number.isInteger(operation) || operation < minimum || operation > maximum) {
+    throw new Error(`Rust/WASM ${label} is invalid.`);
+  }
+}
+
+function validateUtf8Column(
+  offsets: Uint32Array,
+  bytes: Uint8Array,
+  validity: Uint8Array
+): void {
+  if (offsets.length !== validity.length + 1 || offsets[0] !== 0) {
+    throw new Error("Rust/WASM UTF-8 offsets are invalid.");
+  }
+  let previous = 0;
+  for (const offset of offsets) {
+    if (offset < previous || offset > bytes.length) {
+      throw new Error("Rust/WASM UTF-8 offsets are invalid.");
+    }
+    previous = offset;
+  }
+  if (previous !== bytes.length) {
+    throw new Error("Rust/WASM UTF-8 offsets are invalid.");
   }
 }
 

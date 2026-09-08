@@ -51,6 +51,21 @@ describe("GridEditorStateMachine", () => {
     expect(editor.unmount()).toEqual({ phase: "disposed", exitReason: "unmount" });
   });
 
+  it("allows cancellation and remount invalidation while asynchronous commit work is active", () => {
+    const cancelling = createGridEditorStateMachine();
+    cancelling.activate({ rowId: "r1", columnId: "name", initialValue: "Ada" });
+    cancelling.beginValidation();
+    cancelling.beginCommit();
+    expect(cancelling.beginCancel().phase).toBe("cancelling");
+    expect(cancelling.cancelled()).toEqual({ phase: "inactive", exitReason: "cancel" });
+
+    const remounting = createGridEditorStateMachine();
+    remounting.activate({ rowId: "r1", columnId: "name", initialValue: "Ada" });
+    remounting.beginValidation();
+    expect(remounting.suspendForScroll().phase).toBe("suspended");
+    expect(remounting.resumeAfterScroll().phase).toBe("editing");
+  });
+
   it("rejects invalid transitions", () => {
     const editor = createGridEditorStateMachine();
     expect(() => editor.beginCommit()).toThrow(/Invalid editor transition/);

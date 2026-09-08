@@ -100,4 +100,41 @@ describe("grid engine columnar contract", () => {
     const buffer = createGridColumnarBuffer(rows, [{ columnId: "amount", storage: "float64" }]);
     expect(() => decodeGridColumnarBuffer({ ...buffer, rowCount: 3 })).toThrow(/rowIds length/);
   });
+
+  it.each([
+    new Uint32Array([1, 1, 2]),
+    new Uint32Array([0, 2, 1]),
+    new Uint32Array([0, 1, 3]),
+    new Uint32Array([0, 1, 1])
+  ])("rejects malformed UTF-8 offsets before decoding or engine execution", (offsets) => {
+    const malformed = {
+      rowCount: 2,
+      rowIds: ["r1", "r2"],
+      columns: [{
+        columnId: "name",
+        storage: "utf8" as const,
+        validity: new Uint8Array([1, 1]),
+        offsets,
+        bytes: new TextEncoder().encode("ab")
+      }]
+    };
+    expect(() => decodeGridColumnarBuffer(malformed)).toThrow(/UTF-8 offsets/);
+  });
+
+  it("rejects malformed runtime operations at the worker trust boundary", () => {
+    const data = createGridColumnarBuffer(rows, [{ columnId: "amount", storage: "float64" }]);
+    const request = {
+      type: "shape" as const,
+      requestId: "malformed-operation",
+      data,
+      definition: {
+        ...createGridWorkerShapeDefinition({}),
+        sort: [{ columnId: "amount", direction: "sideways" }]
+      }
+    };
+
+    expect(() => executeGridEngineShapeRequest(
+      request as unknown as Parameters<typeof executeGridEngineShapeRequest>[0]
+    )).toThrow(/sort direction/);
+  });
 });

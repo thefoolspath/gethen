@@ -8,6 +8,11 @@ import type {
   GridPortableAggregateDescriptor
 } from "../../contracts/engine-contract.js";
 import type { RustWasmKernels } from "./rust-wasm-kernels.js";
+import {
+  readGridColumnarValue,
+  resolveGridColumnarColumn,
+  stableGridValueKey
+} from "../../shaping/grid-value-semantics.js";
 
 type RustGroupKernels = Pick<
   RustWasmKernels,
@@ -21,8 +26,6 @@ interface GroupLevel {
   readonly groupRows: readonly GridGroupRow[];
   readonly expanded: Uint8Array;
 }
-
-const UTF8_DECODER = new TextDecoder("utf-8", { fatal: true });
 
 export function executeRustWasmGroupShape(
   request: GridEngineShapeRequest,
@@ -75,14 +78,14 @@ function createGroupLevels(
   let parentIds: Uint32Array<ArrayBufferLike> = new Uint32Array(request.data.rowCount);
   for (let levelIndex = 0; levelIndex < request.definition.group.length; levelIndex += 1) {
     const descriptor = request.definition.group[levelIndex]!;
-    const column = resolveColumn(request.data, descriptor.columnId);
+    const column = resolveGridColumnarColumn(request.data, descriptor.columnId);
     const keys = new Map<string, number>();
     const keyValues: CellValue[] = [];
     const stableKeys: string[] = [];
     const rowKeyIds = new Uint32Array(request.data.rowCount);
     for (let rowIndex = 0; rowIndex < request.data.rowCount; rowIndex += 1) {
-      const value = readColumnValue(column, rowIndex);
-      const stableKey = stableValueKey(value, descriptor.comparisonType ?? "text");
+      const value = readGridColumnarValue(column, rowIndex);
+      const stableKey = stableGridValueKey(value, descriptor.comparisonType ?? "text");
       let keyId = keys.get(stableKey);
       if (keyId === undefined) {
         keyId = keys.size;
@@ -175,7 +178,9 @@ function aggregateLevel(
   level: GroupLevel,
   kernels: RustGroupKernels
 ): readonly CellValue[] {
-  const column = descriptor.columnId ? resolveColumn(buffer, descriptor.columnId) : undefined;
+  const column = descriptor.columnId
+    ? resolveGridColumnarColumn(buffer, descriptor.columnId)
+    : undefined;
   const numeric = column?.storage === "float64" ? column.values : new Float64Array(buffer.rowCount);
   const validity = descriptor.operation === "count"
     ? column?.validity ?? new Uint8Array(buffer.rowCount)
@@ -212,56 +217,13 @@ function hydrateTokens(
       id,
       cells: Object.fromEntries(buffer.columns.map((column) => [
         column.columnId,
-        readColumnValue(column, index)
+        readGridColumnarValue(column, index)
       ])),
       kind: "source" as const,
       sourceRowId: id,
       readonly: false as const
     };
   });
-}
-
-function resolveColumn(buffer: GridColumnarBuffer, columnId: string): GridColumnarColumn {
-  return buffer.columns.find((column) => column.columnId === columnId) ?? {
-    columnId,
-    storage: "float64",
-    values: new Float64Array(buffer.rowCount),
-    validity: new Uint8Array(buffer.rowCount)
-  };
-}
-
-function readColumnValue(column: GridColumnarColumn, rowIndex: number): CellValue {
-  if (column.validity[rowIndex] === 0) return null;
-  if (column.storage === "float64") return column.values[rowIndex]!;
-  if (column.storage === "boolean") return column.values[rowIndex] === 1;
-  return UTF8_DECODER.decode(
-    column.bytes.subarray(column.offsets[rowIndex]!, column.offsets[rowIndex + 1]!)
-  );
-}
-
-function stableValueKey(value: CellValue, type: "text" | "number" | "boolean" | "date" | "json"): string {
-  if (value === null) return "null";
-  return `${type}:${type === "json" ? canonicalJson(String(value)) : String(value)}`;
-}
-
-function canonicalJson(value: string): string {
-  try {
-    return JSON.stringify(sortJson(JSON.parse(value)));
-  } catch {
-    return `!invalid:${value}`;
-  }
-}
-
-function sortJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortJson);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value)
-        .sort(([left], [right]) => left.localeCompare(right, "en"))
-        .map(([key, entry]) => [key, sortJson(entry)])
-    );
-  }
-  return value;
 }
 
 function aggregateOperationCode(operation: GridPortableAggregateDescriptor["operation"]): number {
