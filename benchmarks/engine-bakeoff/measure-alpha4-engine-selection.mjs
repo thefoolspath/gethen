@@ -6,7 +6,7 @@ import { chromium } from "@playwright/test";
 import { createStaticServer } from "../../scripts/serve-static.mjs";
 
 const profile = readProfile(process.argv.slice(2));
-const measuredIterations = profile === "small" ? 3 : profile === "fallback" ? 2 : 1;
+const measuredIterations = 3;
 const kernelRowCount = profile === "small" ? 100_000 : profile === "fallback" ? 500_000 : 1_000_000;
 const server = createStaticServer(0);
 await listen(server);
@@ -19,9 +19,11 @@ try {
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${address.port}/apps/core-demo/index.html`);
   evidence = await page.evaluate(async ({ profileName, iterations, primitiveRows }) => {
-    const [{ createAlpha4MixedTypeFixture }, core] = await Promise.all([
+    const [{ createAlpha4MixedTypeFixture }, core, typescriptCandidate, rustCandidate] = await Promise.all([
       import("/benchmarks/engine-bakeoff/alpha4-mixed-type-fixtures.mjs"),
-      import("/packages/core/dist/index.js")
+      import("/packages/core/dist/index.js"),
+      import("/packages/core/dist/engine/typescript-worker/typescript-worker-grid-engine.js"),
+      import("/packages/core/dist/engine/rust-wasm-worker/rust-wasm-worker-grid-engine.js")
     ]);
     const definition = core.createGridWorkerShapeDefinition({
       filter: [
@@ -47,8 +49,8 @@ try {
     });
 
     const candidateFactories = [
-      ["typescript-worker", core.createTypeScriptWorkerGridEngine],
-      ["rust-wasm-worker", core.createRustWasmWorkerGridEngine]
+      ["typescript-worker", typescriptCandidate.createTypeScriptWorkerGridEngine],
+      ["rust-wasm-worker", rustCandidate.createRustWasmWorkerGridEngine]
     ];
     const candidates = [];
     for (const [name, createEngine] of candidateFactories) {
@@ -128,11 +130,23 @@ try {
     }
 
     const kernels = await measureKernels(primitiveRows, iterations);
-    const measuredCandidates = candidates.map((candidate) => ({
-      ...candidate,
-      canonicalResult: undefined,
-      measuredMedianMs: median(candidate.runs.filter((run) => !run.warmup).map((run) => run.elapsedMs))
-    }));
+    const measuredCandidates = candidates.map((candidate) => {
+      const measuredRuns = candidate.runs.filter((run) => !run.warmup);
+      const elapsed = measuredRuns.map((run) => run.elapsedMs);
+      const frameGaps = measuredRuns.map((run) => run.responsiveness.maximumFrameGapMs);
+      return {
+        ...candidate,
+        canonicalResult: undefined,
+        coldElapsedMs: candidate.runs[0]?.elapsedMs ?? null,
+        measuredMedianMs: percentile(elapsed, 0.5),
+        measuredP75Ms: percentile(elapsed, 0.75),
+        measuredP95Ms: percentile(elapsed, 0.95),
+        measuredMinMs: Math.min(...elapsed),
+        measuredMaxMs: Math.max(...elapsed),
+        mainThreadFrameGapP95Ms: percentile(frameGaps, 0.95),
+        peakMainThreadHeapBytes: Math.max(...candidate.runs.map((run) => run.responsiveness.peakUsedJSHeapSizeBytes ?? 0)) || null
+      };
+    });
     return {
       candidates: measuredCandidates,
       shapeParity: candidates[0].canonicalResult === candidates[1].canonicalResult,
@@ -237,10 +251,14 @@ try {
       let frameCount = 0;
       let maximumFrameGapMs = 0;
       let previous = performance.now();
+      let peakUsedJSHeapSizeBytes = performance.memory?.usedJSHeapSize ?? null;
       const tick = (timestamp) => {
         maximumFrameGapMs = Math.max(maximumFrameGapMs, timestamp - previous);
         previous = timestamp;
         frameCount += 1;
+        if (peakUsedJSHeapSizeBytes !== null) {
+          peakUsedJSHeapSizeBytes = Math.max(peakUsedJSHeapSizeBytes, performance.memory?.usedJSHeapSize ?? 0);
+        }
         if (active) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -248,7 +266,7 @@ try {
         async stop() {
           active = false;
           await new Promise((resolve) => requestAnimationFrame(resolve));
-          return { frameCount, maximumFrameGapMs };
+          return { frameCount, maximumFrameGapMs, peakUsedJSHeapSizeBytes };
         }
       };
     }
@@ -264,8 +282,12 @@ try {
     }
 
     function median(values) {
+      return percentile(values, 0.5);
+    }
+
+    function percentile(values, ratio) {
       const sorted = [...values].sort((left, right) => left - right);
-      return sorted[Math.floor(sorted.length / 2)] ?? 0;
+      return sorted[Math.max(0, Math.ceil(sorted.length * ratio) - 1)] ?? 0;
     }
   }, { profileName: profile, iterations: measuredIterations, primitiveRows: kernelRowCount });
 } finally {
@@ -276,20 +298,37 @@ try {
 const typescriptMs = evidence.candidates.find((candidate) => candidate.name === "typescript-worker").measuredMedianMs;
 const rustMs = evidence.candidates.find((candidate) => candidate.name === "rust-wasm-worker").measuredMedianMs;
 const differencePercent = Math.abs(typescriptMs - rustMs) / Math.min(typescriptMs, rustMs) * 100;
-const gatesPass = evidence.shapeParity
+const cancellationWithinBudget = evidence.cancellation.every((result) => result.elapsedMs < 100);
+const correctnessGatesPass = evidence.shapeParity
   && evidence.progressParity
   && evidence.cancellationParity
+  && cancellationWithinBudget
   && evidence.kernels.parity
   && evidence.kernels.progressParity;
+const candidatePerformance = Object.fromEntries(evidence.candidates.map((candidate) => [candidate.name, {
+  mainThreadResponsive: candidate.mainThreadFrameGapP95Ms < 100,
+  capacityCompleted: candidate.runs.every((run) => run.resultSummary.sourceRowCount === evidence.candidates[0].runs[0].resultSummary.sourceRowCount)
+}]));
+const eligibleCandidates = evidence.candidates
+  .filter((candidate) => candidatePerformance[candidate.name].mainThreadResponsive
+    && candidatePerformance[candidate.name].capacityCompleted)
+  .map((candidate) => candidate.name);
 const recommendation = profile === "small"
   ? "No production selection: run the fallback or primary profile."
-  : !gatesPass
-    ? "No production selection: one or more parity gates failed."
-    : differencePercent <= 10
-      ? "rust-wasm-worker"
-      : rustMs < typescriptMs
-        ? "rust-wasm-worker"
-        : "typescript-worker";
+  : !correctnessGatesPass
+    ? "No production selection: one or more correctness/parity gates failed."
+    : eligibleCandidates.length === 0
+      ? "No production selection: neither candidate passed the capacity and responsiveness gates."
+      : eligibleCandidates.length === 1
+        ? eligibleCandidates[0]
+        : differencePercent <= 10
+          ? "rust-wasm-worker"
+          : rustMs < typescriptMs
+            ? "rust-wasm-worker"
+            : "typescript-worker";
+const selectionGatesPass = profile === "small"
+  ? correctnessGatesPass
+  : correctnessGatesPass && eligibleCandidates.includes(recommendation);
 
 console.log(JSON.stringify({
   status: profile === "small" ? "Alpha 4 diagnostic" : "Alpha 4 engine-selection evidence",
@@ -308,9 +347,17 @@ console.log(JSON.stringify({
   measuredIterations,
   assets: readAssetSizes(),
   evidence,
-  decision: { gatesPass, differencePercent, rule: "Select Rust at <=10% difference; otherwise select the faster candidate.", recommendation },
+  decision: {
+    gatesPass: selectionGatesPass,
+    correctnessGatesPass,
+    differencePercent,
+    cancellationWithinBudget,
+    candidatePerformance,
+    rule: "Select Rust at <=10% difference; otherwise select the faster candidate.",
+    recommendation
+  },
   limitations: [
-    "Peak browser memory is not portable across Chromium versions; retained JS heap is reported when performance.memory is available.",
+    "Peak and retained main-thread browser heap are sampled through performance.memory when available; Worker/WASM heap is not exposed portably by Chromium.",
     "Formula and pivot-style evidence uses numeric sum-product and grouped-sum kernels; Alpha 6/7 feature semantics remain milestone-owned.",
     "Bundle sizes list candidate-specific entry assets and WASM, not shared Core modules or compressed network transfer size."
   ]
