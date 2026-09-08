@@ -359,22 +359,10 @@ test("Alpha 3 coalesces double commit and contains rejected custom-editor commit
   expect(pageErrors).toEqual([]);
 });
 
-test("Alpha 4 TypeScript Worker shapes transferable columnar data", async ({ page }) => {
+test("Alpha 4 production Grid Worker shapes transferable columnar data", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
   await page.locator("#runWorker").click();
   await expect(page.locator("#workerStatus")).toHaveText("50 filtered / 52 view rows");
-});
-
-test("Alpha 4 Rust/WASM Worker runs the shared numeric boundary", async ({ page }) => {
-  await page.goto("/apps/core-demo/index.html");
-  await page.locator("#runWasmWorker").click();
-  await expect(page.locator("#wasmStatus")).toHaveText("parity: 50 rows / sum 3775");
-});
-
-test("Alpha 4 TypeScript and Rust/WASM shaping candidates return full parity", async ({ page }) => {
-  await page.goto("/apps/core-demo/index.html");
-  await page.locator("#runEngineParity").click();
-  await expect(page.locator("#wasmStatus")).toHaveText("full parity: 52 view rows");
 });
 
 test("Alpha 4 Rust/WASM filter and sort match the 10K mixed-type fixture", async ({ page }) => {
@@ -382,9 +370,11 @@ test("Alpha 4 Rust/WASM filter and sort match the 10K mixed-type fixture", async
   const parity = await page.evaluate(async () => {
     const fixtureUrl = "/benchmarks/engine-bakeoff/alpha4-mixed-type-fixtures.mjs";
     const coreUrl = "/packages/core/dist/index.js";
-    const [{ createAlpha4MixedTypeFixture }, core] = await Promise.all([
+    const [{ createAlpha4MixedTypeFixture }, core, typescriptCandidate, rustCandidate] = await Promise.all([
       import(fixtureUrl),
-      import(coreUrl)
+      import(coreUrl),
+      import("/packages/core/dist/engine/typescript-worker/typescript-worker-grid-engine.js"),
+      import("/packages/core/dist/engine/rust-wasm-worker/rust-wasm-worker-grid-engine.js")
     ]);
     const fixture = createAlpha4MixedTypeFixture("small");
     const definition = core.createGridWorkerShapeDefinition({
@@ -401,8 +391,8 @@ test("Alpha 4 Rust/WASM filter and sort match the 10K mixed-type fixture", async
         { columnId: "number-01", direction: "desc", comparisonType: "number", nulls: "last" }
       ]
     });
-    const typescriptEngine = core.createTypeScriptWorkerGridEngine();
-    const rustEngine = core.createRustWasmWorkerGridEngine();
+    const typescriptEngine = typescriptCandidate.createTypeScriptWorkerGridEngine();
+    const rustEngine = rustCandidate.createRustWasmWorkerGridEngine();
     try {
       const [typescriptResult, rustResult] = await Promise.all([
         typescriptEngine.shape({ data: fixture.data, definition }),
@@ -426,9 +416,11 @@ test("Alpha 4 Rust/WASM grouping and aggregates match the 10K mixed-type fixture
   const parity = await page.evaluate(async () => {
     const fixtureUrl = "/benchmarks/engine-bakeoff/alpha4-mixed-type-fixtures.mjs";
     const coreUrl = "/packages/core/dist/index.js";
-    const [{ createAlpha4MixedTypeFixture }, core] = await Promise.all([
+    const [{ createAlpha4MixedTypeFixture }, core, typescriptCandidate, rustCandidate] = await Promise.all([
       import(fixtureUrl),
-      import(coreUrl)
+      import(coreUrl),
+      import("/packages/core/dist/engine/typescript-worker/typescript-worker-grid-engine.js"),
+      import("/packages/core/dist/engine/rust-wasm-worker/rust-wasm-worker-grid-engine.js")
     ]);
     const definition = core.createGridWorkerShapeDefinition({
       filter: [
@@ -451,8 +443,8 @@ test("Alpha 4 Rust/WASM grouping and aggregates match the 10K mixed-type fixture
       ],
       expandedGroupIds: "all"
     });
-    const typescriptEngine = core.createTypeScriptWorkerGridEngine();
-    const rustEngine = core.createRustWasmWorkerGridEngine();
+    const typescriptEngine = typescriptCandidate.createTypeScriptWorkerGridEngine();
+    const rustEngine = rustCandidate.createRustWasmWorkerGridEngine();
     try {
       const [typescriptResult, rustResult] = await Promise.all([
         typescriptEngine.shape({

@@ -2,8 +2,7 @@ import {
   createGridColumnarBuffer,
   createGridAggregatePinnedRow,
   createGridWorkerShapeDefinition,
-  createRustWasmWorkerGridEngine,
-  createTypeScriptWorkerGridEngine,
+  createGridWorkerEngine,
   mountVirtualDomGrid
 } from "@thefoolspath/gethen-core";
 import type { GridColumnView, GridRow } from "@thefoolspath/gethen-core";
@@ -193,7 +192,7 @@ requireElement("freezePanes").addEventListener("click", () => gridApi.freezePane
 requireElement("undo").addEventListener("click", () => gridApi.undo());
 requireElement("redo").addEventListener("click", () => gridApi.redo());
 requireElement("runWorker").addEventListener("click", async () => {
-  const engine = createTypeScriptWorkerGridEngine();
+  const engine = createGridWorkerEngine();
   try {
     const data = createGridColumnarBuffer(rows.slice(0, 100), [
       { columnId: "c0", storage: "float64" },
@@ -215,61 +214,6 @@ requireElement("runWorker").addEventListener("click", async () => {
     requireElement("workerStatus").textContent = `${result.filteredRowCount} filtered / ${result.rows.length} view rows`;
   } finally {
     engine.destroy();
-  }
-});
-requireElement("runWasmWorker").addEventListener("click", async () => {
-  const engine = createRustWasmWorkerGridEngine();
-  try {
-    const result = await engine.shape({
-      data: createGridColumnarBuffer(rows.slice(0, 100), [
-        { columnId: "c0", storage: "float64" }
-      ]),
-      definition: createGridWorkerShapeDefinition({
-        filter: [{ columnId: "c0", operator: "greaterThan", value: 50, comparisonType: "number" }],
-        aggregate: [{ id: "sum", operation: "sum", columnId: "c0" }]
-      }),
-      onProgress: (progress) => {
-        requireElement("wasmStatus").textContent = progress.stage;
-      }
-    });
-    const sum = result.rows.reduce((total, row) => total + Number(row.cells.c0 ?? 0), 0);
-    requireElement("wasmStatus").textContent = `parity: ${result.filteredRowCount} rows / sum ${sum}`;
-  } finally {
-    engine.destroy();
-  }
-});
-requireElement("runEngineParity").addEventListener("click", async () => {
-  const typescriptEngine = createTypeScriptWorkerGridEngine();
-  const rustEngine = createRustWasmWorkerGridEngine();
-  const columns = [
-    { columnId: "c0", storage: "float64" as const },
-    { columnId: "c1", storage: "utf8" as const },
-    { columnId: "c2", storage: "boolean" as const }
-  ];
-  const definition = createGridWorkerShapeDefinition({
-    filter: [
-      { columnId: "c0", operator: "greaterThan", value: 50, comparisonType: "number" },
-      { columnId: "c1", operator: "contains", value: "column", comparisonType: "text" }
-    ],
-    sort: [
-      { columnId: "c2", direction: "asc", comparisonType: "boolean" },
-      { columnId: "c1", direction: "desc", comparisonType: "text" },
-      { columnId: "c0", direction: "desc", comparisonType: "number" }
-    ],
-    group: [{ columnId: "c2", comparisonType: "boolean" }],
-    aggregate: [{ id: "sum", operation: "sum", columnId: "c0" }]
-  });
-  try {
-    const [typescriptResult, rustResult] = await Promise.all([
-      typescriptEngine.shape({ data: createGridColumnarBuffer(rows.slice(0, 100), columns), definition }),
-      rustEngine.shape({ data: createGridColumnarBuffer(rows.slice(0, 100), columns), definition })
-    ]);
-    requireElement("wasmStatus").textContent = JSON.stringify(typescriptResult) === JSON.stringify(rustResult)
-      ? `full parity: ${rustResult.rows.length} view rows`
-      : "full parity mismatch";
-  } finally {
-    typescriptEngine.destroy();
-    rustEngine.destroy();
   }
 });
 

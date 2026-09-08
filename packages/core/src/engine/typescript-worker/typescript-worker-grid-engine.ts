@@ -1,21 +1,10 @@
-import type {
-  GridColumnarBuffer,
-  GridEngineWorkerRequest,
-  GridEngineWorkerResponse,
-  GridWorkerShapeDefinition
-} from "../../contracts/engine-contract.js";
+import type { GridEngineWorkerRequest, GridEngineWorkerResponse } from "../../contracts/engine-contract.js";
 import { getGridColumnarTransferables } from "../../contracts/engine-contract.js";
 import type { GridDataShapingResult } from "../../shaping/grid-data-shaping.js";
+import type { GridWorkerEngine, GridWorkerExecutionOptions } from "../grid-worker-engine.js";
 
 export interface TypeScriptWorkerGridEngineOptions {
   readonly workerFactory?: () => Worker;
-}
-
-export interface GridWorkerExecutionOptions {
-  readonly data: GridColumnarBuffer;
-  readonly definition: GridWorkerShapeDefinition;
-  readonly signal?: AbortSignal;
-  readonly onProgress?: (response: Extract<GridEngineWorkerResponse, { type: "progress" }>) => void;
 }
 
 interface PendingRequest {
@@ -25,7 +14,7 @@ interface PendingRequest {
   readonly removeAbortListener?: () => void;
 }
 
-export class TypeScriptWorkerGridEngine {
+export class TypeScriptWorkerGridEngine implements GridWorkerEngine {
   readonly #worker: Worker;
   readonly #pending = new Map<string, PendingRequest>();
   #nextRequestId = 0;

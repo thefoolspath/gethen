@@ -72,12 +72,7 @@ export {
   createGridWorkerShapeDefinition
 } from "./contracts/engine-contract.js";
 
-export {
-  TypeScriptWorkerGridEngine,
-  createTypeScriptWorkerGridEngine
-} from "./engine/typescript-worker/typescript-worker-grid-engine.js";
-
-export { createRustWasmWorkerGridEngine } from "./engine/rust-wasm-worker/rust-wasm-worker-grid-engine.js";
+export { createGridWorkerEngine } from "./engine/grid-worker-engine.js";
 
 export {
   mountVirtualDomGrid
@@ -201,10 +196,7 @@ export type {
   GridWorkerShapeDefinition
 } from "./contracts/engine-contract.js";
 
-export type {
-  GridWorkerExecutionOptions,
-  TypeScriptWorkerGridEngineOptions
-} from "./engine/typescript-worker/typescript-worker-grid-engine.js";
+export type { GridWorkerEngine, GridWorkerExecutionOptions } from "./engine/grid-worker-engine.js";
 
 export type {
   ClientDataSourceOptions,
