@@ -62,7 +62,7 @@ export const routes: readonly DocRoute[] = [
 
   project("roadmap", "Roadmap", "Follow the accepted client-first path through local 1.0 and the deferred Server 2.0 workstream.", "Alpha 5 focuses on read-only Grid Table behavior, Alpha 6 on Formula, Alpha 7 on Pivot, followed by client Beta and 1.0 hardening."),
   project("changelog", "Changelog", "Review the locally verified Alpha release-candidate checkpoints.", "Alpha 1 established the vertical slice, Alpha 2 added customization and row transactions, and Alpha 3 completed the current editing, extension, history, and layout checkpoint."),
-  project("known-limitations", "Known Limitations", "Keep experimental boundaries and missing evidence visible.", "No package is published. The Alpha 4 production engine selection, larger capacity evidence, representative-user walkthroughs, and manual NVDA/Chrome validation remain open. Formula, Pivot, and Server DataSource are not available.")
+  project("known-limitations", "Known Limitations", "Keep experimental boundaries and missing evidence visible.", "No package is published. Three local representative-task walkthroughs are recorded, but external-participant usability research and manual NVDA/Chrome validation remain open. Formula, Pivot, and Server DataSource are not available.")
 ];
 
 function route(

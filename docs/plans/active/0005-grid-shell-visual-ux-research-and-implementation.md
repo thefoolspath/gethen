@@ -1,8 +1,8 @@
 # Grid Shell Visual UX Research And Implementation
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-09-09.
 
-Status: Alpha 4 foundation implemented and locally verified. Manual NVDA/Chrome and representative-user walkthroughs remain open. NVDA/Chrome is optional during alpha and mandatory before Beta/1.0. The former Alpha 7 server-status extension is superseded by the Server 2.0 roadmap.
+Status: Alpha 4 foundation and local UX/visual evidence are complete. Three representative task walkthroughs were recorded on 2026-09-09; they were performed by one local evaluator and are not an external-participant usability study. Manual NVDA/Chrome remains open, optional during alpha, and mandatory before Beta/1.0. The former Alpha 7 server-status extension is superseded by the Server 2.0 roadmap.
 
 ## Goal
 
@@ -30,7 +30,7 @@ The later Corporate Identity implementation adds explicit opt-in Emerald Light a
 - [x] Pass the new inputs through Angular without importing Angular into Core.
 - [x] Update demos and public customization documentation.
 - [x] Add unit, browser, accessibility, manual visual, and existing benchmark-suite evidence.
-- [ ] Record at least three representative user walkthroughs before claiming validated usability; otherwise record the evidence limitation.
+- [x] Record three representative task walkthroughs and the external-participant evidence limitation; do not claim broadly validated usability from the local walkthroughs alone.
 
 ## Version Integration
 
