@@ -1,8 +1,8 @@
 # Client-First 1.0 And Server-Side 2.0 Roadmap
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-09-11.
 
-Status: Accepted sequencing and scope amendment. This plan supersedes the Alpha 5 onward sequencing and server-before-1.0 scope in [0004-alpha-3-onward-execution-plan.md](0004-alpha-3-onward-execution-plan.md). It does not change the implemented status of any version.
+Status: Accepted sequencing and scope amendment. This plan supersedes the Alpha 5 onward sequencing and server-before-1.0 scope in [0004-alpha-3-onward-execution-plan.md](../completed/0004-alpha-3-onward-execution-plan.md). It does not change the implemented status of any version.
 
 ## Goal
 
@@ -19,6 +19,8 @@ Complete Gethen as a production-quality client-side grid through `1.0.0` before 
 7. Plan and implement Server DataSource, the server wire protocol, and C# backend integration as the `2.0` workstream.
 
 No Protocol v2 server transport, Server DataSource, ASP.NET Core, LINQ, EF Core, SQL-provider integration, or NuGet artifact is required for client-side `1.0.0`.
+
+Alpha 5 implementation is now tracked by [0009-alpha-5-read-only-grid-table.md](0009-alpha-5-read-only-grid-table.md).
 
 ## Alpha 5 Read-Only Grid Table
 
@@ -57,6 +59,6 @@ No Protocol v2 server transport, Server DataSource, ASP.NET Core, LINQ, EF Core,
 
 ## Documentation Consequences
 
-- [0004-alpha-3-onward-execution-plan.md](0004-alpha-3-onward-execution-plan.md) remains authoritative for Alpha 3 and Alpha 4 details, but this plan replaces its Alpha 5 onward numbering and removes its Alpha 7/8 server commitments.
+- [0004-alpha-3-onward-execution-plan.md](../completed/0004-alpha-3-onward-execution-plan.md) remains the historical authority for Alpha 3 and Alpha 4 details, but this plan replaces its Alpha 5 onward numbering and removes its Alpha 7/8 server commitments.
 - The product roadmap, product scope, release strategy, architecture boundaries, grid-shell integration notes, and project state must route future work to this plan.
 - Historical research and change-log entries remain evidence of the decision that existed when they were written; current source-of-truth documents must label that sequencing as superseded.

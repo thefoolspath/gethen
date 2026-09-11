@@ -1,8 +1,8 @@
 # Feedback And Change Control Plan
 
-Last reviewed: 2026-08-08.
+Last reviewed: 2026-09-11.
 
-Status: Initial process setup in progress.
+Status: Completed. The intake and triage process is active in `docs/project/ISSUE_AND_CHANGE_REQUESTS.md`.
 
 ## Goal
 
@@ -27,7 +27,7 @@ Future defects and change requests have a clear intake location, status flow, an
 - [x] Define when feedback updates roadmap, active plans, ADRs, release notes, and project state.
 - [x] Require maintainer approval before converting conversation points into issue or change-request intake rows.
 - [x] Use the intake log for the next real-use feedback item.
-- [ ] Move this plan to completed after the first feedback item is triaged successfully.
+- [x] Move this plan to completed after the first feedback item is triaged successfully.
 
 ## Acceptance Criteria
 

@@ -445,6 +445,6 @@ Open creative decisions:
 - [`VISION.md`](VISION.md): product intent, users, and differentiators.
 - [`SCOPE.md`](SCOPE.md): accepted product boundaries and future direction.
 - [`ROADMAP.md`](ROADMAP.md): version sequence and implementation truthfulness.
-- [`../plans/active/0008-corporate-identity-and-theme-system.md`](../plans/active/0008-corporate-identity-and-theme-system.md): accepted CI palette, light/dark direction, typography constraints, accessibility, and copyright boundary.
+- [`../plans/completed/0008-corporate-identity-and-theme-system.md`](../plans/completed/0008-corporate-identity-and-theme-system.md): accepted CI palette, light/dark direction, typography constraints, accessibility, and copyright boundary.
 - [`../project/PROJECT_STATE.md`](../project/PROJECT_STATE.md): current implementation and publication status.
 - [`../architecture/SYSTEM_OVERVIEW.md`](../architecture/SYSTEM_OVERVIEW.md): framework-neutral architecture and ecosystem range.

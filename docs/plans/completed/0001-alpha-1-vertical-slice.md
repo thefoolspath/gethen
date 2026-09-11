@@ -1,8 +1,8 @@
 # Alpha 1 Vertical Slice Plan
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-09-11.
 
-Status: Pre-alpha research gate in progress.
+Status: Completed historical Alpha 1 plan. Later deferred work is governed by the current roadmap and active milestone plans; unchecked conditional items below are preserved as historical scope decisions, not active tasks.
 
 ## Goal
 

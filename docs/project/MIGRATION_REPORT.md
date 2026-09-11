@@ -21,7 +21,7 @@ Last reviewed: 2026-08-04.
 | `docs/planning/11-testing-strategy.md` | `docs/quality/TESTING_STRATEGY.md` | Rewrite | Quality source of truth | Low | No |
 | `docs/planning/12-release-roadmap.md` | `docs/product/ROADMAP.md`, `docs/project/RELEASE_STRATEGY.md` | Split/rewrite | Product roadmap and release policy separated | Low | No |
 | `docs/planning/13-risk-register.md` | `docs/project/RISK_REGISTER.md` | Rewrite | Required risk table fields added | Low | No |
-| `docs/planning/14-alpha-1-implementation-plan.md` | `docs/plans/active/0001-alpha-1-vertical-slice.md` | Rewrite | Active plan should link to sources, not duplicate them | Low | No |
+| `docs/planning/14-alpha-1-implementation-plan.md` | `docs/plans/completed/0001-alpha-1-vertical-slice.md` | Rewrite | Completed plan should link to sources, not duplicate them | Low | No |
 | `docs/planning/decisions/*.md` | `docs/adr/0001-0005*.md` | Rewrite | New ADR template and Proposed status | Low | No |
 
 ## Notes

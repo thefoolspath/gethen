@@ -50,4 +50,4 @@ Revisit if Worker/WASM end-to-end benchmarks show material benefit after startup
 ## Related Documents
 
 - [../architecture/SYSTEM_OVERVIEW.md](../architecture/SYSTEM_OVERVIEW.md)
-- [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md)
+- [../plans/completed/0001-alpha-1-vertical-slice.md](../plans/completed/0001-alpha-1-vertical-slice.md)

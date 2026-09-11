@@ -1,6 +1,6 @@
 # Product Roadmap
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-09-11.
 
 Status: Local `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates are implemented and verified; the Alpha 4 engine bake-off selected TypeScript Worker at the accepted 500,000-row fallback capacity. No package is published. Manual NVDA/Chrome validation is optional during alpha and remains mandatory before Beta/1.0. The accepted client-first plan through local 1.0 is active.
 
@@ -32,9 +32,9 @@ Status: Local `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates are impleme
 
 The local `0.0.0-alpha.2` release candidate was completed on 2026-08-10. It includes hidden rendered columns, alignment, application-owned column/row/cell classes, text-only formatters, theme tokens, rectangular range selection, explicit DTO mapping with hidden stable keys, headless row transactions, opt-in all-or-nothing direct clipboard paste, validation primitives, host-dialog preparation, and Angular adapter passthrough. Preliminary repeat-iteration JavaScript and Chromium render-timing baselines exist. Renderer-owned row/paste-dialog controls and a second adapter are deliberately omitted; cross-hardware/full-frame-trace evidence remains required before external performance claims.
 
-Alpha 3 and Alpha 4 details follow [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md). The accepted Alpha 5 onward sequence follows [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md). Versions are completed sequentially. Features inside the stable scope may not be relabeled as prototypes or deferred merely to pass a release gate.
+Alpha 3 and Alpha 4 details are recorded in [../plans/completed/0004-alpha-3-onward-execution-plan.md](../plans/completed/0004-alpha-3-onward-execution-plan.md). The accepted Alpha 5 onward sequence follows [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md), and current Alpha 5 execution is tracked in [../plans/active/0009-alpha-5-read-only-grid-table.md](../plans/active/0009-alpha-5-read-only-grid-table.md). Versions are completed sequentially. Features inside the stable scope may not be relabeled as prototypes or deferred merely to pass a release gate.
 
-The accepted Alpha 4 grid-shell closure follows [../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/active/0005-grid-shell-visual-ux-research-and-implementation.md). It corrects missing previously accepted header/accessibility behavior and adds CR-20260811-001/002 before Grid Table, formula, and pivot UI build on the shell. Server loading, error, retry, and known/unknown total semantics move to 2.0.
+The completed Alpha 4 grid-shell closure is recorded in [../plans/completed/0005-grid-shell-visual-ux-research-and-implementation.md](../plans/completed/0005-grid-shell-visual-ux-research-and-implementation.md). It corrected missing previously accepted header/accessibility behavior and added CR-20260811-001/002 before Grid Table, formula, and pivot UI build on the shell. Server loading, error, retry, and known/unknown total semantics move to 2.0.
 
 The Alpha 4 engine bake-off is complete. The 1,000,000-row workload completed but missed responsiveness/cancellation thresholds; TypeScript Worker passed the complete 500,000-row fallback gate and is exposed through `createGridWorkerEngine()`. Rust/WASM remains internal as a parity/benchmark oracle. See [../research/findings/2026-09-08-alpha4-engine-selection.md](../research/findings/2026-09-08-alpha4-engine-selection.md).
 

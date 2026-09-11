@@ -61,4 +61,4 @@ Separately versioned C# project/solution area in this repository
 - [PACKAGE_BOUNDARIES.md](PACKAGE_BOUNDARIES.md)
 - [DATA_MODEL.md](DATA_MODEL.md)
 - [DATA_SOURCE.md](DATA_SOURCE.md)
-- [../plans/active/0001-alpha-1-vertical-slice.md](../plans/active/0001-alpha-1-vertical-slice.md)
+- [../plans/completed/0001-alpha-1-vertical-slice.md](../plans/completed/0001-alpha-1-vertical-slice.md)

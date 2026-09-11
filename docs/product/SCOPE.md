@@ -1,10 +1,10 @@
 # Product Scope
 
-Last reviewed: 2026-08-12.
+Last reviewed: 2026-09-11.
 
 ## Current Implementation Status
 
-A local `0.0.0-alpha.2` release candidate is implemented and verified. No package is published. See [../project/PROJECT_STATE.md](../project/PROJECT_STATE.md) for current evidence.
+Local `0.0.0-alpha.2` and `0.0.0-alpha.3` release candidates are implemented and verified, and Alpha 4 data shaping, engine selection, grid shell, and local visual closure are complete. Alpha 5 Read-only Grid Table is the current implementation milestone. No package is published. See [../project/PROJECT_STATE.md](../project/PROJECT_STATE.md) for current evidence.
 
 ## Smallest Credible Alpha
 
@@ -52,7 +52,7 @@ The accepted roadmap uses `0.0.0-alpha.3` through `0.0.0-alpha.7` for required c
 - `alpha.6`: a safe Gethen formula engine with per-cell/computed-column formulas, structured references, dependency graph, incremental worker recalculation, and formula UI.
 - `alpha.7`: a readonly-first pivot engine, virtualized pivot grid, developer configuration API, and accessible field-builder UI.
 
-These entries are accepted product scope but remain unimplemented until their source, tests, documentation, and benchmark evidence exist. Alpha 3/4 details are in [../plans/active/0004-alpha-3-onward-execution-plan.md](../plans/active/0004-alpha-3-onward-execution-plan.md); the revised Alpha 5 onward sequence is in [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md).
+These entries are accepted product scope but remain unimplemented until their source, tests, documentation, and benchmark evidence exist. Alpha 3/4 details are recorded in [../plans/completed/0004-alpha-3-onward-execution-plan.md](../plans/completed/0004-alpha-3-onward-execution-plan.md); the revised Alpha 5 onward sequence is in [../plans/active/0006-client-first-1.0-server-2.0-roadmap.md](../plans/active/0006-client-first-1.0-server-2.0-roadmap.md), with current Alpha 5 execution in [../plans/active/0009-alpha-5-read-only-grid-table.md](../plans/active/0009-alpha-5-read-only-grid-table.md).
 
 ## Out Of Scope Through Extended Frontend Alpha
 

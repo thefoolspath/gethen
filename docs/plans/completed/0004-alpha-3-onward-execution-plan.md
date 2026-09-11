@@ -1,8 +1,8 @@
 # Alpha 3 Through Local 1.0 Execution Plan
 
-Last reviewed: 2026-08-25.
+Last reviewed: 2026-09-11.
 
-Status: Alpha 3 is a locally verified release candidate. The Alpha 4 engine bake-off is complete with TypeScript Worker selected at the 500,000-row fallback capacity; the grid-shell walkthrough evidence remains open. The Alpha 5 onward sequence and all server-before-1.0 scope are superseded by [0006-client-first-1.0-server-2.0-roadmap.md](0006-client-first-1.0-server-2.0-roadmap.md). No package is published.
+Status: Completed historical Alpha 3 and Alpha 4 plan. TypeScript Worker is selected at the 500,000-row fallback capacity, and the grid-shell walkthrough evidence closed on 2026-09-09. Unchecked Alpha 5 onward items below are superseded historical scope, not active tasks; current sequencing is in [0006-client-first-1.0-server-2.0-roadmap.md](../active/0006-client-first-1.0-server-2.0-roadmap.md), and current Alpha 5 execution is tracked in [0009-alpha-5-read-only-grid-table.md](../active/0009-alpha-5-read-only-grid-table.md). No package is published.
 
 ## Goal
 
@@ -113,7 +113,7 @@ The Alpha 4 engine gate is complete. The 1,000,000-row workload completed but di
 
 ### Grid-Shell UX Closure Before Alpha 5
 
-The accepted [grid-shell visual UX plan](0005-grid-shell-visual-ux-research-and-implementation.md) runs after the Alpha 4 shaping boundary is stable and before Alpha 5 begins. It must correct missing header and accessibility behavior, provide row numbers, readonly pinned bottom rows, a client status bar, and a dependency-free modern-enterprise default theme without weakening the engine-selection gate. Server loading, error, retry, and unknown-total states move to Server 2.0.
+The [grid-shell visual UX plan](../completed/0005-grid-shell-visual-ux-research-and-implementation.md) is complete. Header and accessibility corrections, row numbers, readonly pinned bottom rows, the client status bar, and the dependency-free Emerald default themes are implemented and locally verified. Manual NVDA/Chrome remains deferred to the mandatory Beta/1.0 gate. Server loading, error, retry, and unknown-total states remain assigned to Server 2.0.
 
 ## `0.0.0-alpha.5` - Read-Only Grid Table
 
