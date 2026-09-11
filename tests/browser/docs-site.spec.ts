@@ -186,6 +186,8 @@ test("documentation route search supports keyboard selection, empty state, Escap
 
   const search = page.getByRole("searchbox", { name: "Search route title, group, or summary" });
   await expect(search).toBeFocused();
+  await search.fill("undo redo");
+  await expect(page.getByRole("option", { name: /Undo \/ Redo/u })).toBeVisible();
   await search.fill("no matching gethen route");
   await expect(page.getByText(/No documentation routes match/u)).toBeVisible();
   await page.keyboard.press("Escape");

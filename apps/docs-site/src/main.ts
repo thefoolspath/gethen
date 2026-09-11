@@ -67,11 +67,13 @@ export class DocsAppComponent implements OnDestroy {
   protected readonly activeSearchIndex = signal(0);
   protected readonly pageLinkCopied = signal(false);
   protected readonly searchResults = computed(() => {
-    const query = this.searchQuery().trim().toLocaleLowerCase("en-US");
+    const query = normalizeRouteSearchText(this.searchQuery());
     if (!query) return routes;
-    return routes.filter((route) =>
-      [route.title, route.group, route.summary].some((value) => value.toLocaleLowerCase("en-US").includes(query))
-    );
+    const terms = query.split(" ");
+    return routes.filter((route) => {
+      const searchableText = normalizeRouteSearchText([route.title, route.group, route.summary].join(" "));
+      return terms.every((term) => searchableText.includes(term));
+    });
   });
   protected readonly pageSections = computed<readonly PageSection[]>(() => {
     const route = this.activeRoute();
@@ -410,6 +412,15 @@ function groupRoutes(sourceRoutes: readonly DocRoute[]): readonly RouteGroup[] {
     groups.set(route.group, entries);
   }
   return [...groups.entries()].map(([name, groupedRoutes]) => ({ name, routes: groupedRoutes }));
+}
+
+function normalizeRouteSearchText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .toLocaleLowerCase("en-US")
+    .replace(/[\p{P}\p{S}]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
 bootstrapApplication(DocsAppComponent).catch((error: unknown) => {
