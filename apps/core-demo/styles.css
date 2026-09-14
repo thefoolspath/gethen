@@ -10,12 +10,14 @@
 
 body {
   margin: 0;
+  overflow: hidden;
 }
 
 .shell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .toolbar {
@@ -25,6 +27,17 @@ body {
   padding: 18px 24px;
   border-bottom: 1px solid #c8d0d9;
   background: #f6f7f9;
+}
+
+.alpha3-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 6px;
+}
+
+.alpha3-controls button {
+  min-height: 32px;
 }
 
 h1 {
@@ -66,5 +79,23 @@ p {
 
 .gridHost {
   min-height: 0;
-  height: calc(100vh - 88px);
+  height: auto;
+}
+
+.gethen-numeric-column {
+  font-variant-numeric: tabular-nums;
+}
+
+.gethen-alternate-row {
+  --gethen-background: #f8fafc;
+}
+
+.gethen-true-cell {
+  color: #166534 !important;
+  font-weight: 700;
+}
+
+.gethen-primary-header,
+.gethen-boolean-header {
+  color: #0f5d66 !important;
 }

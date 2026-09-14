@@ -2,7 +2,7 @@
 
 ## Status
 
-Initial alpha decision recorded.
+Alpha 4 decision complete; TypeScript Worker selected at the 500,000-row fallback gate.
 
 ## Question
 
@@ -39,7 +39,7 @@ Required before acceptance:
 
 Workers are valuable for avoiding UI long tasks even if algorithm time is similar. Rust/WASM is only valuable if it beats TypeScript after boundary costs and does not create unacceptable maintenance or package burden.
 
-The preliminary native Rust benchmark is much faster for the representative numeric operations, but it does not include WASM startup, transfer, serialization, browser execution, fallback behavior, or package cost. Therefore it is not sufficient to add production Rust/WASM or Worker integration to the alpha path.
+The completed browser bake-off includes startup, transfer, mixed-type shaping, representative formula/pivot kernels, cancellation, responsiveness, package cost, and disposal evidence. The 1,000,000-row workload completed but did not pass consistently. At 500,000 rows, TypeScript Worker passed all gates; Rust/WASM was faster by median latency but missed the strict main-thread responsiveness threshold.
 
 ## Options
 
@@ -50,16 +50,16 @@ The preliminary native Rust benchmark is much faster for the representative nume
 
 ## Recommendation
 
-Use TypeScript reference compute for alpha. Keep Rust native benchmark code as research evidence. Defer production WASM and Worker integration until end-to-end measurements show material improvement after transfer and startup costs.
+Use TypeScript Worker for production client shaping through the implementation-neutral `createGridWorkerEngine()` API. Keep Rust/WASM internal as a test/benchmark oracle and exclude it from publishable Core artifacts.
 
 ## Limitations
 
-No accepted local benchmark exists yet. Preliminary TypeScript-compatible and Rust GNU native benchmark results exist, while default MSVC Rust release execution is currently blocked by local linker setup.
+Accepted evidence is local to one Windows/Chromium machine. Browser `performance.memory` does not expose portable per-Worker/WASM peak heap, and cross-hardware confirmation remains open. See [findings/2026-09-08-alpha4-engine-selection.md](findings/2026-09-08-alpha4-engine-selection.md).
 
 ## Open Questions
 
-- What threshold is enough: 2x algorithm speed, 30 percent end-to-end improvement, or no UI long task?
-- How large is the accepted WASM bundle budget?
+- Can batching and allocation changes make the 1,000,000-row gate stable below the responsiveness and cancellation thresholds?
+- Can future browser tooling measure Worker/WASM peak heap portably enough for a stronger memory comparison?
 
 ## References
 

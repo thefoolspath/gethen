@@ -1,17 +1,29 @@
 import { chromium } from "@playwright/test";
-import { pathToFileURL } from "node:url";
+import { createStaticServer } from "../../scripts/serve-static.mjs";
 
-const root = process.cwd();
+const server = createStaticServer(0);
+await new Promise((resolve, reject) => {
+  server.once("error", reject);
+  server.listen(0, "127.0.0.1", resolve);
+});
+const address = server.address();
+
+if (!address || typeof address === "string") {
+  server.close();
+  throw new Error("Unable to determine renderer benchmark server address.");
+}
+
+const origin = `http://127.0.0.1:${address.port}`;
 const scenarios = [
   {
     name: "virtualized_dom",
-    url: pathToFileURL(`${root}/apps/renderer-prototype/index.html`).toString(),
+    url: `${origin}/apps/renderer-prototype/index.html`,
     countSelector: "#mountedCells",
     timeSelector: "#renderTime"
   },
   {
     name: "canvas_2d",
-    url: pathToFileURL(`${root}/apps/renderer-canvas-prototype/index.html`).toString(),
+    url: `${origin}/apps/renderer-canvas-prototype/index.html`,
     countSelector: "#drawnCells",
     timeSelector: "#drawTime"
   }
@@ -104,4 +116,7 @@ try {
   );
 } finally {
   await browser.close();
+  await new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  });
 }

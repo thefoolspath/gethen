@@ -1,13 +1,15 @@
 {
   "name": "gethen",
-  "version": "0.0.0-alpha.0",
+  "version": "0.0.0-alpha.3",
   "private": true,
   "license": "MIT",
   "packageManager": "pnpm@11.16.0",
   "type": "module",
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm -r --if-present check",
+    "check": "pnpm -r --if-present check && node scripts/verify-docs-site-boundary.mjs && node scripts/verify-core-public-boundary.mjs",
+    "demo": "pnpm build && node scripts/serve-static.mjs",
+    "docs": "pnpm build && node scripts/serve-static.mjs",
     "test": "vitest run --passWithNoTests",
     "test:browser": "node scripts/run-browser-tests.mjs",
     "bench": "pnpm build && node benchmarks/run-benchmarks.mjs"

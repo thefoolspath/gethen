@@ -1,0 +1,25 @@
+<main class="demo-shell">
+  <header class="demo-toolbar">
+    <h1 class="demo-title">Gethen Angular</h1>
+    <span class="demo-stat">Rows<strong id="rowCount">{{ rows.length }}</strong></span>
+    <span class="demo-stat">Active<strong id="activeCell">{{ activeCell() }}</strong></span>
+    <span class="demo-stat">Range<strong id="selectedRange">{{ selectedRange() }}</strong></span>
+    <span class="demo-stat">Last change<strong id="lastChange">{{ lastChange() }}</strong></span>
+    <span class="demo-stat">Last paste<strong id="pasteStatus">{{ pasteStatus() }}</strong></span>
+  </header>
+  <section class="demo-grid">
+    <gethen-grid
+      [columns]="columns"
+      [rows]="rows"
+      [pinnedBottomRows]="pinnedBottomRows"
+      [rowHeight]="32"
+      [columnWidth]="132"
+      [styling]="styling"
+      [clipboard]="clipboard"
+      (selectionChange)="handleSelection($event)"
+      (selectionRangeChange)="handleSelectionRange($event)"
+      (cellChange)="handleCellChange($event)"
+      (pasteResult)="handlePaste($event)"
+    />
+  </section>
+</main>

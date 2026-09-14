@@ -1,6 +1,6 @@
 # DataSource
 
-Last reviewed: 2026-08-04.
+Last reviewed: 2026-09-08.
 
 Status: Initial client-side DataSource implemented.
 
@@ -17,11 +17,11 @@ interface GridDataSource<TRow> {
 
 Client mode owns the complete provided dataset. Sorting and filtering may be local only because the full dataset is available.
 
-## Server-Side Mode
+## Deferred Server-Side 2.0 Mode
 
 Server mode fetches ranges. Sorting and filtering of the entire result set belong to the server. The browser must not filter only cached rows and present them as a complete result.
 
-Required server-mode behaviors before release:
+Required server-mode behaviors will be specified in the dedicated 2.0 plan and include at least:
 
 - cancellation with `AbortSignal`
 - stale-response protection
@@ -30,6 +30,11 @@ Required server-mode behaviors before release:
 - retry
 - bounded block cache
 
-Server-side DataSource is conditional for `alpha.1` if it threatens the first complete vertical slice.
+Initial implementation: `packages/core/src/data/client-data-source.ts` provides client-side row ID extraction, range retrieval, and stale-safe cell updates. Client-side execution is the only runtime scope through 1.0. Server DataSource, its wire protocol, cache semantics, and backend integration move to 2.0.
 
-Initial implementation: `packages/core/src/client-data-source.ts` provides client-side row ID extraction, range retrieval, and stale-safe cell updates. Server-side DataSource remains deferred for alpha.
+`ClientDataSource.getRows` preserves its original range/paging behavior for empty sort/filter arrays.
+Because the protocol request does not carry enough column metadata to reproduce the canonical
+mixed-type comparison semantics, it fails fast when either descriptor array is non-empty and directs
+the caller to the canonical shaping pipeline. It never silently returns an unshaped partial range.
+
+Client-side range/paging, sort, filter, group, aggregate, formula, pivot, update, and row-transaction intent must use transport-neutral descriptors or typed ASTs where those features exist. This preserves a future server execution boundary without freezing the server transport during 1.0.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for alpha deferral
+Superseded by [ADR-0006](0006-alpha4-production-engine.md)
 
 ## Context
 
@@ -11,6 +11,8 @@ Heavy local data operations may block the UI thread. Workers and WASM may help, 
 ## Decision
 
 Build TypeScript reference compute first. Defer production Rust/WASM and Worker integration for alpha until end-to-end benchmark evidence justifies the added build, package, transfer, startup, fallback, and maintenance cost.
+
+The Alpha 4 gate has now completed. ADR-0006 selects TypeScript Worker at the accepted 500,000-row fallback capacity and keeps Rust/WASM internal as an oracle.
 
 ## Alternatives Considered
 

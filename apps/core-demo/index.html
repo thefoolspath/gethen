@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gethen Core Demo</title>
     <link rel="stylesheet" href="./styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "@thefoolspath/gethen-core": "../../packages/core/dist/index.js",
+          "@thefoolspath/gethen-protocol": "../../packages/protocol/dist/index.js"
+        }
+      }
+    </script>
   </head>
   <body>
     <main class="shell">
@@ -18,10 +26,23 @@
           <div><dt>Render time</dt><dd id="renderTime">0 ms</dd></div>
           <div><dt>Active cell</dt><dd id="activeCell">row-1 / c0</dd></div>
           <div><dt>Last change</dt><dd id="lastChange">none</dd></div>
+          <div><dt>Last paste</dt><dd id="lastPaste">none</dd></div>
+          <div><dt>Layout</dt><dd id="layoutStatus">default</dd></div>
+          <div><dt>History</dt><dd id="historyStatus">0 undo / 0 redo</dd></div>
+          <div><dt>Editor</dt><dd id="editorStatus">inactive</dd></div>
+          <div><dt>Grid engine</dt><dd id="workerStatus">idle</dd></div>
         </dl>
+        <div class="alpha3-controls" aria-label="Alpha 3 controls">
+          <button id="resizeColumn" type="button">Resize first column</button>
+          <button id="reorderColumn" type="button">Move second column first</button>
+          <button id="freezePanes" type="button">Freeze 2 x 2</button>
+          <button id="undo" type="button">Undo</button>
+          <button id="redo" type="button">Redo</button>
+          <button id="runWorker" type="button">Run grid engine</button>
+        </div>
       </header>
       <section id="gridHost" class="gridHost" aria-label="Gethen core demo grid"></section>
     </main>
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="./dist/main.js"></script>
   </body>
 </html>

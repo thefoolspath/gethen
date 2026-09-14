@@ -1,8 +1,12 @@
 # Research Findings
 
-Last reviewed: 2026-08-07.
+Last reviewed: 2026-09-08.
 
 Use this folder for concise, source-grounded summaries that can support ADRs, plans, and benchmark gates.
+
+## Accepted Decision Evidence
+
+- [2026-09-08-alpha4-engine-selection.md](2026-09-08-alpha4-engine-selection.md): TypeScript Worker selected at the 500,000-row fallback gate; Rust/WASM retained internally as an oracle.
 
 ## Finding Template
 

@@ -1,14 +1,25 @@
 {
   "name": "@thefoolspath/gethen-core",
-  "version": "0.0.0-alpha.0",
+  "version": "0.0.0-alpha.3",
   "private": true,
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "!dist/engine/rust-wasm-worker/**",
+    "!dist/engine/typescript-worker/typescript-kernel-worker.*"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node ../../scripts/build-rust-wasm.mjs",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config ../../vitest.config.ts --passWithNoTests"
   },

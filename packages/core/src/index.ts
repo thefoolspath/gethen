@@ -1,41 +1,225 @@
 export {
   ClientGridEngine,
   createClientGridEngine
-} from "./client-grid-engine.js";
+} from "./state/client-grid-engine.js";
 
 export {
   ClientDataSource,
   createClientDataSource
-} from "./client-data-source.js";
+} from "./data/client-data-source.js";
 
 export {
   calculateVirtualViewport
-} from "./viewport.js";
+} from "./renderer/dom/viewport.js";
+
+export {
+  getVisibleColumns,
+  resolveGridClassNames
+} from "./renderer/dom/grid-customization.js";
+
+export {
+  gethenDarkTheme,
+  gethenLightTheme
+} from "./renderer/dom/grid-themes.js";
+
+export {
+  createGridModel
+} from "./data/grid-model.js";
+
+export {
+  parseTabularClipboardText,
+  prepareGridPaste
+} from "./state/grid-clipboard.js";
+
+export {
+  RowTransactionManager,
+  createRowTransactionManager,
+  invertRowHistoryChange
+} from "./data/row-transactions.js";
+
+export {
+  GridEditorStateMachine,
+  createGridEditorStateMachine,
+  parseBuiltInEditorValue,
+  resolveBuiltInEditor
+} from "./state/grid-editing.js";
+
+export {
+  GridHistory,
+  createGridHistory,
+  invertCellChange
+} from "./state/grid-history.js";
+
+export {
+  applyGridLayoutState,
+  createGridLayoutState,
+  freezeGridPanes,
+  getGridColumnOffsets,
+  getGridLayoutWidth,
+  reorderGridColumn,
+  resizeGridColumn
+} from "./state/grid-layout.js";
+
+export {
+  aggregateGridRows,
+  compareGridValues,
+  shapeGridData,
+  stableMultiSort
+} from "./shaping/grid-data-shaping.js";
+
+export {
+  createGridColumnarBuffer,
+  createGridWorkerShapeDefinition
+} from "./contracts/engine-contract.js";
+
+export { createGridWorkerEngine } from "./engine/grid-worker-engine.js";
 
 export {
   mountVirtualDomGrid
-} from "./virtual-dom-grid.js";
+} from "./renderer/dom/virtual-dom-grid.js";
+
+export type {
+  CellClassContext,
+  CellFormatContext,
+  GridCellContext,
+  GridClassValue,
+  GridColumnAlignment,
+  GridColumnView,
+  GridDensity,
+  GridStylingOptions,
+  HeaderClassContext,
+  RowClassContext,
+  VirtualDomGridTheme
+} from "./renderer/dom/grid-customization.js";
+export {
+  createGridAggregatePinnedRow,
+  formatGridStatus
+} from "./renderer/dom/grid-shell.js";
+export type {
+  GridAggregatePinnedRowOptions,
+  GridRowNumberOptions,
+  GridStatusBarOptions
+} from "./renderer/dom/grid-shell.js";
+
+export type {
+  CreateGridModelOptions,
+  GridModel,
+  GridModelColumn,
+  GridModelField,
+  GridModelRow
+} from "./data/grid-model.js";
+
+export type {
+  GridClipboardOptions,
+  GridPasteChange,
+  GridPasteMode,
+  GridPasteResult,
+  PasteCellContext,
+  PasteCellParseResult,
+  PasteCellValidationContext,
+  PasteCellValidationError,
+  PasteCellValidationResult,
+  PrepareGridPasteOptions
+} from "./state/grid-clipboard.js";
+
+export type {
+  RowSaveEvent,
+  RowHistoryChange,
+  RowSaveMode,
+  RowTransactionManagerOptions,
+  RowTransactionState
+} from "./data/row-transactions.js";
+
+export type {
+  GridBuiltInEditorDefinition,
+  GridBuiltInEditorKind,
+  GridCellEditor,
+  GridCellEditorFactory,
+  GridCellRenderer,
+  GridCellRendererFactory,
+  GridEditorActivation,
+  GridEditorContext,
+  GridEditorExitReason,
+  GridEditorPhase,
+  GridEditorSnapshot,
+  GridEditorValue,
+  GridSelectOption,
+  GridValidationResult
+} from "./state/grid-editing.js";
+
+export type {
+  GridHistoryEntry,
+  GridHistoryEvent,
+  GridHistoryKind,
+  GridHistoryOptions,
+  GridHistorySnapshot
+} from "./state/grid-history.js";
+
+export type {
+  ApplyGridLayoutStateOptions,
+  CreateGridLayoutStateOptions,
+  GridColumnLayoutState,
+  GridLayoutEvent,
+  GridLayoutState
+} from "./state/grid-layout.js";
+
+export type {
+  GridAggregateDescriptor,
+  GridBuiltInAggregate,
+  GridComparisonType,
+  GridCustomReducerContext,
+  GridDataShapingOptions,
+  GridDataShapingResult,
+  GridFilterDescriptor,
+  GridFilterOperator,
+  GridGroupDescriptor,
+  GridGroupProvenance,
+  GridGroupRow,
+  GridNullPlacement,
+  GridShapedRow,
+  GridSortDescriptor,
+  GridSortDirection,
+  GridSourceViewRow
+} from "./shaping/grid-data-shaping.js";
+
+export type {
+  GridColumnarBooleanColumn,
+  GridColumnarBuffer,
+  GridColumnarColumn,
+  GridColumnarInputColumn,
+  GridColumnarNumericColumn,
+  GridColumnarSchemaColumn,
+  GridColumnarStorage,
+  GridColumnarTextColumn,
+  GridEngineProgressStage,
+  GridPortableAggregateDescriptor,
+  GridWorkerShapeDefinition
+} from "./contracts/engine-contract.js";
+
+export type { GridWorkerEngine, GridWorkerExecutionOptions } from "./engine/grid-worker-engine.js";
 
 export type {
   ClientDataSourceOptions,
   ClientDataSourceRow
-} from "./client-data-source.js";
+} from "./data/client-data-source.js";
 
 export type {
   ClientGridEngineOptions,
   EditState,
-  GridRow,
   SelectionState
-} from "./client-grid-engine.js";
+} from "./state/client-grid-engine.js";
+
+export type { GridRow } from "./contracts/grid-types.js";
 
 export type {
   VirtualViewport,
   VirtualViewportInput
-} from "./viewport.js";
+} from "./renderer/dom/viewport.js";
 
 export type {
   VirtualDomGrid,
   VirtualDomGridOptions,
   VirtualDomGridRenderMetrics,
-  VirtualDomGridSelection
-} from "./virtual-dom-grid.js";
+  VirtualDomGridSelection,
+  VirtualDomGridSelectionRange
+} from "./renderer/dom/virtual-dom-grid.js";

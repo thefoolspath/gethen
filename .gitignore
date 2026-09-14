@@ -1,3 +1,6 @@
+
+#codex
+.codex-temp
 # Operating system files
 .DS_Store
 Thumbs.db
@@ -64,4 +67,3 @@ benchmarks/results/
 # Temporary files
 tmp/
 temp/
-.cache/

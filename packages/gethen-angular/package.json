@@ -1,14 +1,17 @@
 {
   "name": "@thefoolspath/gethen-angular",
-  "version": "0.0.0-alpha.0",
+  "version": "0.0.0-alpha.3",
   "private": true,
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "!dist/**/*.test.*"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node ../../scripts/copy-package-assets.mjs src dist html css",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --config ../../vitest.config.ts --passWithNoTests"
   },

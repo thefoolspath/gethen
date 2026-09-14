@@ -1,0 +1,22 @@
+{
+  "name": "@thefoolspath/gethen-docs-site",
+  "version": "0.0.0-alpha.3",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@angular/common": "^22.1.0",
+    "@angular/compiler": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@thefoolspath/gethen-angular": "workspace:*",
+    "@thefoolspath/gethen-core": "workspace:*",
+    "@thefoolspath/gethen-protocol": "workspace:*",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1"
+  }
+}
