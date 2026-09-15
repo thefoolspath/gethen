@@ -12,6 +12,7 @@ export type GridColumnAlignment = "left" | "center" | "right";
 export type GridDensity = "compact" | "comfortable" | "spacious";
 
 export interface GridColumnView<TRow extends GridRow = GridRow> extends GridColumn {
+  readonly width?: number;
   readonly hidden?: boolean;
   readonly nullable?: boolean;
   readonly key?: boolean;

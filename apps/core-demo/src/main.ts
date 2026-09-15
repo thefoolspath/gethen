@@ -18,6 +18,7 @@ const columns: readonly GridColumnView[] = [
     id: `c${columnIndex}`,
     title: `Column ${columnIndex + 1}`,
     dataType: columnIndex === 2 ? "boolean" : columnIndex % 5 === 0 ? "number" : "text",
+    ...(columnIndex === 0 ? { width: 96 } : columnIndex === 1 ? { width: 220 } : {}),
     align: columnIndex % 5 === 0 ? "right" : "left",
     ...(customizationEnabled && columnIndex === 0 ? { headerClassName: "gethen-primary-header" } : {}),
     ...(customizationEnabled && columnIndex % 5 === 0

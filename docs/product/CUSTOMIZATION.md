@@ -1,6 +1,6 @@
 # Grid Customization
 
-Last reviewed: 2026-09-09.
+Last reviewed: 2026-09-15.
 
 Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shell/default-theme closure are implemented locally. Alpha 3 passed its manual keyboard-only Chrome walkthrough; the 2026-09-09 Emerald Light/Dark visual matrix and three representative local task walkthroughs also pass. External-participant usability research is not claimed. Manual NVDA/Chrome is deferred during alpha but mandatory before Beta/1.0.
 
@@ -8,6 +8,7 @@ Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shel
 
 `GridColumnView` extends the protocol column definition with renderer-facing metadata:
 
+- `width` sets the initial width for that rendered column in pixels.
 - `hidden` omits a column from the rendered viewport without removing its value from row data.
 - `align` controls cell text alignment.
 - `className` accepts an application class string or array of class strings.
@@ -22,11 +23,12 @@ import { mountVirtualDomGrid } from "@thefoolspath/gethen-core";
 import type { GridColumnView } from "@thefoolspath/gethen-core";
 
 const columns: readonly GridColumnView[] = [
-  { id: "id", title: "ID", dataType: "text", hidden: true },
+  { id: "id", title: "ID", dataType: "text", width: 80, hidden: true },
   {
     id: "amount",
     title: "Amount",
     dataType: "number",
+    width: 140,
     align: "right",
     className: "tabular-nums",
     formatter: ({ value }) => typeof value === "number" ? value.toLocaleString() : ""
@@ -36,6 +38,8 @@ const columns: readonly GridColumnView[] = [
 mountVirtualDomGrid(host, {
   columns,
   rows,
+  rowHeight: 34,
+  columnWidth: 132,
   styling: {
     getCellClass: ({ column, value }) =>
       column.id === "amount" && typeof value === "number" && value < 0
@@ -44,6 +48,8 @@ mountVirtualDomGrid(host, {
   }
 });
 ```
+
+`columnWidth` is the grid-wide fallback for columns without a declared `width`; otherwise the density default is used. A persisted `layoutState` takes precedence over declared widths so host-owned resize choices survive remounts. `rowHeight` remains grid-wide so every cell in a row shares one height and virtual scrolling retains fixed row geometry.
 
 Class names belong to the host application, so utility classes and design-system classes can be used without a renderer plugin. Multiple whitespace-separated classes are normalized and duplicate class names are removed.
 
@@ -152,7 +158,7 @@ Built-in editor definitions support `text`, `number`, `boolean`, `date`, `dateti
 
 `GridHistoryOptions` bounds history by entry count and retained bytes. Cell edits, all-or-nothing paste commits, and saved row transactions create local history entries. Undo emits inverse changes as new local events; it does not replay or reverse a prior network request. A new record clears the redo branch.
 
-`GridLayoutState` contains ordered column IDs, per-column widths, and counts for frozen top rows and leading columns. The grid normalizes stale/missing columns, provides resize/reorder/freeze/apply methods, and emits normalized layout events. The host owns persistence to local storage or a server.
+`GridLayoutState` contains ordered column IDs, per-column widths, and counts for frozen top rows and leading columns. The grid normalizes stale/missing columns, uses a column's declared `width` when a persisted state does not contain it, provides resize/reorder/freeze/apply methods, and emits normalized layout events. The host owns persistence to local storage or a server.
 
 ## Security And Deferred APIs
 

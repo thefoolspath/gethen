@@ -31,6 +31,17 @@ test("core demo mounts the virtualized DOM renderer", async ({ page }) => {
   await expect(page.locator("#renderedCells")).not.toHaveText("0");
 });
 
+test("core demo applies declarative per-column widths with a grid fallback", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toHaveCSS("width", "96px");
+  await expect(page.getByRole("columnheader", { name: "Column 2", exact: true })).toHaveCSS("width", "220px");
+  await expect(page.getByRole("columnheader", { name: "Column 3", exact: true })).toHaveCSS("width", "136px");
+  await expect(dataCell(page, 0, 0)).toHaveCSS("width", "96px");
+  await expect(dataCell(page, 0, 1)).toHaveCSS("width", "220px");
+  await expect(page.locator('[data-gethen-pinned-bottom="true"][aria-colindex="2"]')).toHaveCSS("width", "96px");
+});
+
 test("core demo renders headers and a focus-safe empty state", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html?empty=on");
   const grid = page.getByRole("grid");
@@ -246,9 +257,10 @@ test("Alpha 3 layout resizes, reorders, and freezes multiple panes", async ({ pa
     element.scrollLeft = 500;
   });
   await expect(dataCell(page, 0, 0)).toBeVisible();
-  const after = await dataCell(page, 0, 0).boundingBox();
-  expect(after?.x).toBeCloseTo(before?.x ?? 0, 0);
-  expect(after?.y).toBeCloseTo(before?.y ?? 0, 0);
+  await expect.poll(async () => (await dataCell(page, 0, 0).boundingBox())?.x)
+    .toBeCloseTo(before?.x ?? 0, 0);
+  await expect.poll(async () => (await dataCell(page, 0, 0).boundingBox())?.y)
+    .toBeCloseTo(before?.y ?? 0, 0);
 });
 
 test("Alpha 3 JSON editor validates, commits, and reports lifecycle state", async ({ page }) => {
@@ -499,6 +511,8 @@ test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
   await page.goto("/apps/angular-demo/index.html");
   await expect(page.locator("gethen-angular-demo")).toBeVisible();
   await expect(page.getByRole("grid")).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toHaveCSS("width", "96px");
+  await expect(dataCell(page, 0, 1)).toHaveCSS("width", "220px");
   await expect(page.locator("#rowCount")).toHaveText("50000");
   await expect(dataCell(page, 0, 2)).toHaveClass(
     /demo-approved-cell/

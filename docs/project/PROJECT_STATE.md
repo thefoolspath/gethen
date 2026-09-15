@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-09-11.
+Last updated: 2026-09-15.
 
 ## Purpose
 
@@ -28,6 +28,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 - App demos and renderer prototypes keep HTML, CSS, and TypeScript source separated, with TypeScript compiled to app-local `dist/` output during workspace builds.
 - Local `0.0.0-alpha.3` package metadata for protocol, core, Angular, demos, and prototypes.
 - Initial Alpha 2 view customization: hidden rendered columns, alignment, application-owned column/row/cell classes, text-only formatters, CSS-variable theme tokens, and Angular adapter passthrough.
+- Declarative per-column initial widths through `GridColumnView.width`, with persisted layout widths taking precedence, global/density fallback for unspecified columns, shared header/body/pinned/frozen geometry, and a grid-wide fixed row height.
 - Initial Alpha 2 rectangular range selection with Shift+keyboard and Shift+click interactions, normalized range events, virtualized `aria-selected` state, and Angular event passthrough.
 - Initial Alpha 2 explicit DTO mapping with stable hidden key fields, runtime metadata validation, and typed source-row retention.
 - Initial Alpha 2 headless row transaction manager with edit, insert, cancel, dirty-field tracking, stable-identity protection, and row-only save payloads.

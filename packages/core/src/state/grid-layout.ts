@@ -13,6 +13,7 @@ export interface GridLayoutState {
 export interface CreateGridLayoutStateOptions {
   readonly columnIds: readonly string[];
   readonly defaultColumnWidth?: number;
+  readonly columnWidths?: Readonly<Record<string, number>>;
   readonly frozenRowCount?: number;
   readonly frozenColumnCount?: number;
 }
@@ -35,6 +36,11 @@ export function applyGridLayoutState(options: ApplyGridLayoutStateOptions): Grid
   assertUniqueColumnIds(options.columnIds);
   const defaultWidth = requireWidth(options.defaultColumnWidth ?? 132);
   const knownColumns = new Set(options.columnIds);
+  const declaredWidths = new Map(
+    options.columnIds
+      .filter((columnId) => options.columnWidths?.[columnId] !== undefined)
+      .map((columnId) => [columnId, requireWidth(options.columnWidths![columnId]!)] as const)
+  );
   const configured = new Map(
     (options.state?.columns ?? [])
       .filter((column) => knownColumns.has(column.columnId))
@@ -50,7 +56,7 @@ export function applyGridLayoutState(options: ApplyGridLayoutStateOptions): Grid
     version: 1,
     columns: order.map((columnId) => ({
       columnId,
-      width: configured.get(columnId) ?? defaultWidth
+      width: configured.get(columnId) ?? declaredWidths.get(columnId) ?? defaultWidth
     })),
     frozenRowCount: clampInteger(
       options.state?.frozenRowCount ?? options.frozenRowCount ?? 0,

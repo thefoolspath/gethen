@@ -19,7 +19,8 @@ import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 const columns: readonly GridColumnView[] = Array.from({ length: 32 }, (_, columnIndex) => ({
   id: `c${columnIndex}`,
   title: `Column ${columnIndex + 1}`,
-  dataType: columnIndex === 2 ? "boolean" : columnIndex % 5 === 0 ? "number" : "text"
+  dataType: columnIndex === 2 ? "boolean" : columnIndex % 5 === 0 ? "number" : "text",
+  ...(columnIndex === 0 ? { width: 96 } : columnIndex === 1 ? { width: 220 } : {})
 }));
 
 const rows: readonly GridRow[] = Array.from({ length: 50000 }, (_, rowIndex) => {

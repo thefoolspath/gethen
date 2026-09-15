@@ -144,6 +144,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   let layoutState = applyGridLayoutState({
     columnIds: sourceColumns.map((column) => column.id),
     defaultColumnWidth: columnWidth,
+    columnWidths: getDeclaredColumnWidths(sourceColumns),
     ...(options.frozenRowCount === undefined ? {} : { frozenRowCount: options.frozenRowCount }),
     ...(options.frozenColumnCount === undefined ? {} : { frozenColumnCount: options.frozenColumnCount }),
     rowCount: rows.length,
@@ -833,6 +834,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     layoutState = applyGridLayoutState({
       columnIds: sourceColumns.map((column) => column.id),
       defaultColumnWidth: columnWidth,
+      columnWidths: getDeclaredColumnWidths(sourceColumns),
       rowCount: rows.length,
       state
     });
@@ -928,4 +930,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     undo,
     redo
   };
+}
+
+function getDeclaredColumnWidths<TRow extends GridRow>(
+  columns: readonly GridColumnView<TRow>[]
+): Readonly<Record<string, number>> {
+  return Object.fromEntries(
+    columns
+      .filter((column) => column.width !== undefined)
+      .map((column) => [column.id, column.width!])
+  );
 }

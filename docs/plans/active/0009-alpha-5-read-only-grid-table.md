@@ -1,6 +1,6 @@
 # Alpha 5 Read-Only Grid Table Execution Plan
 
-Last reviewed: 2026-09-11.
+Last reviewed: 2026-09-15.
 
 Status: Ready for implementation. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
 
@@ -40,6 +40,7 @@ Deliver `0.0.0-alpha.5` by adding a read-only Grid Table mode to the existing Co
 
 ### A5-02 Column Reordering
 
+- [x] Add declarative per-column initial widths while preserving persisted `GridLayoutState` widths as the higher-precedence host choice and keeping row height grid-wide.
 - [ ] Add pointer drag-and-drop reordering to column headers.
 - [ ] Add keyboard move-left and move-right commands with discoverable labels and focus retention.
 - [ ] Persist reordered columns through the existing `GridLayoutState` boundary and emit the existing reorder reason.

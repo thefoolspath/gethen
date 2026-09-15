@@ -54,6 +54,24 @@ describe("GridLayoutState", () => {
     ]);
   });
 
+  it("uses declared widths for new columns while persisted widths take precedence", () => {
+    expect(applyGridLayoutState({
+      columnIds: ["saved", "declared", "fallback"],
+      defaultColumnWidth: 140,
+      columnWidths: { saved: 100, declared: 239.6 },
+      state: {
+        version: 1,
+        columns: [{ columnId: "saved", width: 180 }],
+        frozenRowCount: 0,
+        frozenColumnCount: 0
+      }
+    }).columns).toEqual([
+      { columnId: "saved", width: 180 },
+      { columnId: "declared", width: 240 },
+      { columnId: "fallback", width: 140 }
+    ]);
+  });
+
   it("resizes, reorders, freezes, and calculates offsets", () => {
     let state = createGridLayoutState({ columnIds: ["a", "b", "c"], defaultColumnWidth: 100 });
     state = resizeGridColumn(state, "b", 160);
@@ -70,5 +88,11 @@ describe("GridLayoutState", () => {
     expect(() => createGridLayoutState({ columnIds: ["a", "a"] })).toThrow(/unique/);
     const state = createGridLayoutState({ columnIds: ["a"] });
     expect(() => resizeGridColumn(state, "a", 1)).toThrow(/24 through 4096/);
+    for (const width of [23, 4097, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => createGridLayoutState({
+        columnIds: ["a"],
+        columnWidths: { a: width }
+      })).toThrow(/24 through 4096/);
+    }
   });
 });
