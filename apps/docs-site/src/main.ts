@@ -231,6 +231,13 @@ export class DocsAppComponent implements OnDestroy {
     this.eventLog.set([]);
   }
 
+  protected toggleReadOnly(): void {
+    const config = this.demoConfig();
+    if (!config) return;
+    this.demoConfig.set({ ...config, readOnly: !config.readOnly });
+    this.prependLog(config.readOnly ? "Editing enabled" : "Read-only enabled");
+  }
+
   protected handleSelection(selection: GethenGridSelection): void {
     this.prependLog(`Selected ${selection.rowId} / ${selection.columnId}`);
   }
@@ -338,7 +345,7 @@ export class DocsAppComponent implements OnDestroy {
       case "history": return "Edit a cell, then use the Angular component's Undo and Redo methods.";
       case "shaping": return "Core shapes deterministic rows, then the Angular adapter renders the resulting public rows.";
       case "large": return "Scroll deeply in both directions while the Angular adapter owns the mounted grid lifecycle.";
-      case "readonly": return "Try to edit any cell. Readonly column metadata passes through the Angular adapter.";
+      case "readonly": return "Navigation, selection, copy, layout, summaries, and status remain active. Toggle editing to verify the same mounted grid changes interaction mode.";
       case "angular": return "This page and its live grid both run inside the Angular documentation application.";
       default: return "Use keyboard and pointer input, then inspect the Angular outputs beside the grid.";
     }

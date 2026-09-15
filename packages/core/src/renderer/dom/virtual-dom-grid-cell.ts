@@ -15,6 +15,7 @@ export interface VirtualDomGridCellInput<TRow extends GridRow = GridRow> {
   readonly frozenColumn: boolean;
   readonly ariaRowOffset: number;
   readonly ariaColumnOffset: number;
+  readonly readOnly: boolean;
   readonly commitEdit: (
     value: CellValue,
     editor?: GridCellEditor<TRow>,
@@ -101,7 +102,7 @@ function configureCellAccessibility<TRow extends GridRow>(
   column: GridColumnView<TRow>,
   columnIndex: number,
   rowIndex: number,
-  input: Pick<VirtualDomGridCellInput, "ariaRowOffset" | "ariaColumnOffset">,
+  input: Pick<VirtualDomGridCellInput, "ariaRowOffset" | "ariaColumnOffset" | "readOnly">,
   active: boolean,
   selected: boolean
 ): void {
@@ -110,7 +111,7 @@ function configureCellAccessibility<TRow extends GridRow>(
   cell.setAttribute("aria-rowindex", String(rowIndex + 1 + input.ariaRowOffset));
   cell.setAttribute("aria-colindex", String(columnIndex + 1 + input.ariaColumnOffset));
   cell.setAttribute("aria-selected", selected ? "true" : "false");
-  if (column.readonly) {
+  if (input.readOnly || column.readonly) {
     cell.setAttribute("aria-readonly", "true");
   }
   cell.dataset.rowIndex = String(rowIndex);
@@ -139,7 +140,7 @@ function configureCellPosition<TRow extends GridRow>(
     borderBottom: "1px solid #e0e5ea",
     borderColor: "var(--gethen-grid-line-color, #e0e5ea)",
     padding: "var(--gethen-cell-padding, 7px 10px)",
-    color: column.readonly
+    color: input.readOnly || column.readonly
       ? "var(--gethen-readonly-text-color, #667085)"
       : "var(--gethen-text-color, #17212b)",
     background: "var(--gethen-background, transparent)",

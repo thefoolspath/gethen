@@ -17,6 +17,7 @@ export interface DemoConfig {
   readonly pinnedBottomRows: readonly GridRow[];
   readonly clipboard: GridClipboardOptions | undefined;
   readonly history: GridHistoryOptions | false;
+  readonly readOnly: boolean;
   readonly styling: GridStylingOptions | undefined;
   readonly theme: VirtualDomGridTheme;
   readonly frozenRowCount: number;
@@ -144,8 +145,7 @@ readonly shaped = shapeGridData({
   readonly: `<gethen-grid
   [columns]="readonlyColumns"
   [rows]="rows"
-  [clipboard]="{ enabled: false }"
-  [history]="false"
+  [readOnly]="true"
 />`
 };
 
@@ -170,12 +170,11 @@ export function createDemoConfig(kind: DemoKind): DemoConfig {
     columns,
     rows,
     pinnedBottomRows,
-    clipboard: kind === "readonly"
-      ? { enabled: false }
-      : kind === "clipboard"
+    clipboard: kind === "clipboard" || kind === "readonly"
         ? { enabled: true, pasteMode: "direct-and-dialog", validateBeforeCommit: true, emptyCellValue: null }
         : undefined,
-    history: kind === "readonly" ? false : { maxEntries: 100, maxRetainedBytes: 4 * 1024 * 1024 },
+    history: { maxEntries: 100, maxRetainedBytes: 4 * 1024 * 1024 },
+    readOnly: kind === "readonly",
     styling: kind === "formatting"
       ? {
           getRowClass: ({ rowIndex }) => rowIndex % 2 === 1 ? "docs-alt-row" : undefined,
@@ -205,14 +204,12 @@ export function shapeDemoRows(rows = createRows(1_000)): readonly GridRow[] {
 }
 
 function createColumns(kind: DemoKind): readonly GethenAngularGridColumn[] {
-  const readonly = kind === "readonly";
   return [
     { id: "order", title: "Order", dataType: "number", align: "right", readonly: true },
     {
       id: "customer",
       title: "Customer",
       dataType: "text",
-      readonly,
       ...(kind === "custom-renderer"
         ? {
             renderer: () => ({
@@ -228,12 +225,11 @@ function createColumns(kind: DemoKind): readonly GethenAngularGridColumn[] {
           }
         : {})
     },
-    { id: "region", title: "Region", dataType: "text", readonly },
+    { id: "region", title: "Region", dataType: "text" },
     {
       id: "status",
       title: "Status",
       dataType: "text",
-      readonly,
       ...(kind === "custom-editor"
         ? {
             editor: {
@@ -252,10 +248,9 @@ function createColumns(kind: DemoKind): readonly GethenAngularGridColumn[] {
       title: "Total",
       dataType: "number",
       align: "right",
-      readonly,
       ...(kind === "formatting" ? { formatter: ({ value }) => formatCurrency(value) } : {})
     },
-    { id: "approved", title: "Approved", dataType: "boolean", readonly }
+    { id: "approved", title: "Approved", dataType: "boolean" }
   ];
 }
 

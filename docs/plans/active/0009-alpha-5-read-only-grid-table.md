@@ -32,11 +32,11 @@ Deliver `0.0.0-alpha.5` by adding a read-only Grid Table mode to the existing Co
 
 ### A5-01 Interaction Mode And Mutation Boundary
 
-- [ ] Define the Core interaction-mode contract and read-only preset/helper.
-- [ ] Add the compatible Angular input and preserve updates without remounting the grid.
-- [ ] Block double-click edit, type-to-edit, boolean toggle, paste commits, row mutation, and mutation-history recording in read-only mode.
-- [ ] Keep focus, selection, range selection, clipboard copy, resize, frozen panes, hidden columns, summaries, and status behavior active.
-- [ ] Prove through tests that read-only setup does not install mutation-only handlers and that mode changes clean up obsolete handlers.
+- [x] Define the Core `readOnly` contract, runtime setter, and frozen read-only preset.
+- [x] Add the compatible Angular input and preserve theme/read-only-only updates without remounting the grid.
+- [x] Block double-click edit, type-to-edit, boolean toggle, paste commits, renderer mutation APIs, and mutation-history application in read-only mode. The independently created headless row-transaction manager remains outside the renderer boundary.
+- [x] Keep focus, selection, range selection, clipboard copy, resize, frozen panes, hidden columns, summaries, and status behavior active.
+- [x] Prove through serialized Chromium coverage that read-only setup excludes mutation-only handlers and repeated mode changes preserve the mounted element without duplicate behavior.
 
 ### A5-02 Column Reordering
 

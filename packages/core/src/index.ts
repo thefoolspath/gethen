@@ -75,6 +75,7 @@ export {
 export { createGridWorkerEngine } from "./engine/grid-worker-engine.js";
 
 export {
+  gethenReadOnlyGridPreset,
   mountVirtualDomGrid
 } from "./renderer/dom/virtual-dom-grid.js";
 

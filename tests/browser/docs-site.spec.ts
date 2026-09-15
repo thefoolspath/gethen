@@ -137,14 +137,84 @@ test("Angular setup renders through the built Angular adapter", async ({ page })
   await expect(page.getByRole("columnheader", { name: "Order", exact: true })).toBeVisible();
 });
 
-test("experimental shaping and readonly preview disclose their boundaries", async ({ page }) => {
+test("experimental shaping and readonly Grid disclose their boundaries", async ({ page }) => {
   await page.goto("/docs/grouping");
   await expect(page.getByText("Experimental", { exact: true }).first()).toBeVisible();
   await expect(page.locator("#event-log")).toContainText("Mounted 100 rows");
 
   await page.goto("/docs/readonly-preview");
   await expect(page.getByText("Preview", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Known limitations" }).locator(".." )).toContainText("Alpha 5");
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-readonly", "true");
+});
+
+test("read-only Grid blocks mutations and changes mode without remounting", async ({ page }) => {
+  await page.goto("/docs/readonly-preview");
+  const grid = page.getByRole("grid");
+  const gridIdentity = await grid.evaluate((element) => {
+    (window as typeof window & { gethenGridIdentity?: Element }).gethenGridIdentity = element;
+    return element.getAttribute("aria-readonly");
+  });
+  expect(gridIdentity).toBe("true");
+
+  await grid.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("blocked edit");
+  await page.keyboard.press("End");
+  const booleanCell = page.locator('[role="gridcell"][aria-colindex="7"]').first();
+  const initialBoolean = await booleanCell.textContent();
+  await page.keyboard.press("Space");
+  await expect(booleanCell).toHaveText(initialBoolean ?? "");
+  await booleanCell.dblclick();
+  await grid.evaluate((element) => {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", "blocked paste");
+    element.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, clipboardData }));
+  });
+  await expect(page.locator("[data-gethen-editor='true']")).toHaveCount(0);
+  await expect(page.locator("#event-log")).not.toContainText("Changed");
+  await expect(page.locator("#event-log")).not.toContainText("Pasted");
+
+  await page.getByRole("button", { name: "Toggle Editing" }).click();
+  await expect(grid).toHaveAttribute("aria-readonly", "false");
+  expect(await grid.evaluate((element) => (
+    (window as typeof window & { gethenGridIdentity?: Element }).gethenGridIdentity === element
+  ))).toBe(true);
+
+  await grid.focus();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Enter");
+  let editor = page.locator("[data-gethen-editor='true']");
+  await expect(editor).toHaveCount(1);
+  const valueBeforeCancelledEdit = await editor.inputValue();
+  await editor.fill("cancelled draft");
+  await page.getByRole("button", { name: "Toggle Editing" }).click();
+  await expect(grid).toHaveAttribute("aria-readonly", "true");
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator("#gethen-active-cell")).toHaveText(valueBeforeCancelledEdit);
+
+  await page.getByRole("button", { name: "Toggle Editing" }).click();
+  await expect(grid).toHaveAttribute("aria-readonly", "false");
+  await page.locator("#gethen-active-cell").dblclick();
+  editor = page.locator("[data-gethen-editor='true']");
+  await expect(editor).toHaveCount(1);
+  await editor.fill("editable value");
+  await editor.press("Enter");
+  await expect(page.locator("#event-log")).toContainText("Changed");
+
+  await page.getByRole("button", { name: "Toggle Editing" }).click();
+  await expect(grid).toHaveAttribute("aria-readonly", "true");
+  const editedCell = page.locator("#gethen-active-cell");
+  const editedValue = await editedCell.textContent();
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(editedCell).toHaveText(editedValue ?? "");
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-gethen-editor='true']")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Toggle Editing" }).click();
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(editedCell).not.toHaveText(editedValue ?? "");
 });
 
 test("narrow viewport exposes keyboard-accessible documentation navigation", async ({ page }) => {

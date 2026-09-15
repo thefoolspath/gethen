@@ -14,6 +14,7 @@ The repository currently contains product, architecture, research, ADR, quality,
 
 ## Implemented
 
+- Alpha 5 A5-01 read-only mutation boundary: Core exposes opt-in `readOnly`, the frozen `gethenReadOnlyGridPreset`, and runtime `setReadOnly()` without changing the editable default. Read-only mode excludes mutation-only keyboard, pointer, and paste listeners; blocks editor activation, boolean toggles, cell/paste commits, and undo/redo application; reports grid/cell ARIA state; and preserves navigation, selection, layout, frozen panes, summaries, status, mounted identity, and retained history. Angular exposes `[readOnly]` and applies theme/read-only-only changes without remounting. The headless row-transaction manager remains an independent API outside the renderer boundary.
 - Clean Code correctness closure for seven reviewed areas: generation-guarded mutually exclusive async editor operations; explicit `ClientDataSource` descriptor rejection; geometry-neutral active-cell focus styling; hardened Rust/WASM input validation and documented unsafe contracts; cohesive virtual-grid geometry, shell, and editor-coordination modules; shared canonical value/column semantics across TypeScript and Rust/WASM shaping; and removal of raw FFI/Worker internals from the Core public root. The focused TypeScript, browser, Rust, formatting, Clippy, package-boundary, and benchmark gates are recorded in the 2026-09-08 change-log entry.
 - Post-refactor local verification passes 101 TypeScript unit/contract/adapter tests, 50 Chromium scenarios, 7 GNU Rust tests, Cargo formatting and Clippy with warnings denied, Core package-root/deep-import checks, and a dry-run package inspection. The repeat-process renderer trace reports customization-off/on median frame intervals of 16.619/16.675 ms, median p95 intervals of 18.051/18.055 ms, and zero tasks over 50 ms. This remains local evidence, not a cross-hardware release claim.
 
@@ -186,6 +187,7 @@ The repository still has no Cargo workspace. `cargo run --manifest-path crates/g
 
 | Date | Change | Evidence |
 | --- | --- | --- |
+| 2026-09-15 | Completed Alpha 5 A5-01 with the Core and Angular read-only mutation boundary, runtime mode changes without remounting, public frozen preset, upgraded documentation example, and automated compatibility coverage. Manual NVDA/Chrome remains deferred to the Beta/1.0 gate. | `packages/core/src/renderer/dom/virtual-dom-grid.ts`, `packages/gethen-angular/src/gethen-grid.component.ts`, `tests/browser/docs-site.spec.ts`, [../plans/active/0009-alpha-5-read-only-grid-table.md](../plans/active/0009-alpha-5-read-only-grid-table.md) |
 | 2026-08-04 | Opened pre-alpha research gate | [../research/PRE_ALPHA_RESEARCH_GATE.md](../research/PRE_ALPHA_RESEARCH_GATE.md) |
 | 2026-08-07 | Added project state and research evidence workflow | this file |
 | 2026-08-07 | Added repository foundation placeholders, root ignore rules, and line-ending normalization | root `.gitignore`, root `.gitattributes`, `apps/`, `packages/`, `benchmarks/`, `crates/`, `tests/` |

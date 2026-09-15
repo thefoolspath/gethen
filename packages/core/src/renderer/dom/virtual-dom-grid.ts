@@ -77,6 +77,7 @@ export interface VirtualDomGridOptions<TRow extends GridRow = GridRow> {
   readonly frozenRowCount?: number;
   readonly frozenColumnCount?: number;
   readonly history?: GridHistoryOptions | false;
+  readonly readOnly?: boolean;
   readonly onRender?: (metrics: VirtualDomGridRenderMetrics) => void;
   readonly onSelectionChange?: (selection: VirtualDomGridSelection) => void;
   readonly onSelectionRangeChange?: (selection: VirtualDomGridSelectionRange) => void;
@@ -92,6 +93,7 @@ export interface VirtualDomGrid {
   destroy(): void;
   render(): void;
   setTheme(theme: VirtualDomGridTheme | undefined): void;
+  setReadOnly(readOnly: boolean): void;
   getLayoutState(): GridLayoutState;
   applyLayoutState(state: GridLayoutState): void;
   resizeColumn(columnId: string, width: number): void;
@@ -100,6 +102,8 @@ export interface VirtualDomGrid {
   undo(): readonly CellChangeEvent[];
   redo(): readonly CellChangeEvent[];
 }
+
+export const gethenReadOnlyGridPreset = Object.freeze({ readOnly: true } as const);
 
 export function mountVirtualDomGrid<TRow extends GridRow>(
   container: HTMLElement,
@@ -160,9 +164,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     columnIndex: 0
   };
   let editState: { rowIndex: number; columnIndex: number; draftValue: CellChangeEvent["newValue"] } | null = null;
+  let readOnly = options.readOnly === true;
+  let mutationHandlersBound = false;
   let animationFrame = 0;
 
   grid.setAttribute("role", "grid");
+  grid.setAttribute("aria-readonly", readOnly ? "true" : "false");
   grid.setAttribute("tabindex", "0");
   grid.setAttribute("aria-rowcount", String(rows.length + pinnedBottomRows.length + (showColumnHeaders ? 1 : 0)));
   grid.setAttribute("aria-colcount", String(columns.length + (showRowNumbers ? 1 : 0)));
@@ -268,6 +275,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           frozenColumn,
           ariaRowOffset: showColumnHeaders ? 1 : 0,
           ariaColumnOffset: showRowNumbers ? 1 : 0,
+          readOnly,
           commitEdit: (
             value: CellChangeEvent["newValue"],
             editor?: GridCellEditor<TRow>,
@@ -406,7 +414,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
   }
 
-  function handleKeyDown(event: KeyboardEvent): void {
+  function handleNavigationKeyDown(event: KeyboardEvent): void {
     if (event.target instanceof Element && event.target.closest("[data-gethen-editor-host='true']")) {
       return;
     }
@@ -417,14 +425,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       return;
     }
 
-    const commandKey = event.ctrlKey || event.metaKey;
-    if (commandKey && event.key.toLowerCase() === "z") {
-      event.preventDefault();
-      event.shiftKey ? redo() : undo();
-    } else if (commandKey && event.key.toLowerCase() === "y") {
-      event.preventDefault();
-      redo();
-    } else if (event.key === "ArrowDown") {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
       setActiveCell(activeCell.rowIndex + 1, activeCell.columnIndex, event.shiftKey);
     } else if (event.key === "ArrowUp") {
@@ -442,6 +443,24 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     } else if (event.key === "End") {
       event.preventDefault();
       setActiveCell(activeCell.rowIndex, columns.length - 1, event.shiftKey);
+    }
+  }
+
+  function handleMutationKeyDown(event: KeyboardEvent): void {
+    if (readOnly || (event.target instanceof Element && event.target.closest("[data-gethen-editor-host='true']"))) {
+      return;
+    }
+    if (editState || rows.length === 0 || columns.length === 0) {
+      return;
+    }
+
+    const commandKey = event.ctrlKey || event.metaKey;
+    if (commandKey && event.key.toLowerCase() === "z") {
+      event.preventDefault();
+      event.shiftKey ? redo() : undo();
+    } else if (commandKey && event.key.toLowerCase() === "y") {
+      event.preventDefault();
+      redo();
     } else if (event.key === "Enter") {
       event.preventDefault();
       startEdit();
@@ -481,13 +500,17 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       grid.focus();
       setActiveCell(rowIndex, columnIndex, event.shiftKey);
 
-      if (event.detail === 2) {
-        startEdit();
-      }
     }
   }
 
+  function handleMutationClick(event: MouseEvent): void {
+    if (readOnly || event.detail !== 2 || !(event.target instanceof HTMLElement)) return;
+    if (!event.target.closest<HTMLElement>("[data-row-index][data-column-index]")) return;
+    startEdit();
+  }
+
   function handlePaste(event: ClipboardEvent): void {
+    if (readOnly) return;
     const pasteMode = options.clipboard?.pasteMode ?? "direct-and-dialog";
 
     if (!options.clipboard?.enabled || pasteMode === "dialog") {
@@ -540,6 +563,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function startEdit(initialDraftValue?: string): void {
+    if (readOnly) return;
     if (editorState.snapshot.phase !== "inactive") {
       return;
     }
@@ -583,6 +607,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     editor?: GridCellEditor<TRow>,
     navigation?: "next" | "previous"
   ): Promise<boolean> {
+    if (readOnly) return false;
     if (editorCoordinator.pendingCommit) {
       return editorCoordinator.pendingCommit;
     }
@@ -686,13 +711,17 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     editState = null;
     if (editorState.snapshot.phase !== "inactive" && editorState.snapshot.phase !== "disposed") {
       editorState.beginCancel();
-      try {
-        await editor?.cancel();
-      } catch {
-        // Cancellation remains final; custom editor cleanup failures must not revive the session.
-      }
-      if (!editorCoordinator.destroyed && editorState.snapshot.phase === "cancelling") {
+      if (!editor) {
         editorState.cancelled();
+      } else {
+        try {
+          await editor.cancel();
+        } catch {
+          // Cancellation remains final; custom editor cleanup failures must not revive the session.
+        }
+        if (!editorCoordinator.destroyed && editorState.snapshot.phase === "cancelling") {
+          editorState.cancelled();
+        }
       }
     }
     if (editorCoordinator.destroyed) return;
@@ -729,6 +758,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function toggleBooleanCell(): void {
+    if (readOnly) return;
     const column = columns[activeCell.columnIndex];
     const row = rows[activeCell.rowIndex];
 
@@ -746,6 +776,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     newValue: CellChangeEvent["newValue"],
     kind: "cell-edit" | "paste"
   ): void {
+    if (readOnly) return;
     const column = columns[columnIndex];
     const row = rows[rowIndex];
 
@@ -766,6 +797,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function applyHistoryChanges(changes: readonly CellChangeEvent[]): readonly CellChangeEvent[] {
+    if (readOnly) return [];
     const applied: CellChangeEvent[] = [];
     for (const change of changes) {
       const row = rows.find((candidate) => candidate.id === change.rowId);
@@ -785,10 +817,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function undo(): readonly CellChangeEvent[] {
+    if (readOnly) return [];
     return applyHistoryChanges(history?.undo(invertCellChange) ?? []);
   }
 
   function redo(): readonly CellChangeEvent[] {
+    if (readOnly) return [];
     return applyHistoryChanges(history?.redo() ?? []);
   }
 
@@ -817,10 +851,40 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     render();
   }
 
+  function bindMutationHandlers(): void {
+    if (mutationHandlersBound) return;
+    grid.addEventListener("keydown", handleMutationKeyDown);
+    grid.addEventListener("click", handleMutationClick);
+    grid.addEventListener("paste", handlePaste);
+    mutationHandlersBound = true;
+  }
+
+  function unbindMutationHandlers(): void {
+    if (!mutationHandlersBound) return;
+    grid.removeEventListener("keydown", handleMutationKeyDown);
+    grid.removeEventListener("click", handleMutationClick);
+    grid.removeEventListener("paste", handlePaste);
+    mutationHandlersBound = false;
+  }
+
+  function setReadOnly(nextReadOnly: boolean): void {
+    if (readOnly === nextReadOnly) return;
+    readOnly = nextReadOnly;
+    grid.setAttribute("aria-readonly", readOnly ? "true" : "false");
+    if (readOnly) {
+      unbindMutationHandlers();
+      if (editState) void handleEditorCancel();
+      else render();
+    } else {
+      bindMutationHandlers();
+      render();
+    }
+  }
+
   grid.addEventListener("scroll", scheduleRender);
-  grid.addEventListener("keydown", handleKeyDown);
+  grid.addEventListener("keydown", handleNavigationKeyDown);
   grid.addEventListener("click", handleClick);
-  grid.addEventListener("paste", handlePaste);
+  if (!readOnly) bindMutationHandlers();
   window.addEventListener("resize", scheduleRender);
   render();
 
@@ -834,9 +898,9 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       }
 
       grid.removeEventListener("scroll", scheduleRender);
-      grid.removeEventListener("keydown", handleKeyDown);
+      grid.removeEventListener("keydown", handleNavigationKeyDown);
       grid.removeEventListener("click", handleClick);
-      grid.removeEventListener("paste", handlePaste);
+      unbindMutationHandlers();
       window.removeEventListener("resize", scheduleRender);
       editorState.unmount();
       unsubscribeEditor();
@@ -846,6 +910,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     },
     render,
     setTheme: (theme) => applyVirtualDomGridTheme(grid, theme),
+    setReadOnly,
     getLayoutState: () => layoutState,
     applyLayoutState: (state) => setLayoutState(state, "apply"),
     resizeColumn: (columnId, width) => setLayoutState(

@@ -130,10 +130,11 @@
                 <button *ngIf="route.demo === 'layout'" type="button" (click)="resizeCustomer()">Resize Customer</button>
                 <button *ngIf="route.demo === 'layout'" type="button" (click)="moveStatusFirst()">Move Status First</button>
                 <button *ngIf="route.demo === 'frozen'" type="button" (click)="freezePanes()">Freeze 2 × 2</button>
-                <button *ngIf="route.demo === 'history'" type="button" (click)="undo()">Undo</button>
-                <button *ngIf="route.demo === 'history'" type="button" (click)="redo()">Redo</button>
+                <button *ngIf="route.demo === 'history' || route.demo === 'readonly'" type="button" (click)="undo()">Undo</button>
+                <button *ngIf="route.demo === 'history' || route.demo === 'readonly'" type="button" (click)="redo()">Redo</button>
                 <button *ngIf="route.demo === 'theme'" type="button" (click)="applyThemeOverride()">Apply Accent Override</button>
                 <button *ngIf="route.demo === 'clipboard'" type="button" (click)="pasteSample()">Paste Sample</button>
+                <button *ngIf="route.demo === 'readonly'" type="button" (click)="toggleReadOnly()">Toggle Editing</button>
                 <button *ngIf="route.demo === 'shaping'" type="button" (click)="runShaping()">Run Shaping</button>
               </div>
             </div>
@@ -154,6 +155,7 @@
                   [statusBar]="config.statusBar"
                   [clipboard]="config.clipboard"
                   [history]="config.history"
+                  [readOnly]="config.readOnly"
                   [frozenRowCount]="config.frozenRowCount"
                   [frozenColumnCount]="config.frozenColumnCount"
                   (selectionChange)="handleSelection($event)"
