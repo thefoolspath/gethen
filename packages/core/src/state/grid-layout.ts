@@ -104,6 +104,64 @@ export function reorderGridColumn(
   return { ...state, columns };
 }
 
+export function reorderGridColumnByVisibleIndex(
+  state: GridLayoutState,
+  columnId: string,
+  targetIndex: number,
+  visibleColumnIds: readonly string[]
+): GridLayoutState {
+  assertUniqueColumnIds(visibleColumnIds);
+  const knownColumns = new Set(state.columns.map((column) => column.columnId));
+  for (const visibleColumnId of visibleColumnIds) {
+    if (!knownColumns.has(visibleColumnId)) {
+      throw new Error(`Unknown visible layout column '${visibleColumnId}'.`);
+    }
+  }
+
+  const sourceIndex = state.columns.findIndex((column) => column.columnId === columnId);
+  if (sourceIndex < 0) {
+    throw new Error(`Unknown layout column '${columnId}'.`);
+  }
+
+  const visibleColumns = new Set(visibleColumnIds);
+  const sourceIsVisible = visibleColumns.has(columnId);
+  const maximumTarget = Math.max(0, visibleColumnIds.length - (sourceIsVisible ? 1 : 0));
+  const nextVisibleIndex = clampInteger(targetIndex, 0, maximumTarget);
+  const columns = [...state.columns];
+  const [source] = columns.splice(sourceIndex, 1);
+  const remainingVisibleIds = columns
+    .map((column) => column.columnId)
+    .filter((candidate) => visibleColumns.has(candidate));
+  const targetColumnId = remainingVisibleIds[nextVisibleIndex];
+  const insertionIndex = targetColumnId === undefined
+    ? getTrailingVisibleInsertionIndex(columns, visibleColumns)
+    : columns.findIndex((column) => column.columnId === targetColumnId);
+
+  columns.splice(insertionIndex, 0, source!);
+  return { ...state, columns };
+}
+
+export function projectVisibleGridLayoutState(
+  state: GridLayoutState,
+  visibleColumnIds: readonly string[]
+): GridLayoutState {
+  assertUniqueColumnIds(visibleColumnIds);
+  const byId = new Map(state.columns.map((column) => [column.columnId, column] as const));
+  const columns = visibleColumnIds.map((columnId) => {
+    const column = byId.get(columnId);
+    if (!column) {
+      throw new Error(`Unknown visible layout column '${columnId}'.`);
+    }
+    return column;
+  });
+
+  return {
+    ...state,
+    columns,
+    frozenColumnCount: clampInteger(state.frozenColumnCount, 0, columns.length)
+  };
+}
+
 export function freezeGridPanes(
   state: GridLayoutState,
   frozenRowCount: number,
@@ -146,6 +204,18 @@ function requireWidth(width: number): number {
     throw new Error("Column width must be a finite number from 24 through 4096 pixels.");
   }
   return Math.round(width);
+}
+
+function getTrailingVisibleInsertionIndex(
+  columns: readonly GridColumnLayoutState[],
+  visibleColumns: ReadonlySet<string>
+): number {
+  for (let index = columns.length - 1; index >= 0; index -= 1) {
+    if (visibleColumns.has(columns[index]!.columnId)) {
+      return index + 1;
+    }
+  }
+  return columns.length;
 }
 
 function clampInteger(value: number, minimum: number, maximum: number): number {

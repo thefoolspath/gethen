@@ -75,6 +75,10 @@ export interface VirtualDomGridTheme {
   readonly readonlyTextColor?: string;
   readonly invalidColor?: string;
   readonly editorFocusColor?: string;
+  readonly headerFocusColor?: string;
+  readonly columnDragSourceBackground?: string;
+  readonly columnDragGhostBackground?: string;
+  readonly columnDropIndicatorColor?: string;
   readonly cellPadding?: string;
   readonly fontFamily?: string;
   readonly fontSize?: string;

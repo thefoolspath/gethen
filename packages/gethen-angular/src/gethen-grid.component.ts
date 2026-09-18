@@ -68,6 +68,7 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() frozenColumnCount = 0;
   @Input() history: GridHistoryOptions | false = {};
   @Input() readOnly = false;
+  @Input() columnReordering = true;
   @Input() rendererRegistry: GethenAngularRendererRegistry | undefined;
   @Input() editorRegistry: GethenAngularEditorRegistry | undefined;
 
@@ -94,9 +95,12 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.initialized) {
       const changedInputs = Object.keys(changes);
-      if (this.grid && changedInputs.every((input) => input === "theme" || input === "readOnly")) {
+      if (this.grid && changedInputs.every(
+        (input) => input === "theme" || input === "readOnly" || input === "columnReordering"
+      )) {
         if (changes["theme"]) this.grid.setTheme(this.theme);
         if (changes["readOnly"]) this.grid.setReadOnly(this.readOnly);
+        if (changes["columnReordering"]) this.grid.setColumnReordering(this.columnReordering);
         return;
       }
       this.mountGrid();
@@ -163,6 +167,7 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
       frozenColumnCount: this.frozenColumnCount,
       history: this.history,
       readOnly: this.readOnly,
+      columnReordering: this.columnReordering,
       onCellChange: (change) => this.cellChange.emit(change),
       onSelectionChange: (selection) => this.selectionChange.emit(selection),
       onSelectionRangeChange: (selection) => this.selectionRangeChange.emit(selection),

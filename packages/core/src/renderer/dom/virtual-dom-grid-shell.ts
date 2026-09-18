@@ -28,6 +28,11 @@ export interface VirtualDomGridShellContext<TRow extends GridRow> {
   readonly showColumnHeaders: boolean;
   readonly showRowNumbers: boolean;
   readonly showStatusBar: boolean;
+  readonly columnReordering: boolean;
+  readonly focusedHeaderColumnId: string | undefined;
+  readonly draggingColumnId: string | undefined;
+  readonly activeHeaderId: string;
+  readonly reorderInstructionsId: string;
 }
 
 export function appendGridShellBeforeRows<TRow extends GridRow>(
@@ -104,8 +109,19 @@ function appendColumnHeaders<TRow extends GridRow>(
     header.setAttribute("aria-rowindex", "1");
     header.setAttribute("aria-colindex", String(columnIndex + 1 + (context.showRowNumbers ? 1 : 0)));
     header.dataset.columnIndex = String(columnIndex);
+    header.dataset.columnId = column.id;
     header.textContent = column.title;
-    header.title = column.title;
+    const headerFocused = context.focusedHeaderColumnId === column.id;
+    const headerDragging = context.draggingColumnId === column.id;
+    if (headerFocused) header.id = context.activeHeaderId;
+    if (context.columnReordering) {
+      header.setAttribute("aria-keyshortcuts", "Alt+Shift+ArrowLeft Alt+Shift+ArrowRight");
+      header.setAttribute("aria-describedby", context.reorderInstructionsId);
+      header.title = `${column.title}. Move with Alt+Shift+Left or Alt+Shift+Right.`;
+      header.dataset.gethenColumnReorder = "true";
+    } else {
+      header.title = column.title;
+    }
     header.classList.add(...resolveGridClassNames(
       column.headerClassName,
       context.styling?.getHeaderClass?.({ column, columnIndex })
@@ -127,6 +143,16 @@ function appendColumnHeaders<TRow extends GridRow>(
       background: "var(--gethen-header-background, #f3f6f9)",
       color: "var(--gethen-header-text-color, #344054)",
       fontWeight: "650",
+      cursor: context.columnReordering ? (headerDragging ? "grabbing" : "grab") : "default",
+      touchAction: context.columnReordering ? "pan-y" : "auto",
+      userSelect: "none",
+      opacity: headerDragging ? "0.55" : "1",
+      boxShadow: headerFocused
+        ? "inset 0 0 0 2px var(--gethen-header-focus-color, #176b87)"
+        : "none",
+      ...(headerDragging
+        ? { background: "var(--gethen-column-drag-source-background, #e7f4ef)" }
+        : {}),
       zIndex: frozenColumn ? "9" : "8"
     });
     fragment.appendChild(header);

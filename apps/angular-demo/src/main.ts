@@ -5,6 +5,7 @@ import { GethenGridComponent } from "@thefoolspath/gethen-angular";
 import type {
   GethenGridCellChange,
   GethenGridPasteResult,
+  GethenGridLayoutChange,
   GethenGridSelection,
   GethenGridSelectionRange
 } from "@thefoolspath/gethen-angular";
@@ -59,6 +60,8 @@ export class DemoAppComponent {
   protected readonly lastChange = signal("None");
   protected readonly selectedRange = signal("R1:C1–R1:C1");
   protected readonly pasteStatus = signal("None");
+  protected readonly layoutStatus = signal("default");
+  protected readonly columnReordering = signal(true);
   protected readonly styling: GridStylingOptions = {
     getCellClass: ({ column, value }) =>
       column.id === "c2" && value === true ? "demo-approved-cell" : undefined
@@ -92,6 +95,14 @@ export class DemoAppComponent {
         ? `${result.changes.length} cells committed`
         : `${result.errors.length} cells rejected`
     );
+  }
+
+  protected handleLayoutChange(event: GethenGridLayoutChange): void {
+    this.layoutStatus.set(`${event.reason}: ${event.state.columns.map((column) => column.columnId).join(",")}`);
+  }
+
+  protected toggleColumnReordering(): void {
+    this.columnReordering.update((enabled) => !enabled);
   }
 }
 

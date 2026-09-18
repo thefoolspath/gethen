@@ -1,8 +1,8 @@
 # Grid Customization
 
-Last reviewed: 2026-09-15.
+Last reviewed: 2026-09-18.
 
-Status: Alpha 2 customization, Alpha 3 editing/layout, and the Alpha 4 grid-shell/default-theme closure are implemented locally. Alpha 3 passed its manual keyboard-only Chrome walkthrough; the 2026-09-09 Emerald Light/Dark visual matrix and three representative local task walkthroughs also pass. External-participant usability research is not claimed. Manual NVDA/Chrome is deferred during alpha but mandatory before Beta/1.0.
+Status: Alpha 2 customization, Alpha 3 editing/layout, the Alpha 4 grid-shell/default-theme closure, and Alpha 5 A5-02 column reordering are implemented locally. Alpha 3 passed its manual keyboard-only Chrome walkthrough; the 2026-09-09 Emerald Light/Dark visual matrix and three representative local task walkthroughs also pass. External-participant usability research is not claimed. Manual NVDA/Chrome is deferred during alpha but mandatory before Beta/1.0.
 
 ## Core API
 
@@ -55,7 +55,7 @@ Class names belong to the host application, so utility classes and design-system
 
 ## Theme Overrides
 
-`VirtualDomGridTheme` exposes color, typography, padding, grid-line, header, row-number, pinned-row, status, readonly, invalid, editor-focus, and shell-dimension tokens. The renderer maps supplied tokens to CSS custom properties on the grid root. Applications may also override these properties directly per grid container.
+`VirtualDomGridTheme` exposes color, typography, padding, grid-line, header, row-number, pinned-row, status, readonly, invalid, editor-focus, column-reordering feedback, and shell-dimension tokens. Column reordering adds semantic header-focus, drag-source, drag-ghost, and drop-indicator colors. The renderer maps supplied tokens to CSS custom properties on the grid root. Applications may also override these properties directly per grid container.
 
 The dependency-free default is a modern-enterprise light theme using system fonts. `density` accepts `compact`, `comfortable`, or `spacious`; `comfortable` is the default. A grid mounted without `theme` retains this existing appearance.
 
@@ -158,7 +158,19 @@ Built-in editor definitions support `text`, `number`, `boolean`, `date`, `dateti
 
 `GridHistoryOptions` bounds history by entry count and retained bytes. Cell edits, all-or-nothing paste commits, and saved row transactions create local history entries. Undo emits inverse changes as new local events; it does not replay or reverse a prior network request. A new record clears the redo branch.
 
-`GridLayoutState` contains ordered column IDs, per-column widths, and counts for frozen top rows and leading columns. The grid normalizes stale/missing columns, uses a column's declared `width` when a persisted state does not contain it, provides resize/reorder/freeze/apply methods, and emits normalized layout events. The host owns persistence to local storage or a server.
+`GridLayoutState` contains the full ordered column-ID set, including hidden columns, per-column widths, and counts for frozen top rows and visible leading columns. The grid normalizes stale/missing columns, appends newly discovered IDs deterministically, uses a column's declared `width` when a persisted state does not contain it, provides resize/reorder/freeze/apply methods, and emits normalized layout events. The host owns persistence to local storage or a server.
+
+`reorderGridColumn()` remains the pure full-order state helper. `VirtualDomGrid.reorderColumn()` and the Angular component method accept a visible target index; a hidden source column may be moved to a visible boundary so its future restored position can be persisted. Reorder no-ops do not emit `layoutChange`.
+
+## Column Reordering
+
+Column reordering is enabled by default through `columnReordering` and can be changed at runtime with `setColumnReordering()` or Angular `[columnReordering]` without remounting the grid. Set it to `false` to disable both pointer and keyboard interaction while retaining programmatic layout APIs.
+
+Pointer input uses a 6-pixel drag threshold, before/after target halves, drag feedback, and horizontal edge auto-scroll. Mouse, touch, and pen share Pointer Events; vertical touch movement remains available for scrolling. `Escape`, pointer cancellation, release outside a valid target, and same-position drops cancel without a layout event. An active cell editor blocks reordering without discarding its draft.
+
+The grid remains one page tab stop. From the first body row, unmodified `ArrowUp` moves the active descendant to that column's header. Header `ArrowLeft`/`ArrowRight` and `Home`/`End` navigate headers, `ArrowDown` returns to the body, and `Alt+Shift+ArrowLeft`/`Alt+Shift+ArrowRight` move the focused column. Focus, selection endpoints, widths, classes, and layout state follow stable column IDs.
+
+Pointer and keyboard interaction cannot cross the boundary between frozen and non-frozen columns. Programmatic reorder calls may cross it so hosts can deliberately reconfigure layout. Current interaction labels are built-in English text and A5-02 covers left-to-right layout; localization and RTL reordering remain deferred.
 
 ## Security And Deferred APIs
 

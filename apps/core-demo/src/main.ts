@@ -126,6 +126,7 @@ const pinnedBottomRows = [createGridAggregatePinnedRow({
   label: "Total / average"
 })];
 const renderedRows = emptyDemoEnabled ? [] : rows;
+let layoutEventCount = 0;
 
 const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   columns,
@@ -175,7 +176,8 @@ const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   },
   onLayoutChange(event) {
     requireElement("layoutStatus").textContent =
-      `${event.reason}: ${event.state.frozenRowCount} x ${event.state.frozenColumnCount}`;
+      `${++layoutEventCount} ${event.reason}: ${event.state.frozenRowCount} x ${event.state.frozenColumnCount}; `
+      + event.state.columns.map((column) => column.columnId).join(",");
   },
   onHistoryChange(event) {
     requireElement("historyStatus").textContent = `${event.undoCount} undo / ${event.redoCount} redo`;
@@ -186,6 +188,7 @@ const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
 });
 
 window.addEventListener("gethen-demo-destroy-grid", () => gridApi.destroy(), { once: true });
+window.addEventListener("gethen-demo-reorder-hidden-column", () => gridApi.reorderColumn("internalKey", 1));
 
 requireElement("resizeColumn").addEventListener("click", () => gridApi.resizeColumn("c0", 220));
 requireElement("reorderColumn").addEventListener("click", () => gridApi.reorderColumn("c1", 0));

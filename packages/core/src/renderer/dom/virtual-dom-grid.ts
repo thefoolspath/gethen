@@ -16,7 +16,8 @@ import {
   freezeGridPanes,
   getGridColumnOffsets,
   getGridLayoutWidth,
-  reorderGridColumn,
+  projectVisibleGridLayoutState,
+  reorderGridColumnByVisibleIndex,
   resizeGridColumn
 } from "../../state/grid-layout.js";
 import { createVirtualDomGridCell } from "./virtual-dom-grid-cell.js";
@@ -78,6 +79,7 @@ export interface VirtualDomGridOptions<TRow extends GridRow = GridRow> {
   readonly frozenColumnCount?: number;
   readonly history?: GridHistoryOptions | false;
   readonly readOnly?: boolean;
+  readonly columnReordering?: boolean;
   readonly onRender?: (metrics: VirtualDomGridRenderMetrics) => void;
   readonly onSelectionChange?: (selection: VirtualDomGridSelection) => void;
   readonly onSelectionRangeChange?: (selection: VirtualDomGridSelectionRange) => void;
@@ -94,6 +96,7 @@ export interface VirtualDomGrid {
   render(): void;
   setTheme(theme: VirtualDomGridTheme | undefined): void;
   setReadOnly(readOnly: boolean): void;
+  setColumnReordering(enabled: boolean): void;
   getLayoutState(): GridLayoutState;
   applyLayoutState(state: GridLayoutState): void;
   resizeColumn(columnId: string, width: number): void;
@@ -105,6 +108,30 @@ export interface VirtualDomGrid {
 
 export const gethenReadOnlyGridPreset = Object.freeze({ readOnly: true } as const);
 
+let gridInstanceSequence = 0;
+
+const COLUMN_DRAG_THRESHOLD = 6;
+const COLUMN_DRAG_EDGE_ZONE = 32;
+const COLUMN_DRAG_MAX_SCROLL_PER_FRAME = 18;
+
+interface ColumnPointerCandidate {
+  readonly pointerId: number;
+  readonly pointerType: string;
+  readonly columnId: string;
+  readonly startX: number;
+  readonly startY: number;
+}
+
+interface ColumnDragState {
+  readonly pointerId: number;
+  readonly columnId: string;
+  clientX: number;
+  clientY: number;
+  targetIndex: number | undefined;
+  validTarget: boolean;
+  invalidReason: "frozen-boundary" | undefined;
+}
+
 export function mountVirtualDomGrid<TRow extends GridRow>(
   container: HTMLElement,
   options: VirtualDomGridOptions<TRow>
@@ -112,6 +139,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const grid = document.createElement("div");
   const spacer = document.createElement("div");
   const viewport = document.createElement("div");
+  const reorderInstructions = document.createElement("span");
+  const reorderLiveRegion = document.createElement("span");
+  const instanceId = ++gridInstanceSequence;
+  const activeHeaderId = `gethen-active-column-header-${instanceId}`;
+  const reorderInstructionsId = `gethen-column-reorder-instructions-${instanceId}`;
   const density = options.theme?.density ?? "comfortable";
   const densityDefaults = getGridDensityDefaults(density);
   const rowHeight = options.rowHeight ?? cssGridPixelValue(options.theme?.rowHeight, densityDefaults.rowHeight);
@@ -131,7 +163,8 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     : 0;
   const overscanRows = options.overscanRows ?? 6;
   const overscanColumns = options.overscanColumns ?? 2;
-  const sourceColumns = getVisibleColumns(options.columns);
+  const allColumns = options.columns;
+  const sourceColumns = getVisibleColumns(allColumns);
   const rows = options.rows.map((row) => ({
     ...row,
     cells: { ...row.cells }
@@ -142,15 +175,20 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   })) as TRow[];
   const pinnedHeight = pinnedBottomRows.length * rowHeight;
   let layoutState = applyGridLayoutState({
-    columnIds: sourceColumns.map((column) => column.id),
+    columnIds: allColumns.map((column) => column.id),
     defaultColumnWidth: columnWidth,
-    columnWidths: getDeclaredColumnWidths(sourceColumns),
+    columnWidths: getDeclaredColumnWidths(allColumns),
     ...(options.frozenRowCount === undefined ? {} : { frozenRowCount: options.frozenRowCount }),
     ...(options.frozenColumnCount === undefined ? {} : { frozenColumnCount: options.frozenColumnCount }),
     rowCount: rows.length,
     ...(options.layoutState ? { state: options.layoutState } : {})
   });
   let columns = orderGridColumns(sourceColumns, layoutState);
+  layoutState = normalizeFrozenColumnCount(layoutState, columns.length);
+  let renderedLayoutState = projectVisibleGridLayoutState(
+    layoutState,
+    columns.map((column) => column.id)
+  );
   const history = options.history === false ? undefined : createGridHistory(options.history);
   const editorState = createGridEditorStateMachine();
   const editorCoordinator = new VirtualDomGridEditorCoordinator();
@@ -166,8 +204,16 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   };
   let editState: { rowIndex: number; columnIndex: number; draftValue: CellChangeEvent["newValue"] } | null = null;
   let readOnly = options.readOnly === true;
+  let columnReordering = options.columnReordering !== false;
   let mutationHandlersBound = false;
   let animationFrame = 0;
+  let dragAnimationFrame = 0;
+  let announcementTimer = 0;
+  let focusedHeaderColumnId: string | undefined;
+  let pointerCandidate: ColumnPointerCandidate | undefined;
+  let dragState: ColumnDragState | undefined;
+  let dragGhost: HTMLElement | undefined;
+  let dropIndicator: HTMLElement | undefined;
 
   grid.setAttribute("role", "grid");
   grid.setAttribute("aria-readonly", readOnly ? "true" : "false");
@@ -189,9 +235,18 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   grid.style.fontSize = "var(--gethen-font-size, 13px)";
   applyVirtualDomGridTheme(grid, options.theme);
 
+  reorderInstructions.id = reorderInstructionsId;
+  reorderInstructions.textContent = "Move the focused column with Alt+Shift+Left Arrow or Alt+Shift+Right Arrow.";
+  applyVisuallyHiddenStyles(reorderInstructions);
+  reorderLiveRegion.setAttribute("role", "status");
+  reorderLiveRegion.setAttribute("aria-live", "polite");
+  reorderLiveRegion.setAttribute("aria-atomic", "true");
+  reorderLiveRegion.dataset.gethenColumnReorderStatus = "true";
+  applyVisuallyHiddenStyles(reorderLiveRegion);
+
   spacer.style.position = "absolute";
   spacer.style.inset = "0 auto auto 0";
-  spacer.style.width = `${rowNumberWidth + getGridLayoutWidth(layoutState)}px`;
+  spacer.style.width = `${rowNumberWidth + getGridLayoutWidth(renderedLayoutState)}px`;
   spacer.style.height = `${headerHeight + rows.length * rowHeight + pinnedHeight + statusHeight}px`;
 
   viewport.style.position = "absolute";
@@ -199,7 +254,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   viewport.style.width = spacer.style.width;
   viewport.style.height = spacer.style.height;
 
-  grid.append(spacer, viewport);
+  grid.append(spacer, viewport, reorderInstructions, reorderLiveRegion);
   container.replaceChildren(grid);
   const unsubscribeEditor = editorState.subscribe((state) => options.onEditorStateChange?.(state));
   const unsubscribeHistory = history?.subscribe((event) => options.onHistoryChange?.(event));
@@ -210,17 +265,17 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     const started = performance.now();
     destroyMountedLifecycles();
     requestActiveEditorCommit = undefined;
-    const columnOffsets = getGridColumnOffsets(layoutState);
+    const columnOffsets = getGridColumnOffsets(renderedLayoutState);
     const rowIndexes = getRenderedGridRowIndexes(
       rows.length,
       rowHeight,
       Math.max(0, grid.scrollTop - headerHeight),
       Math.max(rowHeight, grid.clientHeight - headerHeight - pinnedHeight - statusHeight),
-      layoutState.frozenRowCount,
+      renderedLayoutState.frozenRowCount,
       overscanRows
     );
     const columnIndexes = getRenderedGridColumnIndexes(
-      layoutState,
+      renderedLayoutState,
       columnOffsets,
       Math.max(0, grid.scrollLeft - rowNumberWidth),
       Math.max(columnWidth, grid.clientWidth - rowNumberWidth),
@@ -232,7 +287,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       rows,
       columns,
       pinnedBottomRows,
-      layoutState,
+      layoutState: renderedLayoutState,
       styling: options.styling,
       statusBar: options.statusBar,
       activeCell,
@@ -244,7 +299,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       pinnedHeight,
       showColumnHeaders,
       showRowNumbers,
-      showStatusBar
+      showStatusBar,
+      columnReordering,
+      focusedHeaderColumnId,
+      draggingColumnId: dragState?.columnId,
+      activeHeaderId,
+      reorderInstructionsId
     };
 
     viewport.replaceChildren();
@@ -265,11 +325,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           continue;
         }
 
-        const frozenRow = rowIndex < layoutState.frozenRowCount;
-        const frozenColumn = columnIndex < layoutState.frozenColumnCount;
+        const frozenRow = rowIndex < renderedLayoutState.frozenRowCount;
+        const frozenColumn = columnIndex < renderedLayoutState.frozenColumnCount;
         const cellInput = {
           rowHeight,
-          columnWidth: layoutState.columns[columnIndex]!.width,
+          columnWidth: renderedLayoutState.columns[columnIndex]!.width,
           left: rowNumberWidth + columnOffsets[columnIndex]! + (frozenColumn ? grid.scrollLeft : 0),
           top: headerHeight + rowIndex * rowHeight + (frozenRow ? grid.scrollTop : 0),
           frozenRow,
@@ -307,11 +367,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           )
         );
       }
-      appendGridRowNumber(fragment, row, rowIndex, rowIndex < layoutState.frozenRowCount, shellContext);
+      appendGridRowNumber(fragment, row, rowIndex, rowIndex < renderedLayoutState.frozenRowCount, shellContext);
     }
 
     appendGridShellAfterRows(fragment, columnIndexes, columnOffsets, shellContext);
     viewport.appendChild(fragment);
+    updateActiveDescendant();
     options.onRender?.({
       renderedCellCount: rowIndexes.length * columnIndexes.length,
       renderMs: performance.now() - started
@@ -391,18 +452,18 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function scrollActiveCellIntoView(): void {
-    const offsets = getGridColumnOffsets(layoutState);
+    const offsets = getGridColumnOffsets(renderedLayoutState);
     const left = rowNumberWidth + (offsets[activeCell.columnIndex] ?? 0);
     const top = headerHeight + activeCell.rowIndex * rowHeight;
-    const right = left + (layoutState.columns[activeCell.columnIndex]?.width ?? columnWidth);
+    const right = left + (renderedLayoutState.columns[activeCell.columnIndex]?.width ?? columnWidth);
     const bottom = top + rowHeight;
-    const frozenWidth = rowNumberWidth + layoutState.columns
-      .slice(0, layoutState.frozenColumnCount)
+    const frozenWidth = rowNumberWidth + renderedLayoutState.columns
+      .slice(0, renderedLayoutState.frozenColumnCount)
       .reduce((total, column) => total + column.width, 0);
-    const frozenHeight = headerHeight + layoutState.frozenRowCount * rowHeight;
+    const frozenHeight = headerHeight + renderedLayoutState.frozenRowCount * rowHeight;
     const bottomInset = pinnedHeight + statusHeight;
 
-    if (activeCell.columnIndex >= layoutState.frozenColumnCount && left < grid.scrollLeft + frozenWidth) {
+    if (activeCell.columnIndex >= renderedLayoutState.frozenColumnCount && left < grid.scrollLeft + frozenWidth) {
       grid.scrollLeft = Math.max(0, left - frozenWidth);
     } else if (right > grid.scrollLeft + grid.clientWidth) {
       grid.scrollLeft = right - grid.clientWidth;
@@ -415,14 +476,146 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
   }
 
+  function scrollHeaderIntoView(columnIndex: number): void {
+    const offsets = getGridColumnOffsets(renderedLayoutState);
+    const left = rowNumberWidth + (offsets[columnIndex] ?? 0);
+    const right = left + (renderedLayoutState.columns[columnIndex]?.width ?? columnWidth);
+    const frozenWidth = rowNumberWidth + renderedLayoutState.columns
+      .slice(0, renderedLayoutState.frozenColumnCount)
+      .reduce((total, column) => total + column.width, 0);
+
+    if (columnIndex >= renderedLayoutState.frozenColumnCount && left < grid.scrollLeft + frozenWidth) {
+      grid.scrollLeft = Math.max(0, left - frozenWidth);
+    } else if (right > grid.scrollLeft + grid.clientWidth) {
+      grid.scrollLeft = right - grid.clientWidth;
+    }
+  }
+
+  function focusHeader(columnId: string): void {
+    const columnIndex = columns.findIndex((column) => column.id === columnId);
+    if (!columnReordering || !showColumnHeaders || columnIndex < 0) return;
+    focusedHeaderColumnId = columnId;
+    scrollHeaderIntoView(columnIndex);
+    render();
+  }
+
+  function updateActiveDescendant(): void {
+    if (focusedHeaderColumnId && columnReordering && showColumnHeaders) {
+      grid.setAttribute("aria-activedescendant", activeHeaderId);
+    } else if (rows.length > 0 && columns.length > 0) {
+      grid.setAttribute("aria-activedescendant", "gethen-active-cell");
+    } else {
+      grid.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function moveFocusedHeader(delta: -1 | 1): void {
+    if (!focusedHeaderColumnId || editState) return;
+    const sourceIndex = columns.findIndex((column) => column.id === focusedHeaderColumnId);
+    const targetIndex = sourceIndex + delta;
+    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= columns.length
+      || !isSameFrozenZone(sourceIndex, targetIndex, renderedLayoutState.frozenColumnCount)) {
+      announceColumnReorder(`Cannot move ${getColumnTitle(focusedHeaderColumnId)} beyond its column zone.`);
+      return;
+    }
+
+    if (reorderVisibleColumn(focusedHeaderColumnId, targetIndex)) {
+      const nextIndex = columns.findIndex((column) => column.id === focusedHeaderColumnId);
+      announceColumnReorder(
+        `Moved ${getColumnTitle(focusedHeaderColumnId)} to position ${nextIndex + 1} of ${columns.length}.`
+      );
+    }
+  }
+
+  function reorderVisibleColumn(columnId: string, targetIndex: number): boolean {
+    return setLayoutState(
+      reorderGridColumnByVisibleIndex(
+        layoutState,
+        columnId,
+        targetIndex,
+        columns.map((column) => column.id)
+      ),
+      "reorder"
+    );
+  }
+
+  function getColumnTitle(columnId: string): string {
+    return allColumns.find((column) => column.id === columnId)?.title ?? columnId;
+  }
+
+  function announceColumnReorder(message: string): void {
+    if (announcementTimer !== 0) window.clearTimeout(announcementTimer);
+    reorderLiveRegion.textContent = "";
+    announcementTimer = window.setTimeout(() => {
+      reorderLiveRegion.textContent = message;
+      announcementTimer = 0;
+    }, 0);
+  }
+
   function handleNavigationKeyDown(event: KeyboardEvent): void {
+    if (event.key === "Escape" && dragState) {
+      event.preventDefault();
+      releasePointerCandidate();
+      cancelColumnDrag(true);
+      return;
+    }
     if (event.target instanceof Element && event.target.closest("[data-gethen-editor-host='true']")) {
       return;
     }
     if (editState) {
       return;
     }
-    if (rows.length === 0 || columns.length === 0) {
+    if (columns.length === 0) {
+      return;
+    }
+
+    if (focusedHeaderColumnId) {
+      const focusedIndex = columns.findIndex((column) => column.id === focusedHeaderColumnId);
+      if (focusedIndex < 0) {
+        focusedHeaderColumnId = undefined;
+        updateActiveDescendant();
+        return;
+      }
+
+      if (event.altKey && event.shiftKey && !event.ctrlKey && !event.metaKey
+        && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        moveFocusedHeader(event.key === "ArrowLeft" ? -1 : 1);
+      } else if (!event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+        && event.key === "ArrowLeft") {
+        event.preventDefault();
+        focusHeader(columns[Math.max(0, focusedIndex - 1)]!.id);
+      } else if (!event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+        && event.key === "ArrowRight") {
+        event.preventDefault();
+        focusHeader(columns[Math.min(columns.length - 1, focusedIndex + 1)]!.id);
+      } else if (!event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+        && event.key === "Home") {
+        event.preventDefault();
+        focusHeader(columns[0]!.id);
+      } else if (!event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+        && event.key === "End") {
+        event.preventDefault();
+        focusHeader(columns.at(-1)!.id);
+      } else if (!event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+        && event.key === "ArrowDown") {
+        event.preventDefault();
+        if (rows.length > 0) {
+          focusedHeaderColumnId = undefined;
+          setActiveCell(activeCell.rowIndex, focusedIndex);
+        }
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (rows.length === 0) {
+      if (columnReordering && showColumnHeaders && event.key === "ArrowUp"
+        && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        focusHeader(columns[0]!.id);
+      }
       return;
     }
 
@@ -431,7 +624,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       setActiveCell(activeCell.rowIndex + 1, activeCell.columnIndex, event.shiftKey);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveCell(activeCell.rowIndex - 1, activeCell.columnIndex, event.shiftKey);
+      if (columnReordering && showColumnHeaders && activeCell.rowIndex === 0
+        && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        focusHeader(columns[activeCell.columnIndex]!.id);
+      } else {
+        setActiveCell(activeCell.rowIndex - 1, activeCell.columnIndex, event.shiftKey);
+      }
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
       setActiveCell(activeCell.rowIndex, activeCell.columnIndex + 1, event.shiftKey);
@@ -447,11 +645,275 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
   }
 
+  function handleColumnPointerDown(event: PointerEvent): void {
+    if (!columnReordering || editState || !event.isPrimary || event.button !== 0
+      || !(event.target instanceof HTMLElement)) return;
+    const header = event.target.closest<HTMLElement>("[data-gethen-column-reorder='true']");
+    const columnId = header?.dataset.columnId;
+    if (!header || !columnId || !grid.contains(header)) return;
+
+    pointerCandidate = {
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      columnId,
+      startX: event.clientX,
+      startY: event.clientY
+    };
+    focusedHeaderColumnId = columnId;
+    grid.focus({ preventScroll: true });
+    if (event.pointerType !== "touch" && event.cancelable) event.preventDefault();
+    try {
+      grid.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Synthetic pointer tests and older engines may not register an active pointer for capture.
+    }
+    render();
+  }
+
+  function handleColumnDragKeyDown(event: KeyboardEvent): void {
+    if (event.key !== "Escape" || !dragState) return;
+    event.preventDefault();
+    releasePointerCandidate();
+    cancelColumnDrag(true);
+  }
+
+  function handleColumnPointerMove(event: PointerEvent): void {
+    if (!pointerCandidate || pointerCandidate.pointerId !== event.pointerId) return;
+    if (!dragState) {
+      const deltaX = event.clientX - pointerCandidate.startX;
+      const deltaY = event.clientY - pointerCandidate.startY;
+      if (pointerCandidate.pointerType === "touch"
+        && Math.abs(deltaY) >= COLUMN_DRAG_THRESHOLD
+        && Math.abs(deltaY) > Math.abs(deltaX)) {
+        releasePointerCandidate();
+        return;
+      }
+      if (Math.hypot(deltaX, deltaY) < COLUMN_DRAG_THRESHOLD) return;
+      if (pointerCandidate.pointerType === "touch" && Math.abs(deltaX) <= Math.abs(deltaY)) return;
+      beginColumnDrag(pointerCandidate, event.clientX, event.clientY);
+    }
+    if (!dragState) return;
+
+    if (event.cancelable) event.preventDefault();
+    dragState.clientX = event.clientX;
+    dragState.clientY = event.clientY;
+    positionDragGhost();
+    updateColumnDropTarget();
+    scheduleColumnDragAutoScroll();
+  }
+
+  function handleColumnPointerUp(event: PointerEvent): void {
+    if (!pointerCandidate || pointerCandidate.pointerId !== event.pointerId) return;
+    const completedDrag = dragState;
+    releasePointerCandidate();
+    if (!completedDrag) return;
+
+    const targetIndex = completedDrag.validTarget ? completedDrag.targetIndex : undefined;
+    const columnId = completedDrag.columnId;
+    const invalidReason = completedDrag.invalidReason;
+    cancelColumnDrag(false);
+    if (targetIndex === undefined) {
+      render();
+      if (invalidReason === "frozen-boundary") {
+        announceColumnReorder(`Cannot move ${getColumnTitle(columnId)} beyond its column zone.`);
+      }
+      return;
+    }
+    if (reorderVisibleColumn(columnId, targetIndex)) {
+      const nextIndex = columns.findIndex((column) => column.id === columnId);
+      announceColumnReorder(`Moved ${getColumnTitle(columnId)} to position ${nextIndex + 1} of ${columns.length}.`);
+    } else {
+      render();
+    }
+  }
+
+  function handleColumnPointerCancel(event: PointerEvent): void {
+    if (pointerCandidate?.pointerId !== event.pointerId) return;
+    releasePointerCandidate();
+    cancelColumnDrag(true);
+  }
+
+  function handleLostPointerCapture(event: PointerEvent): void {
+    if (pointerCandidate?.pointerId !== event.pointerId) return;
+    pointerCandidate = undefined;
+    cancelColumnDrag(true);
+  }
+
+  function beginColumnDrag(candidate: ColumnPointerCandidate, clientX: number, clientY: number): void {
+    dragState = {
+      pointerId: candidate.pointerId,
+      columnId: candidate.columnId,
+      clientX,
+      clientY,
+      targetIndex: undefined,
+      validTarget: false,
+      invalidReason: undefined
+    };
+    const sourceHeader = findRenderedHeader(candidate.columnId);
+    const sourceBounds = sourceHeader?.getBoundingClientRect();
+    const computed = sourceHeader ? getComputedStyle(sourceHeader) : undefined;
+    dragGhost = document.createElement("div");
+    dragGhost.dataset.gethenColumnDragGhost = "true";
+    dragGhost.textContent = getColumnTitle(candidate.columnId);
+    Object.assign(dragGhost.style, {
+      position: "fixed",
+      left: "0",
+      top: "0",
+      width: `${sourceBounds?.width ?? 132}px`,
+      height: `${sourceBounds?.height ?? headerHeight}px`,
+      display: "flex",
+      alignItems: "center",
+      padding: computed?.padding ?? "0 10px",
+      border: `1px solid ${computed?.borderRightColor ?? "#d8e0e8"}`,
+      borderRadius: "4px",
+      background: readThemeColor("--gethen-column-drag-ghost-background", "#f3f6f9"),
+      color: computed?.color ?? "#344054",
+      font: computed?.font ?? "inherit",
+      fontWeight: "650",
+      boxShadow: "0 8px 24px rgb(16 24 40 / 0.18)",
+      opacity: "0.95",
+      pointerEvents: "none",
+      zIndex: "2147483646"
+    });
+    dropIndicator = document.createElement("div");
+    dropIndicator.dataset.gethenColumnDropIndicator = "true";
+    Object.assign(dropIndicator.style, {
+      position: "fixed",
+      display: "none",
+      width: "3px",
+      background: readThemeColor("--gethen-column-drop-indicator-color", "#6848d8"),
+      borderRadius: "999px",
+      pointerEvents: "none",
+      zIndex: "2147483647"
+    });
+    document.body.append(dragGhost, dropIndicator);
+    positionDragGhost();
+    render();
+  }
+
+  function positionDragGhost(): void {
+    if (!dragState || !dragGhost) return;
+    dragGhost.style.transform = `translate(${dragState.clientX + 12}px, ${dragState.clientY + 12}px)`;
+  }
+
+  function updateColumnDropTarget(): void {
+    if (!dragState || !dropIndicator) return;
+    const hit = document.elementFromPoint(dragState.clientX, dragState.clientY);
+    const targetHeader = hit instanceof Element
+      ? hit.closest<HTMLElement>("[data-gethen-column-reorder='true']")
+      : null;
+    const sourceIndex = columns.findIndex((column) => column.id === dragState!.columnId);
+    const targetIndex = Number(targetHeader?.dataset.columnIndex);
+    if (!targetHeader || !grid.contains(targetHeader) || sourceIndex < 0 || !Number.isInteger(targetIndex)) {
+      setInvalidColumnDropTarget();
+      return;
+    }
+
+    const bounds = targetHeader.getBoundingClientRect();
+    const insertAfter = dragState.clientX >= bounds.left + bounds.width / 2;
+    const boundaryIndex = targetIndex + (insertAfter ? 1 : 0);
+    const finalIndex = clamp(boundaryIndex - (sourceIndex < boundaryIndex ? 1 : 0), 0, columns.length - 1);
+    if (!isSameFrozenZone(sourceIndex, finalIndex, renderedLayoutState.frozenColumnCount)) {
+      setInvalidColumnDropTarget("frozen-boundary");
+      return;
+    }
+
+    dragState.targetIndex = finalIndex;
+    dragState.validTarget = true;
+    dragState.invalidReason = undefined;
+    dragGhost?.removeAttribute("data-gethen-drop-invalid");
+    if (dragGhost) dragGhost.style.outline = "none";
+    Object.assign(dropIndicator.style, {
+      display: "block",
+      left: `${insertAfter ? bounds.right - 1.5 : bounds.left - 1.5}px`,
+      top: `${bounds.top}px`,
+      height: `${bounds.height}px`
+    });
+  }
+
+  function setInvalidColumnDropTarget(reason?: ColumnDragState["invalidReason"]): void {
+    if (!dragState) return;
+    dragState.targetIndex = undefined;
+    dragState.validTarget = false;
+    dragState.invalidReason = reason;
+    dropIndicator?.style.setProperty("display", "none");
+    if (dragGhost) {
+      dragGhost.dataset.gethenDropInvalid = "true";
+      dragGhost.style.outline = `2px solid ${readThemeColor("--gethen-invalid-color", "#b42318")}`;
+    }
+  }
+
+  function scheduleColumnDragAutoScroll(): void {
+    if (!dragState || dragAnimationFrame !== 0) return;
+    const sourceIndex = columns.findIndex((column) => column.id === dragState!.columnId);
+    if (sourceIndex < renderedLayoutState.frozenColumnCount) return;
+    const speed = getColumnDragScrollSpeed(dragState.clientX);
+    if (speed === 0) return;
+    dragAnimationFrame = requestAnimationFrame(() => {
+      dragAnimationFrame = 0;
+      if (!dragState) return;
+      const previousScrollLeft = grid.scrollLeft;
+      grid.scrollLeft += speed;
+      if (grid.scrollLeft !== previousScrollLeft) {
+        scheduleRender();
+        updateColumnDropTarget();
+        scheduleColumnDragAutoScroll();
+      }
+    });
+  }
+
+  function getColumnDragScrollSpeed(clientX: number): number {
+    const bounds = grid.getBoundingClientRect();
+    const frozenWidth = renderedLayoutState.columns
+      .slice(0, renderedLayoutState.frozenColumnCount)
+      .reduce((total, column) => total + column.width, rowNumberWidth);
+    const leftEdge = Math.min(bounds.right, bounds.left + frozenWidth);
+    if (clientX < leftEdge + COLUMN_DRAG_EDGE_ZONE) {
+      const ratio = clamp((leftEdge + COLUMN_DRAG_EDGE_ZONE - clientX) / COLUMN_DRAG_EDGE_ZONE, 0, 1);
+      return -Math.max(2, Math.ceil(COLUMN_DRAG_MAX_SCROLL_PER_FRAME * ratio));
+    }
+    if (clientX > bounds.right - COLUMN_DRAG_EDGE_ZONE) {
+      const ratio = clamp((clientX - (bounds.right - COLUMN_DRAG_EDGE_ZONE)) / COLUMN_DRAG_EDGE_ZONE, 0, 1);
+      return Math.max(2, Math.ceil(COLUMN_DRAG_MAX_SCROLL_PER_FRAME * ratio));
+    }
+    return 0;
+  }
+
+  function releasePointerCandidate(): void {
+    const pointerId = pointerCandidate?.pointerId;
+    pointerCandidate = undefined;
+    if (pointerId !== undefined && grid.hasPointerCapture?.(pointerId)) {
+      grid.releasePointerCapture(pointerId);
+    }
+  }
+
+  function cancelColumnDrag(renderAfterCancel: boolean): void {
+    if (dragAnimationFrame !== 0) {
+      cancelAnimationFrame(dragAnimationFrame);
+      dragAnimationFrame = 0;
+    }
+    dragState = undefined;
+    dragGhost?.remove();
+    dropIndicator?.remove();
+    dragGhost = undefined;
+    dropIndicator = undefined;
+    if (renderAfterCancel) render();
+  }
+
+  function findRenderedHeader(columnId: string): HTMLElement | undefined {
+    return [...viewport.querySelectorAll<HTMLElement>("[data-column-id]")]
+      .find((header) => header.dataset.columnId === columnId);
+  }
+
+  function readThemeColor(variable: string, fallback: string): string {
+    return getComputedStyle(grid).getPropertyValue(variable).trim() || fallback;
+  }
+
   function handleMutationKeyDown(event: KeyboardEvent): void {
     if (readOnly || (event.target instanceof Element && event.target.closest("[data-gethen-editor-host='true']"))) {
       return;
     }
-    if (editState || rows.length === 0 || columns.length === 0) {
+    if (focusedHeaderColumnId || editState || rows.length === 0 || columns.length === 0) {
       return;
     }
 
@@ -498,6 +960,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
         const committed = await requestActiveEditorCommit();
         if (!committed) return;
       }
+      focusedHeaderColumnId = undefined;
       grid.focus();
       setActiveCell(rowIndex, columnIndex, event.shiftKey);
 
@@ -511,7 +974,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function handlePaste(event: ClipboardEvent): void {
-    if (readOnly) return;
+    if (readOnly || focusedHeaderColumnId) return;
     const pasteMode = options.clipboard?.pasteMode ?? "direct-and-dialog";
 
     if (!options.clipboard?.enabled || pasteMode === "dialog") {
@@ -827,18 +1290,27 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     return applyHistoryChanges(history?.redo() ?? []);
   }
 
-  function setLayoutState(state: GridLayoutState, reason: GridLayoutEvent["reason"]): void {
+  function setLayoutState(state: GridLayoutState, reason: GridLayoutEvent["reason"]): boolean {
     const activeColumnId = columns[activeCell.columnIndex]?.id;
     const anchorColumnId = columns[anchorCell.columnIndex]?.id;
     const editColumnId = editState ? columns[editState.columnIndex]?.id : undefined;
-    layoutState = applyGridLayoutState({
-      columnIds: sourceColumns.map((column) => column.id),
+    const nextLayoutState = applyGridLayoutState({
+      columnIds: allColumns.map((column) => column.id),
       defaultColumnWidth: columnWidth,
-      columnWidths: getDeclaredColumnWidths(sourceColumns),
+      columnWidths: getDeclaredColumnWidths(allColumns),
       rowCount: rows.length,
       state
     });
+    const normalizedLayoutState = normalizeFrozenColumnCount(nextLayoutState, sourceColumns.length);
+    if (reason === "reorder" && haveSameColumnOrder(layoutState, normalizedLayoutState)) {
+      return false;
+    }
+    layoutState = normalizedLayoutState;
     columns = orderGridColumns(sourceColumns, layoutState);
+    renderedLayoutState = projectVisibleGridLayoutState(
+      layoutState,
+      columns.map((column) => column.id)
+    );
     activeCell.columnIndex = findGridColumnIndex(columns, activeColumnId, activeCell.columnIndex);
     anchorCell.columnIndex = findGridColumnIndex(columns, anchorColumnId, anchorCell.columnIndex);
     if (editState) {
@@ -847,10 +1319,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
         columnIndex: findGridColumnIndex(columns, editColumnId, editState.columnIndex)
       };
     }
-    spacer.style.width = `${rowNumberWidth + getGridLayoutWidth(layoutState)}px`;
+    spacer.style.width = `${rowNumberWidth + getGridLayoutWidth(renderedLayoutState)}px`;
     viewport.style.width = spacer.style.width;
     options.onLayoutChange?.({ reason, state: layoutState });
     render();
+    return true;
   }
 
   function bindMutationHandlers(): void {
@@ -883,11 +1356,28 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
   }
 
+  function setColumnReordering(enabled: boolean): void {
+    if (columnReordering === enabled) return;
+    columnReordering = enabled;
+    if (!enabled) {
+      releasePointerCandidate();
+      cancelColumnDrag(false);
+      focusedHeaderColumnId = undefined;
+    }
+    render();
+  }
+
   grid.addEventListener("scroll", scheduleRender);
   grid.addEventListener("keydown", handleNavigationKeyDown);
   grid.addEventListener("click", handleClick);
+  grid.addEventListener("pointerdown", handleColumnPointerDown);
+  grid.addEventListener("pointermove", handleColumnPointerMove);
+  grid.addEventListener("pointerup", handleColumnPointerUp);
+  grid.addEventListener("pointercancel", handleColumnPointerCancel);
+  grid.addEventListener("lostpointercapture", handleLostPointerCapture);
   if (!readOnly) bindMutationHandlers();
   window.addEventListener("resize", scheduleRender);
+  window.addEventListener("keydown", handleColumnDragKeyDown, true);
   render();
 
   return {
@@ -898,12 +1388,23 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       if (animationFrame !== 0) {
         cancelAnimationFrame(animationFrame);
       }
+      if (announcementTimer !== 0) {
+        window.clearTimeout(announcementTimer);
+      }
+      releasePointerCandidate();
+      cancelColumnDrag(false);
 
       grid.removeEventListener("scroll", scheduleRender);
       grid.removeEventListener("keydown", handleNavigationKeyDown);
       grid.removeEventListener("click", handleClick);
+      grid.removeEventListener("pointerdown", handleColumnPointerDown);
+      grid.removeEventListener("pointermove", handleColumnPointerMove);
+      grid.removeEventListener("pointerup", handleColumnPointerUp);
+      grid.removeEventListener("pointercancel", handleColumnPointerCancel);
+      grid.removeEventListener("lostpointercapture", handleLostPointerCapture);
       unbindMutationHandlers();
       window.removeEventListener("resize", scheduleRender);
+      window.removeEventListener("keydown", handleColumnDragKeyDown, true);
       editorState.unmount();
       unsubscribeEditor();
       unsubscribeHistory?.();
@@ -913,16 +1414,16 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     render,
     setTheme: (theme) => applyVirtualDomGridTheme(grid, theme),
     setReadOnly,
+    setColumnReordering,
     getLayoutState: () => layoutState,
     applyLayoutState: (state) => setLayoutState(state, "apply"),
     resizeColumn: (columnId, width) => setLayoutState(
       resizeGridColumn(layoutState, columnId, width),
       "resize"
     ),
-    reorderColumn: (columnId, targetIndex) => setLayoutState(
-      reorderGridColumn(layoutState, columnId, targetIndex),
-      "reorder"
-    ),
+    reorderColumn: (columnId, targetIndex) => {
+      reorderVisibleColumn(columnId, targetIndex);
+    },
     freezePanes: (frozenRowCount, frozenColumnCount) => setLayoutState(
       freezeGridPanes(layoutState, frozenRowCount, frozenColumnCount, rows.length),
       "freeze"
@@ -940,4 +1441,32 @@ function getDeclaredColumnWidths<TRow extends GridRow>(
       .filter((column) => column.width !== undefined)
       .map((column) => [column.id, column.width!])
   );
+}
+
+function normalizeFrozenColumnCount(state: GridLayoutState, visibleColumnCount: number): GridLayoutState {
+  const frozenColumnCount = Math.max(0, Math.min(visibleColumnCount, Math.trunc(state.frozenColumnCount)));
+  return frozenColumnCount === state.frozenColumnCount ? state : { ...state, frozenColumnCount };
+}
+
+function haveSameColumnOrder(left: GridLayoutState, right: GridLayoutState): boolean {
+  return left.columns.length === right.columns.length
+    && left.columns.every((column, index) => column.columnId === right.columns[index]?.columnId);
+}
+
+function isSameFrozenZone(sourceIndex: number, targetIndex: number, frozenColumnCount: number): boolean {
+  return (sourceIndex < frozenColumnCount) === (targetIndex < frozenColumnCount);
+}
+
+function applyVisuallyHiddenStyles(element: HTMLElement): void {
+  Object.assign(element.style, {
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    padding: "0",
+    margin: "-1px",
+    overflow: "hidden",
+    clip: "rect(0, 0, 0, 0)",
+    whiteSpace: "nowrap",
+    border: "0"
+  });
 }

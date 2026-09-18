@@ -6,7 +6,9 @@ import {
   freezeGridPanes,
   getGridColumnOffsets,
   getGridLayoutWidth,
+  projectVisibleGridLayoutState,
   reorderGridColumn,
+  reorderGridColumnByVisibleIndex,
   resizeGridColumn
 } from "./grid-layout.js";
 
@@ -82,6 +84,48 @@ describe("GridLayoutState", () => {
     expect(getGridColumnOffsets(state)).toEqual([0, 100, 200]);
     expect(getGridLayoutWidth(state)).toBe(360);
     expect(state).toMatchObject({ frozenRowCount: 4, frozenColumnCount: 2 });
+  });
+
+  it("projects full persisted order into visible geometry without consuming hidden frozen slots", () => {
+    const state = createGridLayoutState({
+      columnIds: ["a", "hidden", "b", "c"],
+      columnWidths: { a: 80, hidden: 40, b: 120, c: 160 },
+      frozenColumnCount: 2
+    });
+
+    expect(projectVisibleGridLayoutState(state, ["a", "b", "c"])).toEqual({
+      version: 1,
+      columns: [
+        { columnId: "a", width: 80 },
+        { columnId: "b", width: 120 },
+        { columnId: "c", width: 160 }
+      ],
+      frozenRowCount: 0,
+      frozenColumnCount: 2
+    });
+  });
+
+  it("reorders visible columns while retaining hidden column identity in full order", () => {
+    const state = createGridLayoutState({ columnIds: ["a", "hidden", "b", "c"] });
+
+    expect(
+      reorderGridColumnByVisibleIndex(state, "c", 0, ["a", "b", "c"])
+        .columns.map((column) => column.columnId)
+    ).toEqual(["c", "a", "hidden", "b"]);
+    expect(
+      reorderGridColumnByVisibleIndex(state, "a", 2, ["a", "b", "c"])
+        .columns.map((column) => column.columnId)
+    ).toEqual(["hidden", "b", "c", "a"]);
+  });
+
+  it("moves hidden columns to visible boundaries without changing the visible projection", () => {
+    const state = createGridLayoutState({ columnIds: ["a", "hidden", "b", "c"] });
+    const moved = reorderGridColumnByVisibleIndex(state, "hidden", 2, ["a", "b", "c"]);
+
+    expect(moved.columns.map((column) => column.columnId)).toEqual(["a", "b", "hidden", "c"]);
+    expect(projectVisibleGridLayoutState(moved, ["a", "b", "c"]).columns.map(
+      (column) => column.columnId
+    )).toEqual(["a", "b", "c"]);
   });
 
   it("rejects duplicate IDs and unsafe widths", () => {

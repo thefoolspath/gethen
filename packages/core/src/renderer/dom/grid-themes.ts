@@ -30,7 +30,11 @@ export const gethenLightTheme: Readonly<VirtualDomGridTheme> = Object.freeze({
   selectionBackground: "#D8F5E8",
   readonlyTextColor: "#52665D",
   invalidColor: "#B42318",
-  editorFocusColor: "#6848D8"
+  editorFocusColor: "#6848D8",
+  headerFocusColor: "#087F5B",
+  columnDragSourceBackground: "#D8F5E8",
+  columnDragGhostBackground: "#E8F5EF",
+  columnDropIndicatorColor: "#6848D8"
 });
 
 export const gethenDarkTheme: Readonly<VirtualDomGridTheme> = Object.freeze({
@@ -50,5 +54,9 @@ export const gethenDarkTheme: Readonly<VirtualDomGridTheme> = Object.freeze({
   selectionBackground: "#12392B",
   readonlyTextColor: "#8D9994",
   invalidColor: "#FF8090",
-  editorFocusColor: "#A7F3D0"
+  editorFocusColor: "#A7F3D0",
+  headerFocusColor: "#18D98B",
+  columnDragSourceBackground: "#12392B",
+  columnDragGhostBackground: "#14201B",
+  columnDropIndicatorColor: "#A7F3D0"
 });

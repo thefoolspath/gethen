@@ -13,6 +13,31 @@ async function pasteText(locator: Locator, text: string): Promise<void> {
   }, text);
 }
 
+async function dragColumn(
+  page: Page,
+  sourceName: string,
+  targetName: string,
+  targetFraction = 0.75
+): Promise<void> {
+  const source = page.getByRole("columnheader", { name: sourceName, exact: true });
+  const target = page.getByRole("columnheader", { name: targetName, exact: true });
+  const sourceBounds = await source.boundingBox();
+  const targetBounds = await target.boundingBox();
+  if (!sourceBounds || !targetBounds) throw new Error("Column header bounds are unavailable.");
+
+  const startX = sourceBounds.x + sourceBounds.width / 2;
+  const startY = sourceBounds.y + sourceBounds.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 8, startY, { steps: 2 });
+  await page.mouse.move(
+    targetBounds.x + targetBounds.width * targetFraction,
+    targetBounds.y + targetBounds.height / 2,
+    { steps: 5 }
+  );
+  await page.mouse.up();
+}
+
 test("virtualized DOM prototype renders visible cells", async ({ page }) => {
   await page.goto("/apps/renderer-prototype/index.html");
   await expect(page.getByRole("grid")).toBeVisible();
@@ -49,6 +74,12 @@ test("core demo renders headers and a focus-safe empty state", async ({ page }) 
   await expect(page.locator('[data-gethen-empty-state="true"]')).toHaveText("No rows to display");
   await expect(grid).not.toHaveAttribute("aria-activedescendant");
   await expect(page.locator('[data-gethen-status-bar="true"]')).toHaveText("0 rows");
+
+  await grid.focus();
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator("[id^='gethen-active-column-header-']")).toHaveText("Column 1");
+  await page.keyboard.press("Alt+Shift+ArrowRight");
+  await expect(page.locator("#layoutStatus")).toContainText("reorder: 0 x 0; c1,c0,c2");
 });
 
 test("core demo applies Alpha 2 view metadata and application classes", async ({ page }) => {
@@ -250,7 +281,7 @@ test("Alpha 3 layout resizes, reorders, and freezes multiple panes", async ({ pa
   await expect(page.locator("#activeCell")).toHaveText("row-1 / c0");
 
   await page.locator("#freezePanes").click();
-  await expect(page.locator("#layoutStatus")).toHaveText("freeze: 2 x 2");
+  await expect(page.locator("#layoutStatus")).toContainText("freeze: 2 x 2");
   const before = await dataCell(page, 0, 0).boundingBox();
   await grid.evaluate((element) => {
     element.scrollTop = 1000;
@@ -261,6 +292,143 @@ test("Alpha 3 layout resizes, reorders, and freezes multiple panes", async ({ pa
     .toBeCloseTo(before?.x ?? 0, 0);
   await expect.poll(async () => (await dataCell(page, 0, 0).boundingBox())?.y)
     .toBeCloseTo(before?.y ?? 0, 0);
+});
+
+test("A5-02 keyboard reordering retains column focus, selection identity, and full layout state", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+  await grid.focus();
+  await page.keyboard.press("ArrowUp");
+
+  const focusedHeader = page.locator("[id^='gethen-active-column-header-']");
+  await expect(focusedHeader).toHaveText("Column 1");
+  await expect(focusedHeader).toHaveAttribute(
+    "aria-keyshortcuts",
+    "Alt+Shift+ArrowLeft Alt+Shift+ArrowRight"
+  );
+
+  await page.keyboard.press("Alt+Shift+ArrowRight");
+  await expect(page.locator("#layoutStatus")).toContainText("1 reorder: 0 x 0; c1,c0,c2");
+  await expect(page.locator("#layoutStatus")).toContainText("internalKey");
+  await expect(focusedHeader).toHaveText("Column 1");
+  await expect(page.locator("[data-gethen-column-reorder-status='true']")).toHaveText(
+    "Moved Column 1 to position 2 of 50."
+  );
+
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#activeCell")).toHaveText("row-1 / c0");
+  await expect(dataCell(page, 0, 1)).toHaveAttribute("id", "gethen-active-cell");
+});
+
+test("A5-02 pointer drag reorders on target halves and preserves column metadata", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  await dragColumn(page, "Column 2", "Column 4");
+
+  await expect(dataCell(page, 0, 3)).toHaveText("R1 Column 2");
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toHaveClass(
+    /gethen-primary-header/
+  );
+  await expect(page.locator("#layoutStatus")).toContainText("1 reorder: 0 x 0; c0,c2,c3,c1");
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(0);
+  await expect(page.locator("[data-gethen-column-drop-indicator='true']")).toHaveCount(0);
+});
+
+test("A5-02 blocks pointer and keyboard moves across the frozen-column boundary", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  await page.locator("#freezePanes").click();
+  await dragColumn(page, "Column 2", "Column 3");
+
+  await expect(dataCell(page, 0, 1)).toHaveText("R1 Column 2");
+  await expect(page.locator("#layoutStatus")).toContainText("1 freeze: 2 x 2; c0,c1,c2");
+  await expect(page.locator("[data-gethen-column-reorder-status='true']")).toHaveText(
+    "Cannot move Column 2 beyond its column zone."
+  );
+
+  const grid = page.getByRole("grid");
+  await grid.focus();
+  await page.keyboard.press("Alt+Shift+ArrowRight");
+  await expect(page.locator("#layoutStatus")).toContainText("1 freeze: 2 x 2; c0,c1,c2");
+});
+
+test("A5-02 auto-scrolls horizontal columns and Escape cancels without a layout event", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+  const source = page.getByRole("columnheader", { name: "Column 2", exact: true });
+  const sourceBounds = await source.boundingBox();
+  const gridBounds = await grid.boundingBox();
+  if (!sourceBounds || !gridBounds) throw new Error("Grid bounds are unavailable.");
+
+  const startX = sourceBounds.x + sourceBounds.width / 2;
+  const startY = sourceBounds.y + sourceBounds.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 8, startY);
+  await page.mouse.move(gridBounds.x + gridBounds.width - 2, startY);
+  await expect.poll(() => grid.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(0);
+  await page.mouse.up();
+
+  await expect(page.locator("#layoutStatus")).toHaveText("default");
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(0);
+});
+
+test("A5-02 emits only for changed full order and supports a hidden programmatic source", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  await page.locator("#reorderColumn").click();
+  await expect(page.locator("#layoutStatus")).toContainText("1 reorder: 0 x 0; c1,c0,c2");
+  await page.locator("#reorderColumn").click();
+  await expect(page.locator("#layoutStatus")).toContainText("1 reorder: 0 x 0; c1,c0,c2");
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("gethen-demo-reorder-hidden-column"));
+  });
+  await expect(page.locator("#layoutStatus")).toContainText("2 reorder: 0 x 0; c1,internalKey,c0,c2");
+  await expect(dataCell(page, 0, 0)).toHaveText("R1 Column 2");
+  await expect(dataCell(page, 0, 1)).toHaveText("1");
+});
+
+test("A5-02 blocks reordering while an editor owns the interaction", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?alpha3=on");
+  await dataCell(page, 0, 1).dblclick();
+  const editor = page.locator("[data-gethen-editor='true']");
+  await editor.fill("draft remains");
+
+  await dragColumn(page, "Column 2", "Column 4");
+  await expect(editor).toHaveValue("draft remains");
+  await expect(page.locator("#layoutStatus")).toHaveText("default");
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(0);
+});
+
+test("A5-02 arbitrates vertical touch scrolling and cleans up a cancelled pen drag", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html");
+  const grid = page.getByRole("grid");
+  const header = page.getByRole("columnheader", { name: "Column 2", exact: true });
+  const bounds = await header.boundingBox();
+  if (!bounds) throw new Error("Column header bounds are unavailable.");
+  const x = bounds.x + bounds.width / 2;
+  const y = bounds.y + bounds.height / 2;
+
+  await header.dispatchEvent("pointerdown", {
+    pointerId: 41, pointerType: "touch", isPrimary: true, button: 0, clientX: x, clientY: y
+  });
+  await grid.dispatchEvent("pointermove", {
+    pointerId: 41, pointerType: "touch", isPrimary: true, buttons: 1, clientX: x, clientY: y + 10
+  });
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(0);
+
+  await header.dispatchEvent("pointerdown", {
+    pointerId: 42, pointerType: "pen", isPrimary: true, button: 0, clientX: x, clientY: y
+  });
+  await grid.dispatchEvent("pointermove", {
+    pointerId: 42, pointerType: "pen", isPrimary: true, buttons: 1, clientX: x + 8, clientY: y
+  });
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(1);
+  await grid.dispatchEvent("pointercancel", {
+    pointerId: 42, pointerType: "pen", isPrimary: true, button: 0, clientX: x + 8, clientY: y
+  });
+  await expect(page.locator("[data-gethen-column-drag-ghost='true']")).toHaveCount(0);
+  await expect(page.locator("#layoutStatus")).toHaveText("default");
 });
 
 test("Alpha 3 JSON editor validates, commits, and reports lifecycle state", async ({ page }) => {
@@ -518,6 +686,25 @@ test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
     /demo-approved-cell/
   );
   await expect(page.locator('[data-gethen-pinned-bottom="true"]')).not.toHaveCount(0);
+});
+
+test("A5-02 Angular toggles column reordering without remounting the grid", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html");
+  const grid = page.getByRole("grid");
+  await grid.evaluate((element) => {
+    element.dataset.mountIdentity = "preserved";
+  });
+
+  await page.locator("#toggleColumnReordering").click();
+  await expect(grid).toHaveAttribute("data-mount-identity", "preserved");
+  await expect(page.locator("[data-gethen-column-reorder='true']")).toHaveCount(0);
+
+  await page.locator("#toggleColumnReordering").click();
+  await expect(grid).toHaveAttribute("data-mount-identity", "preserved");
+  await expect(page.getByRole("columnheader", { name: "Column 1", exact: true })).toHaveAttribute(
+    "data-gethen-column-reorder",
+    "true"
+  );
 });
 
 test("Angular demo relays selection and edit events", async ({ page }) => {

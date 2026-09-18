@@ -101,6 +101,10 @@ export function applyVirtualDomGridTheme(
     ["--gethen-active-cell-border", theme?.activeCellBorder], ["--gethen-active-cell-background", theme?.activeCellBackground],
     ["--gethen-selection-background", theme?.selectionBackground], ["--gethen-readonly-text-color", theme?.readonlyTextColor],
     ["--gethen-invalid-color", theme?.invalidColor], ["--gethen-editor-focus-color", theme?.editorFocusColor],
+    ["--gethen-header-focus-color", theme?.headerFocusColor],
+    ["--gethen-column-drag-source-background", theme?.columnDragSourceBackground],
+    ["--gethen-column-drag-ghost-background", theme?.columnDragGhostBackground],
+    ["--gethen-column-drop-indicator-color", theme?.columnDropIndicatorColor],
     ["--gethen-cell-padding", theme?.cellPadding], ["--gethen-font-family", theme?.fontFamily],
     ["--gethen-font-size", theme?.fontSize]
   ];

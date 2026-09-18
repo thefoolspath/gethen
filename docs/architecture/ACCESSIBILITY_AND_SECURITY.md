@@ -1,10 +1,10 @@
 # Accessibility And Security Architecture
 
-Last reviewed: 2026-08-11.
+Last reviewed: 2026-09-18.
 
 Initial alpha note: the virtualized DOM renderer represents the active cell with `aria-activedescendant`, cell `aria-selected`, and row/column indexes. Full screen-reader validation is optional during alpha and required before Beta/1.0 release confidence.
 
-Status: Alpha 4 grid-shell ARIA corrections plus Alpha 3 keyboard, trusted-extension, and untrusted-input boundaries are implemented as described below. Alpha 3 passed a manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome validation remains open and is mandatory before Beta/1.0.
+Status: Alpha 4 grid-shell ARIA corrections, Alpha 5 A5-02 accessible column reordering, and the Alpha 3 keyboard, trusted-extension, and untrusted-input boundaries are implemented as described below. Alpha 3 passed a manual keyboard-only Chrome walkthrough. Manual NVDA/Chrome validation remains open and is mandatory before Beta/1.0.
 
 ## Accessibility
 
@@ -38,3 +38,5 @@ Initial Alpha 2 direct paste is disabled by default and reads `text/plain` only.
 Alpha 3 custom renderers and editors are trusted application code supplied by the host app. They receive DOM hosts and may execute application logic; they must never be populated from protocol callbacks or untrusted cell content. Built-in JSON editing parses only to validate syntax and stores inert Protocol v1 text. Angular template/component registrations are resolved only from host-provided registries, while Core remains framework-neutral.
 
 Multiple frozen panes retain one logical active descendant, normalized row/column indexes, and virtualized `aria-selected` state. Automated keyboard/browser coverage exists for layout and editing, but no WCAG or screen-reader certification is claimed.
+
+Alpha 5 column reordering preserves the grid's single tab stop and moves `aria-activedescendant` between body cells and column headers. Header navigation uses Arrow/Home/End keys; `Alt+Shift+ArrowLeft` and `Alt+Shift+ArrowRight` provide keyboard-equivalent movement, and a polite live region reports successful moves or frozen-boundary rejection. Pointer drag uses the same identity and boundary rules. Automated Chromium coverage does not replace the open manual NVDA/Chrome gate.

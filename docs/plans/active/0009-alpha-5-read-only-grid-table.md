@@ -1,8 +1,8 @@
 # Alpha 5 Read-Only Grid Table Execution Plan
 
-Last reviewed: 2026-09-15.
+Last reviewed: 2026-09-18.
 
-Status: Ready for implementation. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
+Status: In implementation. A5-01 and A5-02 are implemented and locally verified; A5-03 through A5-06 remain open. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
 
 ## Goal
 
@@ -41,10 +41,10 @@ Deliver `0.0.0-alpha.5` by adding a read-only Grid Table mode to the existing Co
 ### A5-02 Column Reordering
 
 - [x] Add declarative per-column initial widths while preserving persisted `GridLayoutState` widths as the higher-precedence host choice and keeping row height grid-wide.
-- [ ] Add pointer drag-and-drop reordering to column headers.
-- [ ] Add keyboard move-left and move-right commands with discoverable labels and focus retention.
-- [ ] Persist reordered columns through the existing `GridLayoutState` boundary and emit the existing reorder reason.
-- [ ] Preserve frozen leading-column constraints, hidden-column identity, header classes, widths, and virtualized column geometry.
+- [x] Add pointer drag-and-drop reordering to column headers.
+- [x] Add keyboard move-left and move-right commands with discoverable labels and focus retention.
+- [x] Persist reordered columns through the existing `GridLayoutState` boundary and emit the existing reorder reason.
+- [x] Preserve frozen leading-column constraints, hidden-column identity, header classes, widths, and virtualized column geometry.
 
 ### A5-03 Shared Query State And Header Sorting
 

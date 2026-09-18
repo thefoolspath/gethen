@@ -6,6 +6,10 @@
     <span class="demo-stat">Range<strong id="selectedRange">{{ selectedRange() }}</strong></span>
     <span class="demo-stat">Last change<strong id="lastChange">{{ lastChange() }}</strong></span>
     <span class="demo-stat">Last paste<strong id="pasteStatus">{{ pasteStatus() }}</strong></span>
+    <span class="demo-stat">Layout<strong id="layoutStatus">{{ layoutStatus() }}</strong></span>
+    <button id="toggleColumnReordering" type="button" (click)="toggleColumnReordering()">
+      {{ columnReordering() ? "Disable" : "Enable" }} column reordering
+    </button>
   </header>
   <section class="demo-grid">
     <gethen-grid
@@ -16,10 +20,12 @@
       [columnWidth]="132"
       [styling]="styling"
       [clipboard]="clipboard"
+      [columnReordering]="columnReordering()"
       (selectionChange)="handleSelection($event)"
       (selectionRangeChange)="handleSelectionRange($event)"
       (cellChange)="handleCellChange($event)"
       (pasteResult)="handlePaste($event)"
+      (layoutChange)="handleLayoutChange($event)"
     />
   </section>
 </main>

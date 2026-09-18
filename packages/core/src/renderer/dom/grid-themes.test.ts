@@ -21,6 +21,10 @@ const themeKeys = [
   "readonlyTextColor",
   "invalidColor",
   "editorFocusColor",
+  "headerFocusColor",
+  "columnDragSourceBackground",
+  "columnDragGhostBackground",
+  "columnDropIndicatorColor",
   "cellPadding",
   "fontFamily",
   "fontSize",
@@ -57,7 +61,9 @@ describe("official Gethen grid themes", () => {
       headerBackground: "#E8F5EF",
       selectionBackground: "#D8F5E8",
       activeCellBorder: "#087F5B",
-      editorFocusColor: "#6848D8"
+      editorFocusColor: "#6848D8",
+      headerFocusColor: "#087F5B",
+      columnDropIndicatorColor: "#6848D8"
     });
     expect(gethenDarkTheme).toMatchObject({
       background: "#0D1512",
@@ -65,7 +71,9 @@ describe("official Gethen grid themes", () => {
       headerBackground: "#14201B",
       selectionBackground: "#12392B",
       activeCellBorder: "#18D98B",
-      editorFocusColor: "#A7F3D0"
+      editorFocusColor: "#A7F3D0",
+      headerFocusColor: "#18D98B",
+      columnDropIndicatorColor: "#A7F3D0"
     });
   });
 
@@ -80,6 +88,8 @@ describe("official Gethen grid themes", () => {
     expect(contrast(theme.invalidColor!, theme.background!)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(theme.activeCellBorder!, theme.activeCellBackground!)).toBeGreaterThanOrEqual(3);
     expect(contrast(theme.editorFocusColor!, theme.background!)).toBeGreaterThanOrEqual(3);
+    expect(contrast(theme.headerFocusColor!, theme.headerBackground!)).toBeGreaterThanOrEqual(3);
+    expect(contrast(theme.columnDropIndicatorColor!, theme.headerBackground!)).toBeGreaterThanOrEqual(3);
   });
 });
 
