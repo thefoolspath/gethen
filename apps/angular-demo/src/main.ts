@@ -1,11 +1,12 @@
 import "@angular/compiler";
 import { Component, signal } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
-import { GethenGridComponent } from "@thefoolspath/gethen-angular";
+import { GethenGridComponent, GridSortingMode } from "@thefoolspath/gethen-angular";
 import type {
   GethenGridCellChange,
   GethenGridPasteResult,
   GethenGridLayoutChange,
+  GethenGridQueryChange,
   GethenGridSelection,
   GethenGridSelectionRange
 } from "@thefoolspath/gethen-angular";
@@ -16,6 +17,14 @@ import type {
   GridStylingOptions
 } from "@thefoolspath/gethen-core";
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
+
+const sortingParameter = new URLSearchParams(window.location.search).get("sortingMode");
+const sortingDemoEnabled = sortingParameter !== null;
+const normalizedSortingParameter = sortingParameter?.toLowerCase();
+const initialSortingMode: GridSortingMode = normalizedSortingParameter === GridSortingMode.Single
+  ? GridSortingMode.Single
+  : normalizedSortingParameter === GridSortingMode.Multiple || normalizedSortingParameter === "multi"
+    ? GridSortingMode.Multiple : GridSortingMode.None;
 
 const columns: readonly GridColumnView[] = Array.from({ length: 32 }, (_, columnIndex) => ({
   id: `c${columnIndex}`,
@@ -51,7 +60,9 @@ const rows: readonly GridRow[] = Array.from({ length: 50000 }, (_, rowIndex) => 
 })
 export class DemoAppComponent {
   protected readonly columns = columns;
-  protected readonly rows = rows;
+  protected readonly rows = sortingDemoEnabled ? rows.slice(0, 100) : rows;
+  protected readonly sortingDemoEnabled = sortingDemoEnabled;
+  protected readonly sortingMode = signal<GridSortingMode>(initialSortingMode);
   protected readonly pinnedBottomRows: readonly GridRow[] = [{
     id: "summary",
     cells: { c0: rows.length, c1: "Rows loaded" }
@@ -61,6 +72,7 @@ export class DemoAppComponent {
   protected readonly selectedRange = signal("R1:C1–R1:C1");
   protected readonly pasteStatus = signal("None");
   protected readonly layoutStatus = signal("default");
+  protected readonly sortStatus = signal("none");
   protected readonly columnReordering = signal(true);
   protected readonly styling: GridStylingOptions = {
     getCellClass: ({ column, value }) =>
@@ -101,8 +113,19 @@ export class DemoAppComponent {
     this.layoutStatus.set(`${event.reason}: ${event.state.columns.map((column) => column.columnId).join(",")}`);
   }
 
+  protected handleQueryChange(event: GethenGridQueryChange): void {
+    this.sortStatus.set(`${event.status}: ${event.state.sort.map((sort) =>
+      `${sort.columnId}:${sort.direction}`).join(",")}`);
+  }
+
   protected toggleColumnReordering(): void {
     this.columnReordering.update((enabled) => !enabled);
+  }
+
+  protected cycleSortingMode(): void {
+    this.sortingMode.update((mode) => mode === GridSortingMode.None
+      ? GridSortingMode.Single : mode === GridSortingMode.Single
+        ? GridSortingMode.Multiple : GridSortingMode.None);
   }
 }
 

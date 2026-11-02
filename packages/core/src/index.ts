@@ -74,6 +74,8 @@ export {
 
 export { createGridWorkerEngine } from "./engine/grid-worker-engine.js";
 
+export { GridSortingMode } from "./state/grid-query.js";
+
 export {
   gethenReadOnlyGridPreset,
   mountVirtualDomGrid
@@ -163,6 +165,12 @@ export type {
   GridLayoutEvent,
   GridLayoutState
 } from "./state/grid-layout.js";
+
+export type {
+  GridQueryEvent,
+  GridQueryState,
+  GridQueryStatus
+} from "./state/grid-query.js";
 
 export type {
   GridAggregateDescriptor,

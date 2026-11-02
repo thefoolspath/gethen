@@ -1,6 +1,11 @@
 import type { CellChangeEvent } from "@thefoolspath/gethen-protocol";
 
 import type { GridRow } from "../../contracts/grid-types.js";
+import { createGridColumnarBuffer, createGridWorkerShapeDefinition } from "../../contracts/engine-contract.js";
+import { createGridWorkerEngine } from "../../engine/grid-worker-engine.js";
+import type { GridWorkerEngine } from "../../engine/grid-worker-engine.js";
+import type { GridQueryEvent, GridQueryState, GridQueryStatus } from "../../state/grid-query.js";
+import { GridSortingMode, copyGridQueryState, nextHeaderSort, normalizeGridQueryState } from "../../state/grid-query.js";
 import type { GridClipboardOptions, GridPasteResult } from "../../state/grid-clipboard.js";
 import { prepareGridPaste } from "../../state/grid-clipboard.js";
 import type { GridColumnView, GridStylingOptions, VirtualDomGridTheme } from "./grid-customization.js";
@@ -80,6 +85,10 @@ export interface VirtualDomGridOptions<TRow extends GridRow = GridRow> {
   readonly history?: GridHistoryOptions | false;
   readonly readOnly?: boolean;
   readonly columnReordering?: boolean;
+  /** Header sorting is opt-in so existing grid interactions remain unchanged. */
+  readonly sortingMode?: GridSortingMode;
+  readonly queryState?: GridQueryState;
+  readonly onQueryChange?: (event: GridQueryEvent) => void;
   readonly onRender?: (metrics: VirtualDomGridRenderMetrics) => void;
   readonly onSelectionChange?: (selection: VirtualDomGridSelection) => void;
   readonly onSelectionRangeChange?: (selection: VirtualDomGridSelectionRange) => void;
@@ -97,6 +106,9 @@ export interface VirtualDomGrid {
   setTheme(theme: VirtualDomGridTheme | undefined): void;
   setReadOnly(readOnly: boolean): void;
   setColumnReordering(enabled: boolean): void;
+  setSortingMode(mode: GridSortingMode): Promise<void>;
+  getQueryState(): GridQueryState;
+  setQueryState(state: GridQueryState): Promise<void>;
   getLayoutState(): GridLayoutState;
   applyLayoutState(state: GridLayoutState): void;
   resizeColumn(columnId: string, width: number): void;
@@ -141,6 +153,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const viewport = document.createElement("div");
   const reorderInstructions = document.createElement("span");
   const reorderLiveRegion = document.createElement("span");
+  const queryLiveRegion = document.createElement("span");
   const instanceId = ++gridInstanceSequence;
   const activeHeaderId = `gethen-active-column-header-${instanceId}`;
   const reorderInstructionsId = `gethen-column-reorder-instructions-${instanceId}`;
@@ -165,10 +178,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const overscanColumns = options.overscanColumns ?? 2;
   const allColumns = options.columns;
   const sourceColumns = getVisibleColumns(allColumns);
-  const rows = options.rows.map((row) => ({
+  const sourceRows = options.rows.map((row) => ({
     ...row,
     cells: { ...row.cells }
   })) as TRow[];
+  let rows = sourceRows;
   const pinnedBottomRows = (options.pinnedBottomRows ?? []).map((row) => ({
     ...row,
     cells: { ...row.cells }
@@ -205,6 +219,16 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   let editState: { rowIndex: number; columnIndex: number; draftValue: CellChangeEvent["newValue"] } | null = null;
   let readOnly = options.readOnly === true;
   let columnReordering = options.columnReordering !== false;
+  let sortingMode = options.sortingMode ?? GridSortingMode.None;
+  let queryState = normalizeGridQueryState(options.queryState ?? { sort: [], filter: [] }, allColumns);
+  if (sortingMode === GridSortingMode.None) queryState = { ...queryState, sort: [] };
+  if (sortingMode === GridSortingMode.Single && queryState.sort.length > 1) queryState = { ...queryState, sort: queryState.sort.slice(0, 1) };
+  let appliedQueryState: GridQueryState = { sort: [], filter: [] };
+  let queryStatus: GridQueryStatus = "idle";
+  let queryRevision = 0;
+  let queryAbort: AbortController | undefined;
+  let queryEngine: GridWorkerEngine | undefined;
+  let destroyed = false;
   let mutationHandlersBound = false;
   let animationFrame = 0;
   let dragAnimationFrame = 0;
@@ -243,6 +267,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   reorderLiveRegion.setAttribute("aria-atomic", "true");
   reorderLiveRegion.dataset.gethenColumnReorderStatus = "true";
   applyVisuallyHiddenStyles(reorderLiveRegion);
+  queryLiveRegion.setAttribute("role", "status");
+  queryLiveRegion.setAttribute("aria-live", "polite");
+  queryLiveRegion.dataset.gethenQueryStatus = "true";
+  applyVisuallyHiddenStyles(queryLiveRegion);
 
   spacer.style.position = "absolute";
   spacer.style.inset = "0 auto auto 0";
@@ -254,7 +282,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   viewport.style.width = spacer.style.width;
   viewport.style.height = spacer.style.height;
 
-  grid.append(spacer, viewport, reorderInstructions, reorderLiveRegion);
+  grid.append(spacer, viewport, reorderInstructions, reorderLiveRegion, queryLiveRegion);
   container.replaceChildren(grid);
   const unsubscribeEditor = editorState.subscribe((state) => options.onEditorStateChange?.(state));
   const unsubscribeHistory = history?.subscribe((event) => options.onHistoryChange?.(event));
@@ -289,7 +317,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       pinnedBottomRows,
       layoutState: renderedLayoutState,
       styling: options.styling,
-      statusBar: options.statusBar,
+      statusBar: queryState.filter.length > 0 && options.statusBar !== false
+        ? {
+            ...options.statusBar,
+            totalRowCount: options.statusBar?.totalRowCount === undefined
+              ? sourceRows.length : options.statusBar.totalRowCount,
+            filteredRowCount: rows.length
+          }
+        : options.statusBar,
       activeCell,
       anchorCell,
       rowHeight,
@@ -301,6 +336,8 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       showRowNumbers,
       showStatusBar,
       columnReordering,
+      sortingMode,
+      queryState,
       focusedHeaderColumnId,
       draggingColumnId: dragState?.columnId,
       activeHeaderId,
@@ -493,14 +530,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
 
   function focusHeader(columnId: string): void {
     const columnIndex = columns.findIndex((column) => column.id === columnId);
-    if (!columnReordering || !showColumnHeaders || columnIndex < 0) return;
+    if ((!columnReordering && sortingMode === GridSortingMode.None) || !showColumnHeaders || columnIndex < 0) return;
     focusedHeaderColumnId = columnId;
     scrollHeaderIntoView(columnIndex);
     render();
   }
 
   function updateActiveDescendant(): void {
-    if (focusedHeaderColumnId && columnReordering && showColumnHeaders) {
+    if (focusedHeaderColumnId && (columnReordering || sortingMode !== GridSortingMode.None) && showColumnHeaders) {
       grid.setAttribute("aria-activedescendant", activeHeaderId);
     } else if (rows.length > 0 && columns.length > 0) {
       grid.setAttribute("aria-activedescendant", "gethen-active-cell");
@@ -604,6 +641,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           focusedHeaderColumnId = undefined;
           setActiveCell(activeCell.rowIndex, focusedIndex);
         }
+      } else if (sortingMode !== GridSortingMode.None && !event.altKey && !event.ctrlKey && !event.metaKey
+        && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        void applyHeaderSort(focusedHeaderColumnId);
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
       }
@@ -611,7 +652,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
 
     if (rows.length === 0) {
-      if (columnReordering && showColumnHeaders && event.key === "ArrowUp"
+      if ((columnReordering || sortingMode !== GridSortingMode.None) && showColumnHeaders && event.key === "ArrowUp"
         && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
         event.preventDefault();
         focusHeader(columns[0]!.id);
@@ -624,7 +665,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       setActiveCell(activeCell.rowIndex + 1, activeCell.columnIndex, event.shiftKey);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      if (columnReordering && showColumnHeaders && activeCell.rowIndex === 0
+      if ((columnReordering || sortingMode !== GridSortingMode.None) && showColumnHeaders && activeCell.rowIndex === 0
         && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
         focusHeader(columns[activeCell.columnIndex]!.id);
       } else {
@@ -705,8 +746,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   function handleColumnPointerUp(event: PointerEvent): void {
     if (!pointerCandidate || pointerCandidate.pointerId !== event.pointerId) return;
     const completedDrag = dragState;
+    const pointerCandidateColumnId = pointerCandidate.columnId;
     releasePointerCandidate();
-    if (!completedDrag) return;
+    if (!completedDrag) {
+      if (sortingMode !== GridSortingMode.None) void applyHeaderSort(pointerCandidateColumnId);
+      return;
+    }
 
     const targetIndex = completedDrag.validTarget ? completedDrag.targetIndex : undefined;
     const columnId = completedDrag.columnId;
@@ -951,6 +996,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       return;
     }
 
+    const header = target.closest<HTMLElement>("[role='columnheader'][data-column-id]");
+    if (sortingMode !== GridSortingMode.None && !columnReordering && header?.dataset.columnId) {
+      grid.focus({ preventScroll: true });
+      focusHeader(header.dataset.columnId);
+      void applyHeaderSort(header.dataset.columnId);
+      return;
+    }
+
     const cell = target.closest<HTMLElement>("[data-row-index][data-column-index]");
     const rowIndex = Number(cell?.dataset.rowIndex);
     const columnIndex = Number(cell?.dataset.columnIndex);
@@ -962,6 +1015,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       }
       focusedHeaderColumnId = undefined;
       grid.focus();
+      if (!event.shiftKey && activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex
+        && anchorCell.rowIndex === rowIndex && anchorCell.columnIndex === columnIndex) {
+        updateActiveDescendant();
+        return;
+      }
       setActiveCell(rowIndex, columnIndex, event.shiftKey);
 
     }
@@ -1362,7 +1420,125 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     if (!enabled) {
       releasePointerCandidate();
       cancelColumnDrag(false);
-      focusedHeaderColumnId = undefined;
+      if (sortingMode === GridSortingMode.None) focusedHeaderColumnId = undefined;
+    }
+    render();
+  }
+
+  async function applyHeaderSort(columnId: string): Promise<void> {
+    if (sortingMode === GridSortingMode.None || editState) return;
+    try {
+      await setQueryState(nextHeaderSort(queryState, columnId, sortingMode, allColumns));
+    } catch {
+      // The error has already been reported through onQueryChange.
+    }
+  }
+
+  async function setQueryState(nextState: GridQueryState): Promise<void> {
+    if (destroyed) throw new Error("The grid is destroyed.");
+    const normalized = normalizeGridQueryState(nextState, allColumns);
+    if (sortingMode === GridSortingMode.None && normalized.sort.length > 0) {
+      throw new Error("Sorting is disabled for this grid.");
+    }
+    if (sortingMode === GridSortingMode.Single && normalized.sort.length > 1) {
+      throw new Error("Single sorting mode accepts one sort column.");
+    }
+    if (JSON.stringify(normalized) === JSON.stringify(queryState)
+      && (queryStatus === "loading" || queryStatus === "ready")) return;
+    const revision = ++queryRevision;
+    queryAbort?.abort();
+    queryAbort = undefined;
+    queryState = normalized;
+    queryStatus = "loading";
+    grid.setAttribute("aria-busy", "true");
+    options.onQueryChange?.({ state: copyGridQueryState(queryState), status: queryStatus });
+    render();
+    if (queryState.sort.length === 0 && queryState.filter.length === 0) {
+      applyQueryRows(sourceRows);
+      appliedQueryState = queryState;
+      finishQuery();
+      return;
+    }
+    const controller = new AbortController();
+    queryAbort = controller;
+    try {
+      queryEngine ??= createGridWorkerEngine();
+      const data = createGridColumnarBuffer(sourceRows, allColumns.map((column) => ({
+        columnId: column.id,
+        storage: column.dataType === "number" ? "float64"
+          : column.dataType === "boolean" ? "boolean" : "utf8"
+      })));
+      const result = await queryEngine.shape({
+        data,
+        definition: createGridWorkerShapeDefinition({ sort: normalized.sort, filter: normalized.filter }),
+        signal: controller.signal
+      });
+      if (destroyed || revision !== queryRevision) return;
+      const sourceById = new Map(sourceRows.map((row) => [row.id, row]));
+      applyQueryRows(result.rows.map((row) => {
+        const source = sourceById.get(row.id);
+        if (!source) throw new Error(`Worker returned unknown row '${row.id}'.`);
+        return source;
+      }));
+      appliedQueryState = normalized;
+      finishQuery();
+    } catch (error) {
+      if (destroyed || revision !== queryRevision) return;
+      queryState = appliedQueryState;
+      queryStatus = "error";
+      grid.removeAttribute("aria-busy");
+      const message = error instanceof Error ? error.message : String(error);
+      queryLiveRegion.textContent = `Sort failed: ${message}`;
+      options.onQueryChange?.({ state: copyGridQueryState(queryState), status: queryStatus, error: message });
+      render();
+      throw error;
+    } finally {
+      if (queryAbort === controller) queryAbort = undefined;
+    }
+  }
+
+  function applyQueryRows(nextRows: readonly TRow[]): void {
+    const previousScrollTop = grid.scrollTop;
+    const previousScrollLeft = grid.scrollLeft;
+    rows = [...nextRows];
+    activeCell.rowIndex = clamp(activeCell.rowIndex, 0, Math.max(0, rows.length - 1));
+    anchorCell.rowIndex = clamp(anchorCell.rowIndex, 0, Math.max(0, rows.length - 1));
+    grid.setAttribute("aria-rowcount", String(rows.length + pinnedBottomRows.length + (showColumnHeaders ? 1 : 0)));
+    spacer.style.height = `${headerHeight + rows.length * rowHeight + pinnedHeight + statusHeight}px`;
+    viewport.style.height = spacer.style.height;
+    grid.scrollTop = rows.length === 0 ? 0 : previousScrollTop;
+    grid.scrollLeft = previousScrollLeft;
+    if (rows.length > 0 && columns.length > 0) {
+      const selection = getSelectionAt(activeCell.rowIndex, activeCell.columnIndex);
+      options.onSelectionChange?.(selection);
+      options.onSelectionRangeChange?.(createSelectionRange(selection));
+    }
+    render();
+  }
+
+  function finishQuery(): void {
+    queryStatus = "ready";
+    grid.removeAttribute("aria-busy");
+    const primary = queryState.sort[0];
+    queryLiveRegion.textContent = primary
+      ? `Sorted by ${getColumnTitle(primary.columnId)} ${primary.direction === "asc" ? "ascending" : "descending"}.`
+      : "Sorting cleared.";
+    options.onQueryChange?.({ state: copyGridQueryState(queryState), status: queryStatus });
+    render();
+  }
+
+  async function setSortingMode(mode: GridSortingMode): Promise<void> {
+    if (mode !== GridSortingMode.None && mode !== GridSortingMode.Single && mode !== GridSortingMode.Multiple) {
+      throw new Error(`Unknown sorting mode '${String(mode)}'.`);
+    }
+    if (sortingMode === mode) return;
+    sortingMode = mode;
+    if ((mode === GridSortingMode.None && queryState.sort.length > 0)
+      || (mode === GridSortingMode.Single && queryState.sort.length > 1)) {
+      await setQueryState({
+        sort: mode === GridSortingMode.None ? [] : queryState.sort.slice(0, 1),
+        filter: queryState.filter
+      });
     }
     render();
   }
@@ -1379,10 +1555,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   window.addEventListener("resize", scheduleRender);
   window.addEventListener("keydown", handleColumnDragKeyDown, true);
   render();
+  if (queryState.sort.length > 0 || queryState.filter.length > 0) void setQueryState(queryState).catch(() => {});
 
   return {
     element: grid,
     destroy() {
+      destroyed = true;
+      queryAbort?.abort();
+      queryEngine?.destroy();
       editorCoordinator.destroy();
       editState = null;
       if (animationFrame !== 0) {
@@ -1415,6 +1595,9 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     setTheme: (theme) => applyVirtualDomGridTheme(grid, theme),
     setReadOnly,
     setColumnReordering,
+    setSortingMode,
+    getQueryState: () => copyGridQueryState(queryState),
+    setQueryState,
     getLayoutState: () => layoutState,
     applyLayoutState: (state) => setLayoutState(state, "apply"),
     resizeColumn: (columnId, width) => setLayoutState(

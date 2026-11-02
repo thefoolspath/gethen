@@ -1,5 +1,7 @@
 import type { GridRow } from "../../contracts/grid-types.js";
 import type { GridLayoutState } from "../../state/grid-layout.js";
+import type { GridQueryState } from "../../state/grid-query.js";
+import { GridSortingMode } from "../../state/grid-query.js";
 import type { GridColumnView, GridStylingOptions } from "./grid-customization.js";
 import { resolveGridClassNames } from "./grid-customization.js";
 import type { GridStatusBarOptions } from "./grid-shell.js";
@@ -29,6 +31,8 @@ export interface VirtualDomGridShellContext<TRow extends GridRow> {
   readonly showRowNumbers: boolean;
   readonly showStatusBar: boolean;
   readonly columnReordering: boolean;
+  readonly sortingMode: GridSortingMode;
+  readonly queryState: GridQueryState;
   readonly focusedHeaderColumnId: string | undefined;
   readonly draggingColumnId: string | undefined;
   readonly activeHeaderId: string;
@@ -111,6 +115,29 @@ function appendColumnHeaders<TRow extends GridRow>(
     header.dataset.columnIndex = String(columnIndex);
     header.dataset.columnId = column.id;
     header.textContent = column.title;
+    if (context.sortingMode !== GridSortingMode.None) {
+      const sortIndex = context.queryState.sort.findIndex((item) => item.columnId === column.id);
+      const sort = context.queryState.sort[sortIndex];
+      header.dataset.gethenSort = "true";
+      header.setAttribute("aria-sort", sortIndex === 0 && sort
+        ? sort.direction === "asc" ? "ascending" : "descending" : "none");
+      const sortInstruction = context.sortingMode === GridSortingMode.Multiple
+        ? "Press Enter to sort. Other columns add sorting priority."
+        : "Press Enter to change sort direction.";
+      header.setAttribute("aria-description", sort
+        ? context.queryState.sort.length > 1
+          ? `Sort priority ${sortIndex + 1} of ${context.queryState.sort.length}. ${sortInstruction}`
+          : `Sorted ${sort.direction === "asc" ? "ascending" : "descending"}. ${sortInstruction}`
+        : sortInstruction);
+      if (sort) {
+        const marker = document.createElement("span");
+        marker.setAttribute("aria-hidden", "true");
+        if (context.queryState.sort.length > 1) marker.dataset.gethenSortPriority = String(sortIndex + 1);
+        marker.textContent = ` ${sort.direction === "asc" ? "▲" : "▼"}${context.queryState.sort.length > 1 ? sortIndex + 1 : ""}`;
+        marker.style.marginLeft = "4px";
+        header.appendChild(marker);
+      }
+    }
     const headerFocused = context.focusedHeaderColumnId === column.id;
     const headerDragging = context.draggingColumnId === column.id;
     if (headerFocused) header.id = context.activeHeaderId;
@@ -143,7 +170,8 @@ function appendColumnHeaders<TRow extends GridRow>(
       background: "var(--gethen-header-background, #f3f6f9)",
       color: "var(--gethen-header-text-color, #344054)",
       fontWeight: "650",
-      cursor: context.columnReordering ? (headerDragging ? "grabbing" : "grab") : "default",
+      cursor: context.columnReordering ? (headerDragging ? "grabbing" : "grab")
+        : context.sortingMode !== GridSortingMode.None ? "pointer" : "default",
       touchAction: context.columnReordering ? "pan-y" : "auto",
       userSelect: "none",
       opacity: headerDragging ? "0.55" : "1",

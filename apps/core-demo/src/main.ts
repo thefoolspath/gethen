@@ -3,9 +3,10 @@ import {
   createGridAggregatePinnedRow,
   createGridWorkerShapeDefinition,
   createGridWorkerEngine,
+  GridSortingMode,
   mountVirtualDomGrid
 } from "@thefoolspath/gethen-core";
-import type { GridColumnView, GridRow } from "@thefoolspath/gethen-core";
+import type { GridColumnView, GridQueryState, GridRow } from "@thefoolspath/gethen-core";
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
 const searchParams = new URLSearchParams(window.location.search);
@@ -13,6 +14,13 @@ const customizationEnabled = searchParams.get("customization") !== "off";
 const alpha3DemoEnabled = searchParams.get("alpha3") === "on";
 const asyncEditorDemoEnabled = searchParams.get("asyncEditor") === "on";
 const emptyDemoEnabled = searchParams.get("empty") === "on";
+const sortingParameter = searchParams.get("sorting");
+const sortingDemoEnabled = sortingParameter !== null;
+const normalizedSortingParameter = sortingParameter?.toLowerCase();
+const sortingMode: GridSortingMode = normalizedSortingParameter === "on" || normalizedSortingParameter === "multi"
+  || normalizedSortingParameter === GridSortingMode.Multiple
+  ? GridSortingMode.Multiple : normalizedSortingParameter === GridSortingMode.Single
+    ? GridSortingMode.Single : GridSortingMode.None;
 const columns: readonly GridColumnView[] = [
   ...Array.from({ length: 50 }, (_, columnIndex): GridColumnView => ({
     id: `c${columnIndex}`,
@@ -125,12 +133,13 @@ const pinnedBottomRows = [createGridAggregatePinnedRow({
   labelColumnId: "c1",
   label: "Total / average"
 })];
-const renderedRows = emptyDemoEnabled ? [] : rows;
+const renderedRows = emptyDemoEnabled ? [] : sortingDemoEnabled ? rows.slice(0, 100) : rows;
 let layoutEventCount = 0;
 
 const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   columns,
   rows: renderedRows,
+  sortingMode,
   pinnedBottomRows: emptyDemoEnabled ? [] : pinnedBottomRows,
   statusBar: { totalRowCount: renderedRows.length },
   ...(customizationEnabled
@@ -179,6 +188,10 @@ const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
       `${++layoutEventCount} ${event.reason}: ${event.state.frozenRowCount} x ${event.state.frozenColumnCount}; `
       + event.state.columns.map((column) => column.columnId).join(",");
   },
+  onQueryChange(event) {
+    requireElement("workerStatus").textContent = `${event.status}: ${event.state.sort.map((sort) =>
+      `${sort.columnId}:${sort.direction}`).join(",")}`;
+  },
   onHistoryChange(event) {
     requireElement("historyStatus").textContent = `${event.undoCount} undo / ${event.redoCount} redo`;
   },
@@ -187,8 +200,40 @@ const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   }
 });
 
+if (sortingDemoEnabled) {
+  requireElement("sortingControls").hidden = false;
+  const modeSelect = requireElement("sortingMode") as HTMLSelectElement;
+  modeSelect.value = sortingMode;
+  modeSelect.addEventListener("change", () => {
+    const mode = modeSelect.value as GridSortingMode;
+    void gridApi.setSortingMode(mode).catch((error: unknown) => {
+      requireElement("workerStatus").textContent = error instanceof Error ? error.message : String(error);
+    });
+  });
+
+  const applyMultiSort = async (withFilter: boolean): Promise<void> => {
+    try {
+      await gridApi.setSortingMode(GridSortingMode.Multiple);
+      modeSelect.value = GridSortingMode.Multiple;
+      await gridApi.setQueryState({
+        sort: [{ columnId: "c2", direction: "asc" }, { columnId: "c5", direction: "desc" }],
+        filter: withFilter ? [{ columnId: "c0", operator: "greaterThan", value: 50 }] : []
+      });
+    } catch (error) {
+      requireElement("workerStatus").textContent = error instanceof Error ? error.message : String(error);
+    }
+  };
+  requireElement("applyMultiSort").addEventListener("click", () => void applyMultiSort(false));
+  requireElement("applyMultiSortFilter").addEventListener("click", () => void applyMultiSort(true));
+}
+
 window.addEventListener("gethen-demo-destroy-grid", () => gridApi.destroy(), { once: true });
 window.addEventListener("gethen-demo-reorder-hidden-column", () => gridApi.reorderColumn("internalKey", 1));
+window.addEventListener("gethen-demo-set-query-state", (event) => {
+  void gridApi.setQueryState((event as CustomEvent<GridQueryState>).detail).catch((error: unknown) => {
+    requireElement("workerStatus").textContent = error instanceof Error ? error.message : String(error);
+  });
+});
 
 requireElement("resizeColumn").addEventListener("click", () => gridApi.resizeColumn("c0", 220));
 requireElement("reorderColumn").addEventListener("click", () => gridApi.reorderColumn("c1", 0));

@@ -20,6 +20,8 @@ import type {
   GridLayoutEvent,
   GridLayoutState,
   GridPasteResult,
+  GridQueryEvent,
+  GridQueryState,
   GridRowNumberOptions,
   GridRow,
   GridStatusBarOptions,
@@ -29,7 +31,7 @@ import type {
   VirtualDomGridSelectionRange,
   VirtualDomGridTheme
 } from "@thefoolspath/gethen-core";
-import { mountVirtualDomGrid } from "@thefoolspath/gethen-core";
+import { GridSortingMode, mountVirtualDomGrid } from "@thefoolspath/gethen-core";
 import type {
   GethenAngularEditorRegistry,
   GethenAngularGridColumn,
@@ -44,6 +46,7 @@ export type GethenGridPasteResult = GridPasteResult;
 export type GethenGridLayoutChange = GridLayoutEvent;
 export type GethenGridHistoryChange = GridHistoryEvent<CellChangeEvent>;
 export type GethenGridEditorStateChange = GridEditorSnapshot;
+export type GethenGridQueryChange = GridQueryEvent;
 
 @Component({
   selector: "gethen-grid",
@@ -69,6 +72,8 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() history: GridHistoryOptions | false = {};
   @Input() readOnly = false;
   @Input() columnReordering = true;
+  @Input() sortingMode: GridSortingMode = GridSortingMode.None;
+  @Input() queryState: GridQueryState | undefined;
   @Input() rendererRegistry: GethenAngularRendererRegistry | undefined;
   @Input() editorRegistry: GethenAngularEditorRegistry | undefined;
 
@@ -79,6 +84,7 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Output() layoutChange = new EventEmitter<GethenGridLayoutChange>();
   @Output() historyChange = new EventEmitter<GethenGridHistoryChange>();
   @Output() editorStateChange = new EventEmitter<GethenGridEditorStateChange>();
+  @Output() queryChange = new EventEmitter<GethenGridQueryChange>();
 
   @ViewChild("host", { static: true }) private host?: ElementRef<HTMLElement>;
 
@@ -97,10 +103,17 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
       const changedInputs = Object.keys(changes);
       if (this.grid && changedInputs.every(
         (input) => input === "theme" || input === "readOnly" || input === "columnReordering"
+          || input === "sortingMode" || input === "queryState"
       )) {
         if (changes["theme"]) this.grid.setTheme(this.theme);
         if (changes["readOnly"]) this.grid.setReadOnly(this.readOnly);
         if (changes["columnReordering"]) this.grid.setColumnReordering(this.columnReordering);
+        if (changes["sortingMode"] || changes["queryState"]) {
+          void (async () => {
+            if (changes["sortingMode"]) await this.grid?.setSortingMode(this.sortingMode);
+            if (changes["queryState"] && this.queryState) await this.grid?.setQueryState(this.queryState);
+          })().catch(() => {});
+        }
         return;
       }
       this.mountGrid();
@@ -136,6 +149,14 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
     return this.grid?.getLayoutState();
   }
 
+  getQueryState(): GridQueryState | undefined {
+    return this.grid?.getQueryState();
+  }
+
+  setQueryState(state: GridQueryState): Promise<void> {
+    return this.grid?.setQueryState(state) ?? Promise.resolve();
+  }
+
   private mountGrid(): void {
     const hostElement = this.host?.nativeElement;
 
@@ -168,13 +189,16 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
       history: this.history,
       readOnly: this.readOnly,
       columnReordering: this.columnReordering,
+      sortingMode: this.sortingMode,
+      ...(this.queryState ? { queryState: this.queryState } : {}),
       onCellChange: (change) => this.cellChange.emit(change),
       onSelectionChange: (selection) => this.selectionChange.emit(selection),
       onSelectionRangeChange: (selection) => this.selectionRangeChange.emit(selection),
       onPaste: (result) => this.pasteResult.emit(result),
       onLayoutChange: (event) => this.layoutChange.emit(event),
       onHistoryChange: (event) => this.historyChange.emit(event),
-      onEditorStateChange: (state) => this.editorStateChange.emit(state)
+      onEditorStateChange: (state) => this.editorStateChange.emit(state),
+      onQueryChange: (event) => this.queryChange.emit(event)
     });
   }
 }

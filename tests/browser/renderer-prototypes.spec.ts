@@ -54,6 +54,166 @@ test("core demo mounts the virtualized DOM renderer", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html");
   await expect(page.getByRole("grid")).toBeVisible();
   await expect(page.locator("#renderedCells")).not.toHaveText("0");
+  await expect(page.getByRole("link", { name: "Open sorting demo" })).toHaveAttribute("href", "?sorting=multiple");
+});
+
+test("Core demo exposes a multi-sort preset and mode control", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=on");
+  const mode = page.locator("#sortingMode");
+  await expect(page.locator("#sortingControls")).toBeVisible();
+  await expect(mode).toHaveValue("multiple");
+  await page.locator("#applyMultiSort").click();
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc,c5:desc");
+  await expect(dataCell(page, 0, 0)).toHaveText("100");
+  await expect(dataCell(page, 1, 0)).toHaveText("98");
+  await expect(page.locator("[data-gethen-sort-priority]")).toHaveCount(2);
+
+  await page.locator("#applyMultiSortFilter").click();
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "52");
+  await expect(page.locator('[data-gethen-status-bar="true"]')).toHaveText("50 of 100 rows");
+
+  await mode.selectOption("single");
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc");
+  await expect(page.locator("[data-gethen-sort-priority]")).toHaveCount(0);
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "52");
+  await mode.selectOption("none");
+  await expect(page.locator('[role="columnheader"][data-column-id="c2"]')).not.toHaveAttribute("aria-sort", /.+/);
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "52");
+  await expect(dataCell(page, 0, 0)).toHaveText("51");
+});
+
+test("opt-in header sorting keeps viewport position and exposes multi-sort priority", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=on");
+  const grid = page.getByRole("grid");
+  const score = page.locator('[role="columnheader"][data-column-id="c0"]');
+  const active = page.locator('[role="columnheader"][data-column-id="c2"]');
+
+  await expect(score).toHaveAttribute("aria-sort", "none");
+  await score.click();
+  await expect(score).toHaveAttribute("aria-sort", "ascending");
+  await score.click();
+  await expect(score).toHaveAttribute("aria-sort", "descending");
+  await expect(dataCell(page, 0, 0)).toHaveText("100");
+  await expect(page.locator("#activeCell")).toHaveText("row-100 / c0");
+  await expect(score.locator("span[aria-hidden='true']")).toHaveText("▼");
+  await expect(score.locator("[data-gethen-sort-priority]")).toHaveCount(0);
+  await score.click();
+  await expect(score).toHaveAttribute("aria-sort", "ascending");
+  await expect(score.locator("span[aria-hidden='true']")).toHaveText("▲");
+
+  await active.click();
+  await expect(active).toHaveAttribute("aria-description", /Sort priority 2 of 2/);
+  await expect(active).toHaveAttribute("aria-sort", "none");
+  await expect(score.locator("[data-gethen-sort-priority='1']")).toHaveText("▲1");
+  await expect(active.locator("[data-gethen-sort-priority='2']")).toHaveText("▲2");
+  await grid.press("Enter");
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c0:asc,c2:desc");
+  await expect(score.locator("[data-gethen-sort-priority='1']")).toHaveText("▲1");
+  await expect(active.locator("[data-gethen-sort-priority='2']")).toHaveText("▼2");
+
+  await page.evaluate(() => {
+    for (const direction of ["asc", "desc"] as const) {
+      window.dispatchEvent(new CustomEvent("gethen-demo-set-query-state", {
+        detail: { sort: [{ columnId: "c0", direction }], filter: [] }
+      }));
+    }
+  });
+  await expect(score).toHaveAttribute("aria-sort", "descending");
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c0:desc");
+});
+
+test("normal clicks in Multiple mode order tied primary values by the secondary direction", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple");
+  const boolean = page.locator('[role="columnheader"][data-column-id="c2"]');
+  const number = page.locator('[role="columnheader"][data-column-id="c5"]');
+  await boolean.click();
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc");
+  await expect(dataCell(page, 0, 0)).toHaveText("2");
+  await expect(boolean.locator("span[aria-hidden='true']")).toHaveText("▲");
+  await number.click();
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc,c5:asc");
+  await expect(dataCell(page, 0, 0)).toHaveText("2");
+  await number.click();
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc,c5:desc");
+  await expect(dataCell(page, 0, 0)).toHaveText("100");
+  await expect(dataCell(page, 1, 0)).toHaveText("98");
+  await expect(boolean.locator("[data-gethen-sort-priority='1']")).toHaveText("▲1");
+  await expect(number.locator("[data-gethen-sort-priority='2']")).toHaveText("▼2");
+  await page.getByRole("grid").press("Enter");
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc,c5:asc");
+  await expect(dataCell(page, 0, 0)).toHaveText("2");
+  await expect(number.locator("[data-gethen-sort-priority='2']")).toHaveText("▲2");
+});
+
+test("sorting changes visible rows at a fixed scroll position and selection index", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple");
+  const grid = page.getByRole("grid");
+  await grid.evaluate((element) => { element.scrollTop = 40 * 34; element.scrollLeft = 600; });
+  await dataCell(page, 40, 5).click();
+  const before = await grid.evaluate((element) => ({ top: element.scrollTop, left: element.scrollLeft }));
+  await page.locator('[role="columnheader"][data-column-id="c5"]').click();
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c5:asc");
+  await page.locator('[role="columnheader"][data-column-id="c5"]').click();
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c5:desc");
+  expect(await grid.evaluate((element) => ({ top: element.scrollTop, left: element.scrollLeft }))).toEqual(before);
+  await expect(dataCell(page, 40, 5)).toHaveText("360");
+  await expect(page.locator("#activeCell")).toHaveText("row-60 / c5");
+});
+
+test("single and none sorting modes constrain header interactions", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=single");
+  const score = page.locator('[role="columnheader"][data-column-id="c0"]');
+  const active = page.locator('[role="columnheader"][data-column-id="c2"]');
+  await score.click();
+  await active.click();
+  await expect(score).toHaveAttribute("aria-sort", "none");
+  await expect(active).toHaveAttribute("aria-sort", "ascending");
+  await expect(page.locator("[data-gethen-sort-priority]")).toHaveCount(0);
+  await expect(active.locator("span[aria-hidden='true']")).toHaveText("▲");
+
+  await page.goto("/apps/core-demo/index.html?sorting=none");
+  const disabled = page.locator('[role="columnheader"][data-column-id="c0"]');
+  await expect(disabled).not.toHaveAttribute("aria-sort", /.+/);
+  await disabled.click();
+  await expect(page.locator("#workerStatus")).toHaveText("idle");
+  await expect(dataCell(page, 0, 0)).toHaveText("1");
+});
+
+test("Core demo accepts enum-cased Single sorting URL", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=Single");
+  await expect(page.locator("#sortingMode")).toHaveValue("single");
+  const header = page.locator('[role="columnheader"][data-column-id="c0"]');
+  await header.click();
+  await expect(header).toHaveAttribute("aria-sort", "ascending");
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c0:asc");
+});
+
+test("programmatic query state filters rows and updates selection by position", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=on");
+  const grid = page.getByRole("grid");
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("gethen-demo-set-query-state", {
+    detail: { sort: [], filter: [{ columnId: "c0", operator: "greaterThan", value: 90 }] }
+  })));
+  await expect(grid).toHaveAttribute("aria-rowcount", "12");
+  await expect(page.locator('[data-gethen-status-bar="true"]')).toHaveText("10 of 100 rows");
+  await expect(page.locator("#activeCell")).toHaveText("row-91 / c0");
+  await expect(page.locator("#workerStatus")).toHaveText("ready:");
+});
+
+test("Core demo applies multi-sort and filter through one query state", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple");
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("gethen-demo-set-query-state", {
+    detail: {
+      sort: [{ columnId: "c2", direction: "asc" }, { columnId: "c5", direction: "desc" }],
+      filter: [{ columnId: "c0", operator: "greaterThan", value: 50 }]
+    }
+  })));
+  await expect(page.locator("#workerStatus")).toHaveText("ready: c2:asc,c5:desc");
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "52");
+  await expect(dataCell(page, 0, 0)).toHaveText("100");
+  await expect(page.locator("#activeCell")).toHaveText("row-100 / c0");
+  await expect(page.locator('[role="columnheader"][data-column-id="c2"] [data-gethen-sort-priority="1"]')).toBeVisible();
+  await expect(page.locator('[role="columnheader"][data-column-id="c5"] [data-gethen-sort-priority="2"]')).toBeVisible();
 });
 
 test("core demo applies declarative per-column widths with a grid fallback", async ({ page }) => {
@@ -686,6 +846,53 @@ test("Angular demo mounts the adapter-backed grid", async ({ page }) => {
     /demo-approved-cell/
   );
   await expect(page.locator('[data-gethen-pinned-bottom="true"]')).not.toHaveCount(0);
+});
+
+test("Angular sorting modes expose single and multi priorities without remounting", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html?sortingMode=none");
+  const grid = page.getByRole("grid");
+  await grid.evaluate((element) => { element.dataset.mountIdentity = "preserved"; });
+  const score = page.locator('[role="columnheader"][data-column-id="c0"]');
+  const active = page.locator('[role="columnheader"][data-column-id="c2"]');
+  await score.click();
+  await expect(score).not.toHaveAttribute("aria-sort", /.+/);
+  await expect(dataCell(page, 0, 0)).toHaveText("1");
+
+  await page.locator("#cycleSortingMode").click();
+  await expect(grid).toHaveAttribute("data-mount-identity", "preserved");
+  await score.click();
+  await active.click();
+  await expect(score).toHaveAttribute("aria-sort", "none");
+  await expect(active).toHaveAttribute("aria-sort", "ascending");
+  await expect(active.locator("span[aria-hidden='true']")).toHaveText("▲");
+  await expect(active.locator("[data-gethen-sort-priority]")).toHaveCount(0);
+
+  await page.locator("#cycleSortingMode").click();
+  await expect(grid).toHaveAttribute("data-mount-identity", "preserved");
+  await score.click();
+  await expect(page.locator("#sortStatus")).toHaveText("ready: c2:asc,c0:asc");
+  await expect(active.locator("[data-gethen-sort-priority='1']")).toBeVisible();
+  await expect(score.locator("[data-gethen-sort-priority='2']")).toBeVisible();
+  await score.click();
+  await expect(page.locator("#sortStatus")).toHaveText("ready: c2:asc,c0:desc");
+  await expect(score.locator("[data-gethen-sort-priority='2']")).toHaveText("▼2");
+  await expect(dataCell(page, 0, 0)).toHaveText("100");
+  await expect(dataCell(page, 1, 0)).toHaveText("98");
+
+  await page.locator("#cycleSortingMode").click();
+  await expect(score).not.toHaveAttribute("aria-sort", /.+/);
+  await expect(dataCell(page, 0, 0)).toHaveText("1");
+  await page.reload();
+  await expect(page.locator('[role="columnheader"][data-column-id="c0"]')).not.toHaveAttribute("aria-sort", /.+/);
+});
+
+test("Angular demo accepts enum-cased Single sorting URL", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html?sortingMode=Single");
+  await expect(page.locator("#cycleSortingMode")).toHaveText("Sort mode: single");
+  const header = page.locator('[role="columnheader"][data-column-id="c0"]');
+  await header.click();
+  await expect(header).toHaveAttribute("aria-sort", "ascending");
+  await expect(page.locator("#sortStatus")).toHaveText("ready: c0:asc");
 });
 
 test("A5-02 Angular toggles column reordering without remounting the grid", async ({ page }) => {

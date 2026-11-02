@@ -1,8 +1,8 @@
 # Alpha 5 Read-Only Grid Table Execution Plan
 
-Last reviewed: 2026-09-18.
+Last reviewed: 2026-11-02.
 
-Status: In implementation. A5-01 and A5-02 are implemented and locally verified; A5-03 through A5-06 remain open. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
+Status: In implementation. A5-01 through A5-03 are implemented and locally verified; A5-04 through A5-06 remain open. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
 
 ## Goal
 
@@ -24,6 +24,7 @@ Deliver `0.0.0-alpha.5` by adding a read-only Grid Table mode to the existing Co
 - Selection, clipboard copy, resize, column order, layout persistence, sort, filter, group, aggregate, virtualization, pinned summaries, and status remain available.
 - Read-only mode must not install or invoke editing, paste-mutation, row-mutation, or mutation-history handlers.
 - Sort and filter descriptors reuse Alpha 4 comparison types, null placement, operators, and stable ordering.
+- The public `GridSortingMode` enum defaults to `None`; `Single` replaces the previous column, while `Multiple` adds a new column on an ordinary header click or Enter. Repeated clicks toggle ascending/descending without changing priority. A single sorted column shows only an arrow; multiple sorted columns show priority numbers. Sorting keeps both scroll offsets and the active cell's visual index, then reports the new row ID.
 - Header-menu and filter-row presentations write to the same serializable query state.
 - Pointer reordering must have keyboard-accessible move-left and move-right equivalents.
 - Application renderers, editors, formatters, and reducers remain client-only; portable query state contains no callbacks or executable text.
@@ -48,10 +49,10 @@ Deliver `0.0.0-alpha.5` by adding a read-only Grid Table mode to the existing Co
 
 ### A5-03 Shared Query State And Header Sorting
 
-- [ ] Define serializable Grid Table query state over the existing `GridSortDescriptor` and `GridFilterDescriptor` semantics.
-- [ ] Add single-sort and modifier-assisted stable multi-sort header controls.
-- [ ] Render truthful `aria-sort` state and provide keyboard operation without pointer-only behavior.
-- [ ] Execute shaping through the selected TypeScript Worker at the existing engine boundary and discard stale results.
+- [x] Define serializable Grid Table query state over the existing `GridSortDescriptor` and `GridFilterDescriptor` semantics.
+- [x] Add single-sort and ordinary-click stable multiple-sort header controls.
+- [x] Render truthful `aria-sort` state and provide keyboard operation without pointer-only behavior.
+- [x] Execute shaping through the selected TypeScript Worker at the existing engine boundary and discard stale results.
 
 ### A5-04 Configurable Filtering
 

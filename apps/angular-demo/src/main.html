@@ -10,6 +10,12 @@
     <button id="toggleColumnReordering" type="button" (click)="toggleColumnReordering()">
       {{ columnReordering() ? "Disable" : "Enable" }} column reordering
     </button>
+    @if (sortingDemoEnabled) {
+      <button id="cycleSortingMode" type="button" (click)="cycleSortingMode()">
+        Sort mode: {{ sortingMode() }}
+      </button>
+      <small class="sorting-hint">In Multiple mode, click headers normally. Each new column adds sorting priority; click it again to reverse its direction. <strong id="sortStatus">{{ sortStatus() }}</strong></small>
+    }
   </header>
   <section class="demo-grid">
     <gethen-grid
@@ -21,11 +27,13 @@
       [styling]="styling"
       [clipboard]="clipboard"
       [columnReordering]="columnReordering()"
+      [sortingMode]="sortingMode()"
       (selectionChange)="handleSelection($event)"
       (selectionRangeChange)="handleSelectionRange($event)"
       (cellChange)="handleCellChange($event)"
       (pasteResult)="handlePaste($event)"
       (layoutChange)="handleLayoutChange($event)"
+      (queryChange)="handleQueryChange($event)"
     />
   </section>
 </main>
