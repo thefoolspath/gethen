@@ -184,6 +184,9 @@ test("read-only Grid blocks mutations and changes mode without remounting", asyn
   await grid.focus();
   await page.keyboard.press("Home");
   await page.keyboard.press("ArrowRight");
+  await grid.evaluate((element) => { element.scrollTop = 0; });
+  await grid.locator('[data-row-index="0"][data-column-index="1"]').click();
+  await expect(grid).toBeFocused();
   await page.keyboard.press("Enter");
   let editor = page.locator("[data-gethen-editor='true']");
   await expect(editor).toHaveCount(1);
@@ -202,6 +205,7 @@ test("read-only Grid blocks mutations and changes mode without remounting", asyn
   await editor.fill("editable value");
   await editor.press("Enter");
   await expect(page.locator("#event-log")).toContainText("Changed");
+  await expect(page.locator("#gethen-active-cell")).toHaveText("editable value");
 
   await page.getByRole("button", { name: "Toggle Editing" }).click();
   await expect(grid).toHaveAttribute("aria-readonly", "true");
@@ -214,7 +218,7 @@ test("read-only Grid blocks mutations and changes mode without remounting", asyn
 
   await page.getByRole("button", { name: "Toggle Editing" }).click();
   await page.getByRole("button", { name: "Undo" }).click();
-  await expect(editedCell).not.toHaveText(editedValue ?? "");
+  await expect(editedCell).toHaveText(valueBeforeCancelledEdit);
 });
 
 test("narrow viewport exposes keyboard-accessible documentation navigation", async ({ page }) => {
