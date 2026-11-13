@@ -1,7 +1,7 @@
 import type { GridColumn } from "@thefoolspath/gethen-protocol";
 import type { GridComparisonType, GridFilterDescriptor, GridFilterOperator, GridSortDescriptor } from "../shaping/grid-data-shaping.js";
 
-/** Portable query intent shared by header sorting and the future filter presentations. */
+/** Portable query intent shared by header sorting and filter presentations. */
 export interface GridQueryState {
   readonly sort: readonly GridSortDescriptor[];
   readonly filter: readonly GridFilterDescriptor[];

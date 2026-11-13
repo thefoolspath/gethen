@@ -1,6 +1,6 @@
 # Alpha 5 Read-Only Grid Table Execution Plan
 
-Last reviewed: 2026-11-11.
+Last reviewed: 2026-11-12.
 
 Status: In implementation. A5-01 through A5-04 are implemented and locally verified; A5-05 and A5-06 remain open. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
 

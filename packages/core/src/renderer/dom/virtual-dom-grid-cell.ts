@@ -26,6 +26,7 @@ export interface VirtualDomGridCellInput<TRow extends GridRow = GridRow> {
   readonly editorSignal: AbortSignal;
   readonly registerLifecycle: (destroy: () => void) => void;
   readonly registerEditorCommit: (commit: () => Promise<boolean>) => void;
+  readonly updateEditorDraft: (value: CellValue) => void;
 }
 
 export function createVirtualDomGridCell<TRow extends GridRow>(
@@ -245,6 +246,10 @@ function createCellEditor<TRow extends GridRow>(
     return input.commitEdit(parsed.value, undefined, navigation);
   };
   input.registerEditorCommit(commit);
+  control.addEventListener("input", () => {
+    input.updateEditorDraft(control instanceof HTMLInputElement && definition.kind === "boolean"
+      ? control.checked : control.value);
+  });
   control.addEventListener("keydown", (event) => {
     const keyboardEvent = event as KeyboardEvent;
     if (keyboardEvent.key === "Enter" && !(control instanceof HTMLTextAreaElement && keyboardEvent.shiftKey)) {

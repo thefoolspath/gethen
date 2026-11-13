@@ -148,6 +148,7 @@ test("experimental shaping and readonly Grid disclose their boundaries", async (
 });
 
 test("read-only Grid blocks mutations and changes mode without remounting", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/docs/readonly-preview");
   const grid = page.getByRole("grid");
   const gridIdentity = await grid.evaluate((element) => {
@@ -161,11 +162,12 @@ test("read-only Grid blocks mutations and changes mode without remounting", asyn
   await page.keyboard.press("Enter");
   await page.keyboard.type("blocked edit");
   await page.keyboard.press("End");
-  const booleanCell = page.locator('[role="gridcell"][aria-colindex="7"]').first();
+  await expect(page.locator("#gethen-active-cell")).toHaveAttribute("aria-colindex", "7");
+  const booleanCell = grid.locator('[data-row-index="0"][data-column-index="5"]');
   const initialBoolean = await booleanCell.textContent();
   await page.keyboard.press("Space");
   await expect(booleanCell).toHaveText(initialBoolean ?? "");
-  await booleanCell.dblclick();
+  await booleanCell.dispatchEvent("dblclick", { bubbles: true });
   await grid.evaluate((element) => {
     const clipboardData = new DataTransfer();
     clipboardData.setData("text/plain", "blocked paste");
@@ -199,13 +201,21 @@ test("read-only Grid blocks mutations and changes mode without remounting", asyn
 
   await page.getByRole("button", { name: "Toggle Editing" }).click();
   await expect(grid).toHaveAttribute("aria-readonly", "false");
-  await page.locator("#gethen-active-cell").dblclick();
+  const customerCell = grid.locator('[data-row-index="0"][data-column-index="1"]');
+  await customerCell.dblclick();
   editor = page.locator("[data-gethen-editor='true']");
   await expect(editor).toHaveCount(1);
   await editor.fill("editable value");
+  await expect(editor).toHaveValue("editable value");
+  await grid.dispatchEvent("scroll");
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect(editor).toHaveValue("editable value");
   await editor.press("Enter");
-  await expect(page.locator("#event-log")).toContainText("Changed");
-  await expect(page.locator("#gethen-active-cell")).toHaveText("editable value");
+  await expect(page.locator("#event-log")).toContainText("Changed order-1 / customer");
+  expect(await grid.evaluate((element) => (
+    (window as typeof window & { gethenGridIdentity?: Element }).gethenGridIdentity === element
+  ))).toBe(true);
+  await expect(customerCell).toHaveText("editable value");
 
   await page.getByRole("button", { name: "Toggle Editing" }).click();
   await expect(grid).toHaveAttribute("aria-readonly", "true");

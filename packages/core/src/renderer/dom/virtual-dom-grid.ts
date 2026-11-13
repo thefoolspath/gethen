@@ -433,6 +433,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           registerLifecycle: (destroy: () => void) => mountedLifecycles.push(destroy),
           registerEditorCommit: (commit: () => Promise<boolean>) => {
             requestActiveEditorCommit = commit;
+          },
+          updateEditorDraft: (value: CellChangeEvent["newValue"]) => {
+            if (!editState || editState.rowIndex !== rowIndex || editState.columnIndex !== columnIndex) return;
+            editState.draftValue = value;
+            editorState.updateDraft(value);
           }
         };
         fragment.appendChild(
