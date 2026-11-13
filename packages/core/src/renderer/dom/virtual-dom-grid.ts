@@ -1,6 +1,12 @@
 import type { CellChangeEvent } from "@thefoolspath/gethen-protocol";
 
 import type { GridRow } from "../../contracts/grid-types.js";
+import { createGridColumnarBuffer, createGridWorkerShapeDefinition } from "../../contracts/engine-contract.js";
+import { createGridWorkerEngine } from "../../engine/grid-worker-engine.js";
+import type { GridWorkerEngine } from "../../engine/grid-worker-engine.js";
+import type { GridQueryEvent, GridQueryState, GridQueryStatus } from "../../state/grid-query.js";
+import { GridSortingMode, copyGridQueryState, getGridFilterOperators, nextHeaderSort, normalizeGridQueryState, parseGridFilterDraft, replaceColumnFilter } from "../../state/grid-query.js";
+import type { GridComparisonType, GridFilterOperator } from "../../shaping/grid-data-shaping.js";
 import type { GridClipboardOptions, GridPasteResult } from "../../state/grid-clipboard.js";
 import { prepareGridPaste } from "../../state/grid-clipboard.js";
 import type { GridColumnView, GridStylingOptions, VirtualDomGridTheme } from "./grid-customization.js";
@@ -44,6 +50,16 @@ export interface VirtualDomGridRenderMetrics {
   readonly renderMs: number;
 }
 
+export type GridFilterPresentation = "none" | "header-menu" | "filter-row";
+
+interface GridFilterDraft {
+  comparisonType: GridComparisonType;
+  operator: GridFilterOperator;
+  rawValue: string;
+  caseSensitive: boolean;
+  inputKind: "text" | "date" | "datetime-local";
+}
+
 export interface VirtualDomGridSelection {
   readonly rowIndex: number;
   readonly columnIndex: number;
@@ -80,6 +96,11 @@ export interface VirtualDomGridOptions<TRow extends GridRow = GridRow> {
   readonly history?: GridHistoryOptions | false;
   readonly readOnly?: boolean;
   readonly columnReordering?: boolean;
+  /** Header sorting is opt-in so existing grid interactions remain unchanged. */
+  readonly sortingMode?: GridSortingMode;
+  readonly filterPresentation?: GridFilterPresentation;
+  readonly queryState?: GridQueryState;
+  readonly onQueryChange?: (event: GridQueryEvent) => void;
   readonly onRender?: (metrics: VirtualDomGridRenderMetrics) => void;
   readonly onSelectionChange?: (selection: VirtualDomGridSelection) => void;
   readonly onSelectionRangeChange?: (selection: VirtualDomGridSelectionRange) => void;
@@ -97,6 +118,10 @@ export interface VirtualDomGrid {
   setTheme(theme: VirtualDomGridTheme | undefined): void;
   setReadOnly(readOnly: boolean): void;
   setColumnReordering(enabled: boolean): void;
+  setSortingMode(mode: GridSortingMode): Promise<void>;
+  setFilterPresentation(presentation: GridFilterPresentation): void;
+  getQueryState(): GridQueryState;
+  setQueryState(state: GridQueryState): Promise<void>;
   getLayoutState(): GridLayoutState;
   applyLayoutState(state: GridLayoutState): void;
   resizeColumn(columnId: string, width: number): void;
@@ -141,6 +166,8 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const viewport = document.createElement("div");
   const reorderInstructions = document.createElement("span");
   const reorderLiveRegion = document.createElement("span");
+  const queryLiveRegion = document.createElement("span");
+  const filterPanel = document.createElement("div");
   const instanceId = ++gridInstanceSequence;
   const activeHeaderId = `gethen-active-column-header-${instanceId}`;
   const reorderInstructionsId = `gethen-column-reorder-instructions-${instanceId}`;
@@ -152,9 +179,15 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const rowNumberOptions = typeof options.rowNumbers === "object" ? options.rowNumbers : undefined;
   const showRowNumbers = options.rowNumbers !== false && rowNumberOptions?.visible !== false;
   const showStatusBar = options.statusBar !== false && options.statusBar?.visible !== false;
-  const headerHeight = showColumnHeaders
+  const columnHeaderHeight = showColumnHeaders
     ? cssGridPixelValue(options.theme?.headerHeight, densityDefaults.headerHeight)
     : 0;
+  let filterPresentation: GridFilterPresentation = options.filterPresentation ?? "none";
+  if (!["none", "header-menu", "filter-row"].includes(filterPresentation)) {
+    throw new Error(`Unknown filter presentation '${String(filterPresentation)}'.`);
+  }
+  if (!showColumnHeaders && filterPresentation !== "none") throw new Error("Filtering UI requires column headers.");
+  let headerHeight = columnHeaderHeight + (filterPresentation === "filter-row" ? rowHeight : 0);
   const rowNumberWidth = showRowNumbers
     ? rowNumberOptions?.width ?? cssGridPixelValue(options.theme?.rowNumberWidth, densityDefaults.rowNumberWidth)
     : 0;
@@ -165,10 +198,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   const overscanColumns = options.overscanColumns ?? 2;
   const allColumns = options.columns;
   const sourceColumns = getVisibleColumns(allColumns);
-  const rows = options.rows.map((row) => ({
+  const sourceRows = options.rows.map((row) => ({
     ...row,
     cells: { ...row.cells }
   })) as TRow[];
+  let rows = sourceRows;
   const pinnedBottomRows = (options.pinnedBottomRows ?? []).map((row) => ({
     ...row,
     cells: { ...row.cells }
@@ -205,6 +239,18 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   let editState: { rowIndex: number; columnIndex: number; draftValue: CellChangeEvent["newValue"] } | null = null;
   let readOnly = options.readOnly === true;
   let columnReordering = options.columnReordering !== false;
+  let sortingMode = options.sortingMode ?? GridSortingMode.None;
+  let queryState = normalizeGridQueryState(options.queryState ?? { sort: [], filter: [] }, allColumns);
+  if (sortingMode === GridSortingMode.None) queryState = { ...queryState, sort: [] };
+  if (sortingMode === GridSortingMode.Single && queryState.sort.length > 1) queryState = { ...queryState, sort: queryState.sort.slice(0, 1) };
+  let appliedQueryState: GridQueryState = { sort: [], filter: [] };
+  let queryStatus: GridQueryStatus = "idle";
+  let queryRevision = 0;
+  let queryAbort: AbortController | undefined;
+  let queryEngine: GridWorkerEngine | undefined;
+  const filterDrafts = new Map<string, GridFilterDraft>();
+  let openFilterColumnId: string | undefined;
+  let destroyed = false;
   let mutationHandlersBound = false;
   let animationFrame = 0;
   let dragAnimationFrame = 0;
@@ -218,7 +264,9 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   grid.setAttribute("role", "grid");
   grid.setAttribute("aria-readonly", readOnly ? "true" : "false");
   grid.setAttribute("tabindex", "0");
-  grid.setAttribute("aria-rowcount", String(rows.length + pinnedBottomRows.length + (showColumnHeaders ? 1 : 0)));
+  grid.dataset.gethenGridInstance = String(instanceId);
+  grid.setAttribute("aria-rowcount", String(rows.length + pinnedBottomRows.length + (showColumnHeaders ? 1 : 0)
+    + (filterPresentation === "filter-row" ? 1 : 0)));
   grid.setAttribute("aria-colcount", String(columns.length + (showRowNumbers ? 1 : 0)));
   if (rows.length > 0 && columns.length > 0) {
     grid.setAttribute("aria-activedescendant", "gethen-active-cell");
@@ -243,6 +291,26 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   reorderLiveRegion.setAttribute("aria-atomic", "true");
   reorderLiveRegion.dataset.gethenColumnReorderStatus = "true";
   applyVisuallyHiddenStyles(reorderLiveRegion);
+  queryLiveRegion.setAttribute("role", "status");
+  queryLiveRegion.setAttribute("aria-live", "polite");
+  queryLiveRegion.dataset.gethenQueryStatus = "true";
+  applyVisuallyHiddenStyles(queryLiveRegion);
+  filterPanel.dataset.gethenFilterPanel = "true";
+  filterPanel.setAttribute("role", "dialog");
+  filterPanel.setAttribute("aria-labelledby", `gethen-filter-title-${instanceId}`);
+  filterPanel.hidden = true;
+  filterPanel.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeFilterPanel(true);
+    }
+  });
+  Object.assign(filterPanel.style, {
+    position: "absolute", zIndex: "30", width: "260px", padding: "12px", borderRadius: "6px",
+    border: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
+    background: "var(--gethen-background, #ffffff)", color: "var(--gethen-text-color, #17212b)",
+    boxShadow: "0 8px 22px #0002"
+  });
 
   spacer.style.position = "absolute";
   spacer.style.inset = "0 auto auto 0";
@@ -254,13 +322,15 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   viewport.style.width = spacer.style.width;
   viewport.style.height = spacer.style.height;
 
-  grid.append(spacer, viewport, reorderInstructions, reorderLiveRegion);
+  grid.append(spacer, viewport, reorderInstructions, reorderLiveRegion, queryLiveRegion, filterPanel);
   container.replaceChildren(grid);
   const unsubscribeEditor = editorState.subscribe((state) => options.onEditorStateChange?.(state));
   const unsubscribeHistory = history?.subscribe((event) => options.onHistoryChange?.(event));
 
   function render(): void {
     animationFrame = 0;
+    const focusedFilterCell = document.activeElement?.closest<HTMLElement>("[data-gethen-filter-row] [data-column-id]");
+    const focusedFilterColumnId = focusedFilterCell?.dataset.columnId;
     invalidatePendingEditorOperationForRemount();
     const started = performance.now();
     destroyMountedLifecycles();
@@ -289,19 +359,31 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       pinnedBottomRows,
       layoutState: renderedLayoutState,
       styling: options.styling,
-      statusBar: options.statusBar,
+      statusBar: queryState.filter.length > 0 && options.statusBar !== false
+        ? {
+            ...options.statusBar,
+            totalRowCount: options.statusBar?.totalRowCount === undefined
+              ? sourceRows.length : options.statusBar.totalRowCount,
+            filteredRowCount: rows.length
+          }
+        : options.statusBar,
       activeCell,
       anchorCell,
       rowHeight,
       rowNumberWidth,
       headerHeight,
+      columnHeaderHeight,
+      filterPresentation,
       statusHeight,
       pinnedHeight,
       showColumnHeaders,
       showRowNumbers,
       showStatusBar,
       columnReordering,
+      sortingMode,
+      queryState,
       focusedHeaderColumnId,
+      openFilterColumnId,
       draggingColumnId: dragState?.columnId,
       activeHeaderId,
       reorderInstructionsId
@@ -309,6 +391,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
 
     viewport.replaceChildren();
     appendGridShellBeforeRows(fragment, columnIndexes, columnOffsets, shellContext);
+    if (filterPresentation === "filter-row") appendFilterRow(fragment, columnIndexes, columnOffsets);
     for (const rowIndex of rowIndexes) {
       const row = rows[rowIndex];
 
@@ -334,7 +417,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           top: headerHeight + rowIndex * rowHeight + (frozenRow ? grid.scrollTop : 0),
           frozenRow,
           frozenColumn,
-          ariaRowOffset: showColumnHeaders ? 1 : 0,
+          ariaRowOffset: (showColumnHeaders ? 1 : 0) + (filterPresentation === "filter-row" ? 1 : 0),
           ariaColumnOffset: showRowNumbers ? 1 : 0,
           readOnly,
           commitEdit: (
@@ -350,6 +433,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           registerLifecycle: (destroy: () => void) => mountedLifecycles.push(destroy),
           registerEditorCommit: (commit: () => Promise<boolean>) => {
             requestActiveEditorCommit = commit;
+          },
+          updateEditorDraft: (value: CellChangeEvent["newValue"]) => {
+            if (!editState || editState.rowIndex !== rowIndex || editState.columnIndex !== columnIndex) return;
+            editState.draftValue = value;
+            editorState.updateDraft(value);
           }
         };
         fragment.appendChild(
@@ -372,6 +460,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
 
     appendGridShellAfterRows(fragment, columnIndexes, columnOffsets, shellContext);
     viewport.appendChild(fragment);
+    if (focusedFilterColumnId && filterPresentation === "filter-row") {
+      viewport.querySelector<HTMLElement>(`[data-gethen-filter-row] [data-column-id="${CSS.escape(focusedFilterColumnId)}"] [data-gethen-filter-value]`)
+        ?.focus({ preventScroll: true });
+    }
     updateActiveDescendant();
     options.onRender?.({
       renderedCellCount: rowIndexes.length * columnIndexes.length,
@@ -379,6 +471,231 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     });
     if (editorState.snapshot.phase === "suspended") {
       editorState.resumeAfterScroll();
+    }
+  }
+
+  function getFilterDraft(columnId: string): GridFilterDraft {
+    const cached = filterDrafts.get(columnId);
+    if (cached) return cached;
+    const column = allColumns.find((item) => item.id === columnId);
+    const applied = queryState.filter.find((item) => item.columnId === columnId);
+    const comparisonType = applied?.comparisonType ?? column?.dataType ?? "text";
+    const draft: GridFilterDraft = {
+      comparisonType,
+      operator: applied?.operator === "in" ? "equals" : applied?.operator ?? "equals",
+      rawValue: Array.isArray(applied?.value) ? "" : String(applied?.value ?? ""),
+      caseSensitive: applied?.caseSensitive ?? false,
+      inputKind: comparisonType === "date" ? String(applied?.value ?? "").includes("T") ? "datetime-local" : "date" : "text"
+    };
+    filterDrafts.set(columnId, draft);
+    return draft;
+  }
+
+  function createFilterValueControl(columnId: string, draft: GridFilterDraft): HTMLInputElement | HTMLSelectElement {
+    const control = draft.comparisonType === "boolean"
+      ? document.createElement("select") : document.createElement("input");
+    control.dataset.gethenFilterValue = "true";
+    control.setAttribute("aria-label", `Filter value for ${getColumnTitle(columnId)}`);
+    if (control instanceof HTMLSelectElement) {
+      for (const value of ["true", "false"]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        control.appendChild(option);
+      }
+      control.value = draft.rawValue || "true";
+      if (draft.rawValue === "") draft.rawValue = control.value;
+    } else {
+      control.type = draft.comparisonType === "number" ? "number"
+        : draft.comparisonType === "date" ? draft.inputKind : "text";
+      control.value = draft.rawValue;
+    }
+    control.disabled = draft.operator === "isNull" || draft.operator === "isNotNull";
+    control.addEventListener("input", () => { draft.rawValue = control.value; });
+    control.addEventListener("change", () => { draft.rawValue = control.value; });
+    control.addEventListener("keydown", (rawEvent) => {
+      const event = rawEvent as KeyboardEvent;
+      event.stopPropagation();
+      if (event.key === "Enter") {
+        event.preventDefault();
+        void applyFilterDraft(columnId);
+      } else if (event.key === "Escape") closeFilterPanel(true);
+    });
+    return control;
+  }
+
+  function appendFilterRow(fragment: DocumentFragment, columnIndexes: readonly number[], columnOffsets: readonly number[]): void {
+    const row = document.createElement("div");
+    row.dataset.gethenFilterRow = "true";
+    row.setAttribute("role", "row");
+    row.setAttribute("aria-rowindex", "2");
+    Object.assign(row.style, { position: "absolute", top: `${grid.scrollTop + columnHeaderHeight}px`, left: "0", height: `${rowHeight}px`, zIndex: "10" });
+    for (const columnIndex of columnIndexes) {
+      const column = columns[columnIndex];
+      const layout = renderedLayoutState.columns[columnIndex];
+      if (!column || !layout) continue;
+      const cell = document.createElement("div");
+      cell.dataset.columnId = column.id;
+      cell.setAttribute("role", "gridcell");
+      cell.setAttribute("aria-rowindex", "2");
+      cell.setAttribute("aria-colindex", String(columnIndex + 1 + (showRowNumbers ? 1 : 0)));
+      const frozen = columnIndex < renderedLayoutState.frozenColumnCount;
+      Object.assign(cell.style, {
+        position: "absolute", left: `${rowNumberWidth + columnOffsets[columnIndex]! + (frozen ? grid.scrollLeft : 0)}px`,
+        top: "0", width: `${layout.width}px`, height: `${rowHeight}px`, display: "flex", alignItems: "center",
+        padding: "2px 4px", boxSizing: "border-box", background: "var(--gethen-header-background, #f3f6f9)",
+        borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
+        borderBottom: "1px solid var(--gethen-grid-line-color, #d8e0e8)", zIndex: frozen ? "2" : "1"
+      });
+      const draft = getFilterDraft(column.id);
+      const input = createFilterValueControl(column.id, draft);
+      input.style.minWidth = "0";
+      input.style.width = "100%";
+      input.style.flex = "1";
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.dataset.gethenFilterTrigger = column.id;
+      trigger.setAttribute("aria-label", `Filter options for ${column.title}`);
+      trigger.setAttribute("aria-haspopup", "dialog");
+      trigger.textContent = queryState.filter.some((item) => item.columnId === column.id) ? "●" : "⋯";
+      trigger.style.flexShrink = "0";
+      cell.append(input, trigger);
+      row.appendChild(cell);
+    }
+    fragment.appendChild(row);
+  }
+
+  function closeFilterPanel(restoreFocus = false): void {
+    const columnId = openFilterColumnId;
+    openFilterColumnId = undefined;
+    filterPanel.hidden = true;
+    filterPanel.replaceChildren();
+    if (columnId) grid.querySelector<HTMLElement>(`[data-gethen-filter-trigger="${CSS.escape(columnId)}"]`)
+      ?.setAttribute("aria-expanded", "false");
+    if (restoreFocus && columnId) {
+      grid.querySelector<HTMLElement>(`[data-gethen-filter-trigger="${CSS.escape(columnId)}"]`)?.focus();
+    }
+  }
+
+  function openFilterPanel(columnId: string, anchor: HTMLElement): void {
+    if (openFilterColumnId && openFilterColumnId !== columnId) closeFilterPanel();
+    const draft = getFilterDraft(columnId);
+    openFilterColumnId = columnId;
+    anchor.setAttribute("aria-expanded", "true");
+    filterPanel.replaceChildren();
+    const title = document.createElement("strong");
+    title.id = `gethen-filter-title-${instanceId}`;
+    title.textContent = `Filter ${getColumnTitle(columnId)}`;
+    const typeLabel = document.createElement("label");
+    typeLabel.textContent = "Value type";
+    const typeSelect = document.createElement("select");
+    typeSelect.dataset.gethenFilterType = "true";
+    const column = allColumns.find((item) => item.id === columnId);
+    const types = column?.dataType === "text" ? ["text", "date", "datetime"]
+      : column?.dataType === "number" ? ["number"] : ["boolean"];
+    for (const type of types) {
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = type;
+      typeSelect.appendChild(option);
+    }
+    typeSelect.value = draft.inputKind === "datetime-local" ? "datetime" : draft.comparisonType;
+    typeSelect.addEventListener("change", () => {
+      draft.comparisonType = typeSelect.value === "datetime" ? "date" : typeSelect.value as GridComparisonType;
+      draft.inputKind = typeSelect.value === "datetime" ? "datetime-local" : typeSelect.value === "date" ? "date" : "text";
+      draft.operator = "equals";
+      draft.rawValue = "";
+      renderFilterPanel(columnId);
+    });
+    typeLabel.appendChild(typeSelect);
+    filterPanel.append(title, typeLabel);
+    renderFilterPanel(columnId);
+    const anchorBounds = anchor.getBoundingClientRect();
+    const gridBounds = grid.getBoundingClientRect();
+    filterPanel.style.left = `${Math.min(grid.scrollLeft + anchorBounds.left - gridBounds.left, grid.scrollLeft + Math.max(0, grid.clientWidth - 270))}px`;
+    filterPanel.style.top = `${grid.scrollTop + anchorBounds.bottom - gridBounds.top}px`;
+    filterPanel.hidden = false;
+    filterPanel.querySelector<HTMLElement>("[data-gethen-filter-operator]")?.focus();
+  }
+
+  function renderFilterPanel(columnId: string): void {
+    const draft = getFilterDraft(columnId);
+    const existing = filterPanel.querySelector<HTMLElement>("[data-gethen-filter-editor]");
+    existing?.remove();
+    const editor = document.createElement("div");
+    editor.dataset.gethenFilterEditor = "true";
+    Object.assign(editor.style, { display: "grid", gap: "8px", marginTop: "8px" });
+    const operatorLabel = document.createElement("label");
+    operatorLabel.textContent = "Condition";
+    const operator = document.createElement("select");
+    operator.dataset.gethenFilterOperator = "true";
+    for (const value of getGridFilterOperators(draft.comparisonType).filter((item) => item !== "in")) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      operator.appendChild(option);
+    }
+    operator.value = draft.operator;
+    operator.addEventListener("change", () => {
+      draft.operator = operator.value as GridFilterOperator;
+      renderFilterPanel(columnId);
+      filterPanel.querySelector<HTMLElement>("[data-gethen-filter-operator]")?.focus({ preventScroll: true });
+    });
+    operatorLabel.appendChild(operator);
+    const valueLabel = document.createElement("label");
+    valueLabel.textContent = "Value";
+    valueLabel.appendChild(createFilterValueControl(columnId, draft));
+    editor.append(operatorLabel, valueLabel);
+    if (draft.comparisonType === "text") {
+      const caseLabel = document.createElement("label");
+      const caseControl = document.createElement("input");
+      caseControl.type = "checkbox";
+      caseControl.checked = draft.caseSensitive;
+      caseControl.addEventListener("change", () => { draft.caseSensitive = caseControl.checked; });
+      caseLabel.append(caseControl, " Case sensitive");
+      editor.appendChild(caseLabel);
+    }
+    const actions = document.createElement("div");
+    Object.assign(actions.style, { display: "flex", gap: "8px" });
+    const apply = document.createElement("button");
+    apply.type = "button";
+    apply.textContent = "Apply";
+    apply.dataset.gethenFilterApply = "true";
+    apply.addEventListener("click", () => void applyFilterDraft(columnId));
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.textContent = "Clear";
+    clear.dataset.gethenFilterClear = "true";
+    clear.addEventListener("click", () => void clearColumnFilter(columnId));
+    actions.append(apply, clear);
+    const error = document.createElement("div");
+    error.dataset.gethenFilterError = "true";
+    error.setAttribute("role", "alert");
+    editor.append(actions, error);
+    filterPanel.appendChild(editor);
+  }
+
+  async function applyFilterDraft(columnId: string): Promise<void> {
+    const draft = getFilterDraft(columnId);
+    try {
+      const descriptor = parseGridFilterDraft(columnId, draft.operator, draft.rawValue, draft.comparisonType, draft.caseSensitive);
+      await setQueryState(replaceColumnFilter(queryState, columnId, descriptor));
+      closeFilterPanel(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const panelError = filterPanel.querySelector<HTMLElement>("[data-gethen-filter-error]");
+      if (panelError) panelError.textContent = message;
+      queryLiveRegion.textContent = `Filter failed: ${message}`;
+    }
+  }
+
+  async function clearColumnFilter(columnId: string): Promise<void> {
+    try {
+      await setQueryState(replaceColumnFilter(queryState, columnId));
+      filterDrafts.delete(columnId);
+      closeFilterPanel(true);
+    } catch (error) {
+      queryLiveRegion.textContent = `Filter failed: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
 
@@ -493,14 +810,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
 
   function focusHeader(columnId: string): void {
     const columnIndex = columns.findIndex((column) => column.id === columnId);
-    if (!columnReordering || !showColumnHeaders || columnIndex < 0) return;
+    if ((!columnReordering && sortingMode === GridSortingMode.None) || !showColumnHeaders || columnIndex < 0) return;
     focusedHeaderColumnId = columnId;
     scrollHeaderIntoView(columnIndex);
     render();
   }
 
   function updateActiveDescendant(): void {
-    if (focusedHeaderColumnId && columnReordering && showColumnHeaders) {
+    if (focusedHeaderColumnId && (columnReordering || sortingMode !== GridSortingMode.None) && showColumnHeaders) {
       grid.setAttribute("aria-activedescendant", activeHeaderId);
     } else if (rows.length > 0 && columns.length > 0) {
       grid.setAttribute("aria-activedescendant", "gethen-active-cell");
@@ -553,6 +870,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function handleNavigationKeyDown(event: KeyboardEvent): void {
+    if (event.target instanceof Element && event.target.closest("[data-gethen-filter-panel], [data-gethen-filter-row], [data-gethen-filter-trigger]")) return;
     if (event.key === "Escape" && dragState) {
       event.preventDefault();
       releasePointerCandidate();
@@ -604,6 +922,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
           focusedHeaderColumnId = undefined;
           setActiveCell(activeCell.rowIndex, focusedIndex);
         }
+      } else if (sortingMode !== GridSortingMode.None && !event.altKey && !event.ctrlKey && !event.metaKey
+        && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        void applyHeaderSort(focusedHeaderColumnId);
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
       }
@@ -611,7 +933,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     }
 
     if (rows.length === 0) {
-      if (columnReordering && showColumnHeaders && event.key === "ArrowUp"
+      if ((columnReordering || sortingMode !== GridSortingMode.None) && showColumnHeaders && event.key === "ArrowUp"
         && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
         event.preventDefault();
         focusHeader(columns[0]!.id);
@@ -624,7 +946,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       setActiveCell(activeCell.rowIndex + 1, activeCell.columnIndex, event.shiftKey);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      if (columnReordering && showColumnHeaders && activeCell.rowIndex === 0
+      if ((columnReordering || sortingMode !== GridSortingMode.None) && showColumnHeaders && activeCell.rowIndex === 0
         && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
         focusHeader(columns[activeCell.columnIndex]!.id);
       } else {
@@ -648,6 +970,7 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   function handleColumnPointerDown(event: PointerEvent): void {
     if (!columnReordering || editState || !event.isPrimary || event.button !== 0
       || !(event.target instanceof HTMLElement)) return;
+    if (event.target.closest("[data-gethen-filter-trigger], [data-gethen-filter-row]")) return;
     const header = event.target.closest<HTMLElement>("[data-gethen-column-reorder='true']");
     const columnId = header?.dataset.columnId;
     if (!header || !columnId || !grid.contains(header)) return;
@@ -705,8 +1028,12 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   function handleColumnPointerUp(event: PointerEvent): void {
     if (!pointerCandidate || pointerCandidate.pointerId !== event.pointerId) return;
     const completedDrag = dragState;
+    const pointerCandidateColumnId = pointerCandidate.columnId;
     releasePointerCandidate();
-    if (!completedDrag) return;
+    if (!completedDrag) {
+      if (sortingMode !== GridSortingMode.None) void applyHeaderSort(pointerCandidateColumnId);
+      return;
+    }
 
     const targetIndex = completedDrag.validTarget ? completedDrag.targetIndex : undefined;
     const columnId = completedDrag.columnId;
@@ -910,7 +1237,8 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   }
 
   function handleMutationKeyDown(event: KeyboardEvent): void {
-    if (readOnly || (event.target instanceof Element && event.target.closest("[data-gethen-editor-host='true']"))) {
+    if (readOnly || (event.target instanceof Element
+      && event.target.closest("[data-gethen-editor-host='true'], [data-gethen-filter-panel], [data-gethen-filter-row], [data-gethen-filter-trigger]"))) {
       return;
     }
     if (focusedHeaderColumnId || editState || rows.length === 0 || columns.length === 0) {
@@ -951,6 +1279,23 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       return;
     }
 
+    const filterTrigger = target.closest<HTMLElement>("[data-gethen-filter-trigger]");
+    if (filterTrigger?.dataset.gethenFilterTrigger) {
+      const columnId = filterTrigger.dataset.gethenFilterTrigger;
+      if (openFilterColumnId === columnId) closeFilterPanel(true);
+      else openFilterPanel(columnId, filterTrigger);
+      return;
+    }
+    if (target.closest("[data-gethen-filter-panel], [data-gethen-filter-row]")) return;
+
+    const header = target.closest<HTMLElement>("[role='columnheader'][data-column-id]");
+    if (sortingMode !== GridSortingMode.None && !columnReordering && header?.dataset.columnId) {
+      grid.focus({ preventScroll: true });
+      focusHeader(header.dataset.columnId);
+      void applyHeaderSort(header.dataset.columnId);
+      return;
+    }
+
     const cell = target.closest<HTMLElement>("[data-row-index][data-column-index]");
     const rowIndex = Number(cell?.dataset.rowIndex);
     const columnIndex = Number(cell?.dataset.columnIndex);
@@ -962,6 +1307,11 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
       }
       focusedHeaderColumnId = undefined;
       grid.focus();
+      if (!event.shiftKey && activeCell.rowIndex === rowIndex && activeCell.columnIndex === columnIndex
+        && anchorCell.rowIndex === rowIndex && anchorCell.columnIndex === columnIndex) {
+        updateActiveDescendant();
+        return;
+      }
       setActiveCell(rowIndex, columnIndex, event.shiftKey);
 
     }
@@ -1362,9 +1712,161 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     if (!enabled) {
       releasePointerCandidate();
       cancelColumnDrag(false);
-      focusedHeaderColumnId = undefined;
+      if (sortingMode === GridSortingMode.None) focusedHeaderColumnId = undefined;
     }
     render();
+  }
+
+  async function applyHeaderSort(columnId: string): Promise<void> {
+    if (sortingMode === GridSortingMode.None || editState) return;
+    try {
+      await setQueryState(nextHeaderSort(queryState, columnId, sortingMode, allColumns));
+    } catch {
+      // The error has already been reported through onQueryChange.
+    }
+  }
+
+  async function setQueryState(nextState: GridQueryState): Promise<void> {
+    if (destroyed) throw new Error("The grid is destroyed.");
+    let normalized: GridQueryState;
+    try {
+      normalized = normalizeGridQueryState(nextState, allColumns);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      queryLiveRegion.textContent = `Query failed: ${message}`;
+      options.onQueryChange?.({ state: copyGridQueryState(queryState), status: "error", error: message });
+      throw error;
+    }
+    if (sortingMode === GridSortingMode.None && normalized.sort.length > 0) {
+      throw new Error("Sorting is disabled for this grid.");
+    }
+    if (sortingMode === GridSortingMode.Single && normalized.sort.length > 1) {
+      throw new Error("Single sorting mode accepts one sort column.");
+    }
+    if (JSON.stringify(normalized) === JSON.stringify(queryState)
+      && (queryStatus === "loading" || queryStatus === "ready")) return;
+    const revision = ++queryRevision;
+    queryAbort?.abort();
+    queryAbort = undefined;
+    if (JSON.stringify(queryState.filter) !== JSON.stringify(normalized.filter)) {
+      const openDraft = openFilterColumnId ? filterDrafts.get(openFilterColumnId) : undefined;
+      filterDrafts.clear();
+      if (openFilterColumnId && openDraft) filterDrafts.set(openFilterColumnId, openDraft);
+    }
+    queryState = normalized;
+    queryStatus = "loading";
+    grid.setAttribute("aria-busy", "true");
+    options.onQueryChange?.({ state: copyGridQueryState(queryState), status: queryStatus });
+    render();
+    if (queryState.sort.length === 0 && queryState.filter.length === 0) {
+      applyQueryRows(sourceRows);
+      appliedQueryState = queryState;
+      finishQuery();
+      return;
+    }
+    const controller = new AbortController();
+    queryAbort = controller;
+    try {
+      queryEngine ??= createGridWorkerEngine();
+      const data = createGridColumnarBuffer(sourceRows, allColumns.map((column) => ({
+        columnId: column.id,
+        storage: column.dataType === "number" ? "float64"
+          : column.dataType === "boolean" ? "boolean" : "utf8"
+      })));
+      const result = await queryEngine.shape({
+        data,
+        definition: createGridWorkerShapeDefinition({ sort: normalized.sort, filter: normalized.filter }),
+        signal: controller.signal
+      });
+      if (destroyed || revision !== queryRevision) return;
+      const sourceById = new Map(sourceRows.map((row) => [row.id, row]));
+      applyQueryRows(result.rows.map((row) => {
+        const source = sourceById.get(row.id);
+        if (!source) throw new Error(`Worker returned unknown row '${row.id}'.`);
+        return source;
+      }));
+      appliedQueryState = normalized;
+      finishQuery();
+    } catch (error) {
+      if (destroyed || revision !== queryRevision) return;
+      queryState = appliedQueryState;
+      queryStatus = "error";
+      grid.removeAttribute("aria-busy");
+      const message = error instanceof Error ? error.message : String(error);
+      queryLiveRegion.textContent = `Query failed: ${message}`;
+      options.onQueryChange?.({ state: copyGridQueryState(queryState), status: queryStatus, error: message });
+      render();
+      throw error;
+    } finally {
+      if (queryAbort === controller) queryAbort = undefined;
+    }
+  }
+
+  function applyQueryRows(nextRows: readonly TRow[]): void {
+    const previousScrollTop = grid.scrollTop;
+    const previousScrollLeft = grid.scrollLeft;
+    rows = [...nextRows];
+    activeCell.rowIndex = clamp(activeCell.rowIndex, 0, Math.max(0, rows.length - 1));
+    anchorCell.rowIndex = clamp(anchorCell.rowIndex, 0, Math.max(0, rows.length - 1));
+    grid.setAttribute("aria-rowcount", String(rows.length + pinnedBottomRows.length + (showColumnHeaders ? 1 : 0)
+      + (filterPresentation === "filter-row" ? 1 : 0)));
+    spacer.style.height = `${headerHeight + rows.length * rowHeight + pinnedHeight + statusHeight}px`;
+    viewport.style.height = spacer.style.height;
+    grid.scrollTop = rows.length === 0 ? 0 : previousScrollTop;
+    grid.scrollLeft = previousScrollLeft;
+    if (rows.length > 0 && columns.length > 0) {
+      const selection = getSelectionAt(activeCell.rowIndex, activeCell.columnIndex);
+      options.onSelectionChange?.(selection);
+      options.onSelectionRangeChange?.(createSelectionRange(selection));
+    }
+    render();
+  }
+
+  function finishQuery(): void {
+    queryStatus = "ready";
+    grid.removeAttribute("aria-busy");
+    const primary = queryState.sort[0];
+    queryLiveRegion.textContent = [
+      primary ? `Sorted by ${getColumnTitle(primary.columnId)} ${primary.direction === "asc" ? "ascending" : "descending"}.` : "",
+      queryState.filter.length > 0 ? `${rows.length} of ${sourceRows.length} rows match the filter.` : ""
+    ].filter(Boolean).join(" ") || "Query cleared.";
+    options.onQueryChange?.({ state: copyGridQueryState(queryState), status: queryStatus });
+    render();
+  }
+
+  async function setSortingMode(mode: GridSortingMode): Promise<void> {
+    if (mode !== GridSortingMode.None && mode !== GridSortingMode.Single && mode !== GridSortingMode.Multiple) {
+      throw new Error(`Unknown sorting mode '${String(mode)}'.`);
+    }
+    if (sortingMode === mode) return;
+    sortingMode = mode;
+    if ((mode === GridSortingMode.None && queryState.sort.length > 0)
+      || (mode === GridSortingMode.Single && queryState.sort.length > 1)) {
+      await setQueryState({
+        sort: mode === GridSortingMode.None ? [] : queryState.sort.slice(0, 1),
+        filter: queryState.filter
+      });
+    }
+    render();
+  }
+
+  function setFilterPresentation(presentation: GridFilterPresentation): void {
+    if (presentation !== "none" && presentation !== "header-menu" && presentation !== "filter-row") {
+      throw new Error(`Unknown filter presentation '${String(presentation)}'.`);
+    }
+    if (!showColumnHeaders && presentation !== "none") throw new Error("Filtering UI requires column headers.");
+    if (filterPresentation === presentation) return;
+    const focusedRowControl = document.activeElement instanceof Element
+      && Boolean(document.activeElement.closest("[data-gethen-filter-row]"));
+    closeFilterPanel();
+    filterPresentation = presentation;
+    headerHeight = columnHeaderHeight + (presentation === "filter-row" ? rowHeight : 0);
+    grid.setAttribute("aria-rowcount", String(rows.length + pinnedBottomRows.length + (showColumnHeaders ? 1 : 0)
+      + (presentation === "filter-row" ? 1 : 0)));
+    spacer.style.height = `${headerHeight + rows.length * rowHeight + pinnedHeight + statusHeight}px`;
+    viewport.style.height = spacer.style.height;
+    render();
+    if (focusedRowControl && presentation !== "filter-row") grid.focus({ preventScroll: true });
   }
 
   grid.addEventListener("scroll", scheduleRender);
@@ -1379,10 +1881,14 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
   window.addEventListener("resize", scheduleRender);
   window.addEventListener("keydown", handleColumnDragKeyDown, true);
   render();
+  if (queryState.sort.length > 0 || queryState.filter.length > 0) void setQueryState(queryState).catch(() => {});
 
   return {
     element: grid,
     destroy() {
+      destroyed = true;
+      queryAbort?.abort();
+      queryEngine?.destroy();
       editorCoordinator.destroy();
       editState = null;
       if (animationFrame !== 0) {
@@ -1415,6 +1921,10 @@ export function mountVirtualDomGrid<TRow extends GridRow>(
     setTheme: (theme) => applyVirtualDomGridTheme(grid, theme),
     setReadOnly,
     setColumnReordering,
+    setSortingMode,
+    setFilterPresentation,
+    getQueryState: () => copyGridQueryState(queryState),
+    setQueryState,
     getLayoutState: () => layoutState,
     applyLayoutState: (state) => setLayoutState(state, "apply"),
     resizeColumn: (columnId, width) => setLayoutState(

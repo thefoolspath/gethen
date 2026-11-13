@@ -14,7 +14,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] }
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(process.env.GETHEN_BROWSER_CHANNEL === "chrome" ? { channel: "chrome" as const } : {})
+      }
     }
   ]
 });

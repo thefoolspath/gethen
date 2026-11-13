@@ -4,12 +4,16 @@ export {
 
 export { resolveAngularGridColumns } from "./gethen-angular-registry.js";
 
+export { GridSortingMode } from "@thefoolspath/gethen-core";
+export type { GridFilterPresentation } from "@thefoolspath/gethen-core";
+
 export type {
   GethenGridCellChange,
   GethenGridEditorStateChange,
   GethenGridHistoryChange,
   GethenGridLayoutChange,
   GethenGridPasteResult,
+  GethenGridQueryChange,
   GethenGridSelection,
   GethenGridSelectionRange
 } from "./gethen-grid.component.js";

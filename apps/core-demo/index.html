@@ -32,13 +32,27 @@
           <div><dt>Editor</dt><dd id="editorStatus">inactive</dd></div>
           <div><dt>Grid engine</dt><dd id="workerStatus">idle</dd></div>
         </dl>
-        <div class="alpha3-controls" aria-label="Alpha 3 controls">
+        <div class="alpha3-controls" aria-label="Demo controls">
           <button id="resizeColumn" type="button">Resize first column</button>
           <button id="reorderColumn" type="button">Move second column first</button>
           <button id="freezePanes" type="button">Freeze 2 x 2</button>
           <button id="undo" type="button">Undo</button>
           <button id="redo" type="button">Redo</button>
           <button id="runWorker" type="button">Run grid engine</button>
+          <a href="?sorting=multiple">Open sorting demo</a>
+          <a href="?sorting=multiple&amp;filter=header-menu">Open header filter demo</a>
+          <a href="?sorting=multiple&amp;filter=filter-row">Open filter row demo</a>
+          <div id="sortingControls" class="sorting-controls" hidden>
+            <label for="sortingMode">Sort mode</label>
+            <select id="sortingMode">
+              <option value="none">None</option>
+              <option value="single">Single</option>
+              <option value="multiple">Multiple</option>
+            </select>
+            <button id="applyMultiSort" type="button">Try multi-sort: Column 3 ↑, Column 6 ↓</button>
+            <button id="applyMultiSortFilter" type="button">Try multi-sort + filter</button>
+            <small>In Multiple mode, click column headers normally. Each new column adds sorting priority; click it again to reverse its direction.</small>
+          </div>
         </div>
       </header>
       <section id="gridHost" class="gridHost" aria-label="Gethen core demo grid"></section>

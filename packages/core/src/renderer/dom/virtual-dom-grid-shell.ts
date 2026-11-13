@@ -1,5 +1,8 @@
 import type { GridRow } from "../../contracts/grid-types.js";
 import type { GridLayoutState } from "../../state/grid-layout.js";
+import type { GridQueryState } from "../../state/grid-query.js";
+import { GridSortingMode } from "../../state/grid-query.js";
+import type { GridFilterPresentation } from "./virtual-dom-grid.js";
 import type { GridColumnView, GridStylingOptions } from "./grid-customization.js";
 import { resolveGridClassNames } from "./grid-customization.js";
 import type { GridStatusBarOptions } from "./grid-shell.js";
@@ -23,13 +26,18 @@ export interface VirtualDomGridShellContext<TRow extends GridRow> {
   readonly rowHeight: number;
   readonly rowNumberWidth: number;
   readonly headerHeight: number;
+  readonly columnHeaderHeight: number;
+  readonly filterPresentation: GridFilterPresentation;
   readonly statusHeight: number;
   readonly pinnedHeight: number;
   readonly showColumnHeaders: boolean;
   readonly showRowNumbers: boolean;
   readonly showStatusBar: boolean;
   readonly columnReordering: boolean;
+  readonly sortingMode: GridSortingMode;
+  readonly queryState: GridQueryState;
   readonly focusedHeaderColumnId: string | undefined;
+  readonly openFilterColumnId: string | undefined;
   readonly draggingColumnId: string | undefined;
   readonly activeHeaderId: string;
   readonly reorderInstructionsId: string;
@@ -67,7 +75,8 @@ export function appendGridRowNumber<TRow extends GridRow>(
   const rowHeader = document.createElement("div");
   const isGroup = "kind" in row && row.kind === "group";
   rowHeader.setAttribute("role", "rowheader");
-  rowHeader.setAttribute("aria-rowindex", String(rowIndex + 1 + (context.showColumnHeaders ? 1 : 0)));
+  rowHeader.setAttribute("aria-rowindex", String(rowIndex + 1 + (context.showColumnHeaders ? 1 : 0)
+    + (context.filterPresentation === "filter-row" ? 1 : 0)));
   rowHeader.setAttribute("aria-colindex", "1");
   rowHeader.textContent = isGroup ? "" : String(rowIndex + 1);
   rowHeader.title = isGroup ? "Group row" : `Row ${rowIndex + 1}`;
@@ -111,6 +120,40 @@ function appendColumnHeaders<TRow extends GridRow>(
     header.dataset.columnIndex = String(columnIndex);
     header.dataset.columnId = column.id;
     header.textContent = column.title;
+    if (context.filterPresentation === "header-menu") {
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.dataset.gethenFilterTrigger = column.id;
+      trigger.setAttribute("aria-label", `Filter ${column.title}`);
+      trigger.setAttribute("aria-haspopup", "dialog");
+      trigger.setAttribute("aria-expanded", String(context.openFilterColumnId === column.id));
+      trigger.textContent = context.queryState.filter.some((item) => item.columnId === column.id) ? "⏷•" : "⏷";
+      Object.assign(trigger.style, { marginLeft: "auto", cursor: "pointer", flexShrink: "0" });
+      header.appendChild(trigger);
+    }
+    if (context.sortingMode !== GridSortingMode.None) {
+      const sortIndex = context.queryState.sort.findIndex((item) => item.columnId === column.id);
+      const sort = context.queryState.sort[sortIndex];
+      header.dataset.gethenSort = "true";
+      header.setAttribute("aria-sort", sortIndex === 0 && sort
+        ? sort.direction === "asc" ? "ascending" : "descending" : "none");
+      const sortInstruction = context.sortingMode === GridSortingMode.Multiple
+        ? "Press Enter to sort. Other columns add sorting priority."
+        : "Press Enter to change sort direction.";
+      header.setAttribute("aria-description", sort
+        ? context.queryState.sort.length > 1
+          ? `Sort priority ${sortIndex + 1} of ${context.queryState.sort.length}. ${sortInstruction}`
+          : `Sorted ${sort.direction === "asc" ? "ascending" : "descending"}. ${sortInstruction}`
+        : sortInstruction);
+      if (sort) {
+        const marker = document.createElement("span");
+        marker.setAttribute("aria-hidden", "true");
+        if (context.queryState.sort.length > 1) marker.dataset.gethenSortPriority = String(sortIndex + 1);
+        marker.textContent = ` ${sort.direction === "asc" ? "▲" : "▼"}${context.queryState.sort.length > 1 ? sortIndex + 1 : ""}`;
+        marker.style.marginLeft = "4px";
+        header.appendChild(marker);
+      }
+    }
     const headerFocused = context.focusedHeaderColumnId === column.id;
     const headerDragging = context.draggingColumnId === column.id;
     if (headerFocused) header.id = context.activeHeaderId;
@@ -131,7 +174,7 @@ function appendColumnHeaders<TRow extends GridRow>(
       left: `${context.rowNumberWidth + columnOffsets[columnIndex]! + (frozenColumn ? context.grid.scrollLeft : 0)}px`,
       top: `${context.grid.scrollTop}px`,
       width: `${layoutColumn.width}px`,
-      height: `${context.headerHeight}px`,
+      height: `${context.columnHeaderHeight}px`,
       display: "flex",
       alignItems: "center",
       overflow: "hidden",
@@ -143,7 +186,8 @@ function appendColumnHeaders<TRow extends GridRow>(
       background: "var(--gethen-header-background, #f3f6f9)",
       color: "var(--gethen-header-text-color, #344054)",
       fontWeight: "650",
-      cursor: context.columnReordering ? (headerDragging ? "grabbing" : "grab") : "default",
+      cursor: context.columnReordering ? (headerDragging ? "grabbing" : "grab")
+        : context.sortingMode !== GridSortingMode.None ? "pointer" : "default",
       touchAction: context.columnReordering ? "pan-y" : "auto",
       userSelect: "none",
       opacity: headerDragging ? "0.55" : "1",
@@ -174,7 +218,7 @@ function appendRowNumberCorner<TRow extends GridRow>(
     left: `${context.grid.scrollLeft}px`,
     top: `${context.grid.scrollTop}px`,
     width: `${context.rowNumberWidth}px`,
-    height: `${context.headerHeight}px`,
+    height: `${context.columnHeaderHeight}px`,
     borderRight: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
     borderBottom: "1px solid var(--gethen-grid-line-color, #d8e0e8)",
     background: "var(--gethen-row-number-background, #eef2f6)",
@@ -216,7 +260,8 @@ function appendPinnedBottomRows<TRow extends GridRow>(
   const baseTop = context.grid.scrollTop
     + Math.max(context.headerHeight, context.grid.clientHeight - context.statusHeight - context.pinnedHeight);
   context.pinnedBottomRows.forEach((row, pinnedIndex) => {
-    const ariaRowIndex = context.rows.length + pinnedIndex + 1 + (context.showColumnHeaders ? 1 : 0);
+    const ariaRowIndex = context.rows.length + pinnedIndex + 1 + (context.showColumnHeaders ? 1 : 0)
+      + (context.filterPresentation === "filter-row" ? 1 : 0);
     if (context.showRowNumbers) {
       const label = document.createElement("div");
       label.setAttribute("role", "rowheader");

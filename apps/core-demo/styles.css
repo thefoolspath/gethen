@@ -36,8 +36,26 @@ body {
   gap: 6px;
 }
 
-.alpha3-controls button {
+.alpha3-controls button,
+.alpha3-controls a {
   min-height: 32px;
+}
+
+.alpha3-controls a {
+  align-content: center;
+}
+
+.sorting-controls:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sorting-controls small {
+  width: 100%;
+  color: #5e6a75;
 }
 
 h1 {
