@@ -14,6 +14,9 @@
       <button id="cycleSortingMode" type="button" (click)="cycleSortingMode()">
         Sort mode: {{ sortingMode() }}
       </button>
+      <button id="cycleFilterPresentation" type="button" (click)="cycleFilterPresentation()">
+        Filter UI: {{ filterPresentation() }}
+      </button>
       <small class="sorting-hint">In Multiple mode, click headers normally. Each new column adds sorting priority; click it again to reverse its direction. <strong id="sortStatus">{{ sortStatus() }}</strong></small>
     }
   </header>
@@ -28,6 +31,7 @@
       [clipboard]="clipboard"
       [columnReordering]="columnReordering()"
       [sortingMode]="sortingMode()"
+      [filterPresentation]="filterPresentation()"
       (selectionChange)="handleSelection($event)"
       (selectionRangeChange)="handleSelectionRange($event)"
       (cellChange)="handleCellChange($event)"

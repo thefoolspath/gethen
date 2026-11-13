@@ -1,8 +1,8 @@
 # Alpha 5 Read-Only Grid Table Execution Plan
 
-Last reviewed: 2026-11-02.
+Last reviewed: 2026-11-11.
 
-Status: In implementation. A5-01 through A5-03 are implemented and locally verified; A5-04 through A5-06 remain open. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
+Status: In implementation. A5-01 through A5-04 are implemented and locally verified; A5-05 and A5-06 remain open. Alpha 3, the Alpha 4 engine selection, and the local grid-shell/visual closure are complete. No package is published.
 
 ## Goal
 
@@ -56,10 +56,10 @@ Deliver `0.0.0-alpha.5` by adding a read-only Grid Table mode to the existing Co
 
 ### A5-04 Configurable Filtering
 
-- [ ] Implement header-menu and filter-row presentations over the same query state.
-- [ ] Provide typed controls for the supported string, number, boolean, date/datetime, and null-aware operators.
-- [ ] Preserve Alpha 4 comparison, case-sensitivity, null, cancellation, progress, and error semantics.
-- [ ] Keep query descriptors transport-neutral and reject unknown column IDs or incompatible filter values before execution.
+- [x] Implement header-menu and filter-row presentations over the same query state.
+- [x] Provide typed controls for the supported string, number, boolean, date/datetime, and null-aware operators.
+- [x] Preserve Alpha 4 comparison, case-sensitivity, null, cancellation, progress, and error semantics.
+- [x] Keep query descriptors transport-neutral and reject unknown column IDs or incompatible filter values before execution.
 
 ### A5-05 Integration And Documentation
 

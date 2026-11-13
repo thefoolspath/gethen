@@ -6,7 +6,7 @@ import {
   GridSortingMode,
   mountVirtualDomGrid
 } from "@thefoolspath/gethen-core";
-import type { GridColumnView, GridQueryState, GridRow } from "@thefoolspath/gethen-core";
+import type { GridColumnView, GridFilterPresentation, GridQueryState, GridRow } from "@thefoolspath/gethen-core";
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
 const searchParams = new URLSearchParams(window.location.search);
@@ -15,6 +15,9 @@ const alpha3DemoEnabled = searchParams.get("alpha3") === "on";
 const asyncEditorDemoEnabled = searchParams.get("asyncEditor") === "on";
 const emptyDemoEnabled = searchParams.get("empty") === "on";
 const sortingParameter = searchParams.get("sorting");
+const filterParameter = searchParams.get("filter");
+const filterPresentation: GridFilterPresentation = filterParameter === "header-menu" || filterParameter === "filter-row"
+  ? filterParameter : "none";
 const sortingDemoEnabled = sortingParameter !== null;
 const normalizedSortingParameter = sortingParameter?.toLowerCase();
 const sortingMode: GridSortingMode = normalizedSortingParameter === "on" || normalizedSortingParameter === "multi"
@@ -140,6 +143,7 @@ const gridApi = mountVirtualDomGrid(requireElement("gridHost"), {
   columns,
   rows: renderedRows,
   sortingMode,
+  filterPresentation,
   pinnedBottomRows: emptyDemoEnabled ? [] : pinnedBottomRows,
   statusBar: { totalRowCount: renderedRows.length },
   ...(customizationEnabled
@@ -233,6 +237,9 @@ window.addEventListener("gethen-demo-set-query-state", (event) => {
   void gridApi.setQueryState((event as CustomEvent<GridQueryState>).detail).catch((error: unknown) => {
     requireElement("workerStatus").textContent = error instanceof Error ? error.message : String(error);
   });
+});
+window.addEventListener("gethen-demo-set-filter-presentation", (event) => {
+  gridApi.setFilterPresentation((event as CustomEvent<GridFilterPresentation>).detail);
 });
 
 requireElement("resizeColumn").addEventListener("click", () => gridApi.resizeColumn("c0", 220));

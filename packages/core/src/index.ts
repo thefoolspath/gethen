@@ -226,6 +226,7 @@ export type {
 } from "./renderer/dom/viewport.js";
 
 export type {
+  GridFilterPresentation,
   VirtualDomGrid,
   VirtualDomGridOptions,
   VirtualDomGridRenderMetrics,

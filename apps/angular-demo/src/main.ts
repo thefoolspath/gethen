@@ -13,12 +13,16 @@ import type {
 import type {
   GridClipboardOptions,
   GridColumnView,
+  GridFilterPresentation,
   GridRow,
   GridStylingOptions
 } from "@thefoolspath/gethen-core";
 import type { CellValue, ColumnId } from "@thefoolspath/gethen-protocol";
 
 const sortingParameter = new URLSearchParams(window.location.search).get("sortingMode");
+const filterParameter = new URLSearchParams(window.location.search).get("filter");
+const initialFilterPresentation: GridFilterPresentation = filterParameter === "header-menu" || filterParameter === "filter-row"
+  ? filterParameter : "none";
 const sortingDemoEnabled = sortingParameter !== null;
 const normalizedSortingParameter = sortingParameter?.toLowerCase();
 const initialSortingMode: GridSortingMode = normalizedSortingParameter === GridSortingMode.Single
@@ -63,6 +67,7 @@ export class DemoAppComponent {
   protected readonly rows = sortingDemoEnabled ? rows.slice(0, 100) : rows;
   protected readonly sortingDemoEnabled = sortingDemoEnabled;
   protected readonly sortingMode = signal<GridSortingMode>(initialSortingMode);
+  protected readonly filterPresentation = signal<GridFilterPresentation>(initialFilterPresentation);
   protected readonly pinnedBottomRows: readonly GridRow[] = [{
     id: "summary",
     cells: { c0: rows.length, c1: "Rows loaded" }
@@ -126,6 +131,11 @@ export class DemoAppComponent {
     this.sortingMode.update((mode) => mode === GridSortingMode.None
       ? GridSortingMode.Single : mode === GridSortingMode.Single
         ? GridSortingMode.Multiple : GridSortingMode.None);
+  }
+
+  protected cycleFilterPresentation(): void {
+    this.filterPresentation.update((presentation) => presentation === "filter-row" ? "header-menu"
+      : presentation === "header-menu" ? "none" : "filter-row");
   }
 }
 

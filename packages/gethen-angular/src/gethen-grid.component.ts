@@ -15,6 +15,7 @@ import type {
   GridColumnView,
   GridClipboardOptions,
   GridEditorSnapshot,
+  GridFilterPresentation,
   GridHistoryEvent,
   GridHistoryOptions,
   GridLayoutEvent,
@@ -73,6 +74,7 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() readOnly = false;
   @Input() columnReordering = true;
   @Input() sortingMode: GridSortingMode = GridSortingMode.None;
+  @Input() filterPresentation: GridFilterPresentation = "none";
   @Input() queryState: GridQueryState | undefined;
   @Input() rendererRegistry: GethenAngularRendererRegistry | undefined;
   @Input() editorRegistry: GethenAngularEditorRegistry | undefined;
@@ -103,11 +105,12 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
       const changedInputs = Object.keys(changes);
       if (this.grid && changedInputs.every(
         (input) => input === "theme" || input === "readOnly" || input === "columnReordering"
-          || input === "sortingMode" || input === "queryState"
+          || input === "sortingMode" || input === "queryState" || input === "filterPresentation"
       )) {
         if (changes["theme"]) this.grid.setTheme(this.theme);
         if (changes["readOnly"]) this.grid.setReadOnly(this.readOnly);
         if (changes["columnReordering"]) this.grid.setColumnReordering(this.columnReordering);
+        if (changes["filterPresentation"]) this.grid.setFilterPresentation(this.filterPresentation);
         if (changes["sortingMode"] || changes["queryState"]) {
           void (async () => {
             if (changes["sortingMode"]) await this.grid?.setSortingMode(this.sortingMode);
@@ -157,6 +160,10 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
     return this.grid?.setQueryState(state) ?? Promise.resolve();
   }
 
+  setFilterPresentation(presentation: GridFilterPresentation): void {
+    this.grid?.setFilterPresentation(presentation);
+  }
+
   private mountGrid(): void {
     const hostElement = this.host?.nativeElement;
 
@@ -190,6 +197,7 @@ export class GethenGridComponent implements AfterViewInit, OnChanges, OnDestroy 
       readOnly: this.readOnly,
       columnReordering: this.columnReordering,
       sortingMode: this.sortingMode,
+      filterPresentation: this.filterPresentation,
       ...(this.queryState ? { queryState: this.queryState } : {}),
       onCellChange: (change) => this.cellChange.emit(change),
       onSelectionChange: (selection) => this.selectionChange.emit(selection),

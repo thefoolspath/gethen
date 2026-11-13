@@ -200,6 +200,114 @@ test("programmatic query state filters rows and updates selection by position", 
   await expect(page.locator("#workerStatus")).toHaveText("ready:");
 });
 
+test("header menu applies a typed filter only after Enter and keeps header sorting separate", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=header-menu");
+  const header = page.locator('[role="columnheader"][data-column-id="c0"]');
+  await header.locator('[data-gethen-filter-trigger]').click();
+  await expect(header.locator('[data-gethen-filter-trigger]')).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("dialog", { name: "Filter Column 1" })).toBeVisible();
+  await expect(header).toHaveAttribute("aria-sort", "none");
+  const panel = page.locator('[data-gethen-filter-panel]');
+  await panel.locator('[data-gethen-filter-operator]').selectOption("greaterThan");
+  await panel.locator('[data-gethen-filter-value]').fill("90");
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "102");
+  await panel.locator('[data-gethen-filter-value]').press("Enter");
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "12");
+  await expect(header).toHaveAttribute("aria-sort", "none");
+  await header.locator('[data-gethen-filter-trigger]').click();
+  await panel.locator('[data-gethen-filter-clear]').click();
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "102");
+  await expect(header.locator('[data-gethen-filter-trigger]')).toHaveAttribute("aria-expanded", "false");
+});
+
+test("filter menu keeps keyboard focus when its operator changes", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=header-menu");
+  await page.locator('[role="columnheader"][data-column-id="c0"] [data-gethen-filter-trigger]').focus();
+  await page.keyboard.press("Enter");
+  const operator = page.locator('[data-gethen-filter-panel] [data-gethen-filter-operator]');
+  await expect(operator).toBeFocused();
+  await operator.selectOption("isNull");
+  await expect(operator).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator('[data-gethen-filter-panel] [data-gethen-filter-apply]')).toBeFocused();
+});
+
+test("text-column filter menu accepts date and datetime drafts", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=header-menu");
+  const trigger = page.locator('[role="columnheader"][data-column-id="c1"] [data-gethen-filter-trigger]');
+  await trigger.click();
+  const panel = page.locator('[data-gethen-filter-panel]');
+  await panel.locator('[data-gethen-filter-type]').selectOption("date");
+  await expect(panel.locator('[data-gethen-filter-value]')).toHaveAttribute("type", "date");
+  await panel.locator('[data-gethen-filter-value]').fill("2026-11-11");
+  await panel.locator('[data-gethen-filter-apply]').click();
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "2");
+  await trigger.click();
+  await panel.locator('[data-gethen-filter-type]').selectOption("datetime");
+  await expect(panel.locator('[data-gethen-filter-value]')).toHaveAttribute("type", "datetime-local");
+  await panel.locator('[data-gethen-filter-value]').fill("2026-11-11T10:30");
+  await panel.locator('[data-gethen-filter-value]').press("Enter");
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "2");
+});
+
+test("filter row applies on Enter, shares query state, and switches presentation without remounting", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=filter-row");
+  const grid = page.getByRole("grid");
+  const identity = await grid.evaluate((element) => { (window as any).gridIdentity = element; return element.dataset.gethenGridInstance; });
+  const value = page.locator('[data-gethen-filter-row] [data-column-id="c0"] [data-gethen-filter-value]');
+  await value.fill("90");
+  await expect(grid).toHaveAttribute("aria-rowcount", "103");
+  await value.press("Enter");
+  await expect(grid).toHaveAttribute("aria-rowcount", "4");
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("gethen-demo-set-filter-presentation", { detail: "header-menu" })));
+  expect(await grid.evaluate((element) => element === (window as any).gridIdentity)).toBe(true);
+  await expect(grid).toHaveAttribute("aria-rowcount", "3");
+  await expect(grid).toHaveAttribute("data-gethen-grid-instance", identity);
+  await expect(page.locator('[role="columnheader"][data-column-id="c0"] [data-gethen-filter-trigger]')).toBeVisible();
+});
+
+test("filter controls handle boolean and null conditions without changing sort", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=header-menu");
+  const booleanHeader = page.locator('[role="columnheader"][data-column-id="c2"]');
+  await booleanHeader.locator('[data-gethen-filter-trigger]').click();
+  const panel = page.locator('[data-gethen-filter-panel]');
+  await panel.locator('[data-gethen-filter-value]').selectOption("false");
+  await panel.locator('[data-gethen-filter-apply]').click();
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "52");
+  await expect(booleanHeader).toHaveAttribute("aria-sort", "none");
+  const textHeader = page.locator('[role="columnheader"][data-column-id="c1"]');
+  await textHeader.locator('[data-gethen-filter-trigger]').click();
+  await panel.locator('[data-gethen-filter-operator]').selectOption("isNull");
+  await panel.locator('[data-gethen-filter-apply]').click();
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "2");
+  await textHeader.locator('[data-gethen-filter-trigger]').click();
+  await panel.locator('[data-gethen-filter-clear]').click();
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "52");
+});
+
+test("invalid programmatic filter leaves rows unchanged", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=filter-row");
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent("gethen-demo-set-query-state", {
+    detail: { sort: [], filter: [{ columnId: "c0", operator: "contains", value: "9" }] }
+  })));
+  await expect(page.locator("#workerStatus")).toContainText("Invalid filter operator");
+  await expect(page.getByRole("grid")).toHaveAttribute("aria-rowcount", "103");
+});
+
+test("filter row keeps frozen geometry and body ARIA indices", async ({ page }) => {
+  await page.goto("/apps/core-demo/index.html?sorting=multiple&filter=filter-row");
+  await page.locator("#freezePanes").click();
+  const grid = page.getByRole("grid");
+  await grid.evaluate((element) => { element.scrollTop = 600; element.scrollLeft = 350; });
+  const header = page.locator('[role="columnheader"][data-column-id="c0"]');
+  const filterCell = page.locator('[data-gethen-filter-row] [data-column-id="c0"]');
+  await expect(filterCell).toHaveAttribute("aria-rowindex", "2");
+  await expect(filterCell).toHaveAttribute("aria-colindex", "2");
+  await expect(dataCell(page, 0, 0)).toHaveAttribute("aria-rowindex", "3");
+  const lefts = await Promise.all([header, filterCell].map((locator) => locator.evaluate((element) => element.getBoundingClientRect().left)));
+  expect(Math.abs(lefts[0]! - lefts[1]!)).toBeLessThan(2);
+});
+
 test("Core demo applies multi-sort and filter through one query state", async ({ page }) => {
   await page.goto("/apps/core-demo/index.html?sorting=multiple");
   await page.evaluate(() => window.dispatchEvent(new CustomEvent("gethen-demo-set-query-state", {
@@ -884,6 +992,20 @@ test("Angular sorting modes expose single and multi priorities without remountin
   await expect(dataCell(page, 0, 0)).toHaveText("1");
   await page.reload();
   await expect(page.locator('[role="columnheader"][data-column-id="c0"]')).not.toHaveAttribute("aria-sort", /.+/);
+});
+
+test("Angular changes filter presentations without remounting the grid", async ({ page }) => {
+  await page.goto("/apps/angular-demo/index.html?sortingMode=multiple&filter=filter-row");
+  const grid = page.getByRole("grid");
+  await grid.evaluate((element) => { element.dataset.mountIdentity = "preserved"; });
+  const value = page.locator('[data-gethen-filter-row] [data-column-id="c0"] [data-gethen-filter-value]');
+  await value.fill("90");
+  await value.press("Enter");
+  await expect(grid).toHaveAttribute("aria-rowcount", "4");
+  await page.locator("#cycleFilterPresentation").click();
+  await expect(grid).toHaveAttribute("data-mount-identity", "preserved");
+  await expect(grid).toHaveAttribute("aria-rowcount", "3");
+  await expect(page.locator('[role="columnheader"][data-column-id="c0"] [data-gethen-filter-trigger]')).toBeVisible();
 });
 
 test("Angular demo accepts enum-cased Single sorting URL", async ({ page }) => {

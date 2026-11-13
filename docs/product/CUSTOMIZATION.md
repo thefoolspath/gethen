@@ -168,7 +168,7 @@ Column reordering is enabled by default through `columnReordering` and can be ch
 
 Pointer input uses a 6-pixel drag threshold, before/after target halves, drag feedback, and horizontal edge auto-scroll. Mouse, touch, and pen share Pointer Events; vertical touch movement remains available for scrolling. `Escape`, pointer cancellation, release outside a valid target, and same-position drops cancel without a layout event. An active cell editor blocks reordering without discarding its draft.
 
-The grid remains one page tab stop. From the first body row, unmodified `ArrowUp` moves the active descendant to that column's header. Header `ArrowLeft`/`ArrowRight` and `Home`/`End` navigate headers, `ArrowDown` returns to the body, and `Alt+Shift+ArrowLeft`/`Alt+Shift+ArrowRight` move the focused column. Focus, selection endpoints, widths, classes, and layout state follow stable column IDs.
+Body and header navigation use one grid tab stop. When filtering UI is enabled, its buttons and value controls add normal tab stops. From the first body row, unmodified `ArrowUp` moves the active descendant to that column's header. Header `ArrowLeft`/`ArrowRight` and `Home`/`End` navigate headers, `ArrowDown` returns to the body, and `Alt+Shift+ArrowLeft`/`Alt+Shift+ArrowRight` move the focused column. Focus, selection endpoints, widths, classes, and layout state follow stable column IDs.
 
 Pointer and keyboard interaction cannot cross the boundary between frozen and non-frozen columns. Programmatic reorder calls may cross it so hosts can deliberately reconfigure layout. Current interaction labels are built-in English text and A5-02 covers left-to-right layout; localization and RTL reordering remain deferred.
 
@@ -186,7 +186,7 @@ Angular re-exports `GridSortingMode` and accepts `[sortingMode]="GridSortingMode
 
 Core accepts an initial `queryState` and exposes `getQueryState()`, `setQueryState(state)`, `setSortingMode(mode)`, and `onQueryChange`. Angular accepts `[queryState]` and `[sortingMode]`, emits `(queryChange)`, and exposes `getQueryState()` and `setQueryState(state)`. A query state contains serializable `sort` and `filter` descriptor arrays. The selected TypeScript Worker applies both; the grid discards stale responses. Sorting retains both scroll offsets and the active cell's visual row and column index. `selectionChange` reports the row ID now at that position. A filter that reduces the row count may clamp the vertical scroll offset or active row index.
 
-Switching to `none` clears interactive header sorting. Programmatic sort descriptors are rejected in `none`, and multiple descriptors are rejected in `single`. Query state is not saved in storage; a refreshed page starts from the developer's current mode and initial query state. The filter controls planned for A5-04 are not yet available, but developers can test filtering with `setQueryState`:
+Switching to `none` clears interactive header sorting. Programmatic sort descriptors are rejected in `none`, and multiple descriptors are rejected in `single`. Query state is not saved in storage; a refreshed page starts from the developer's current mode and initial query state. Developers can also set filters directly:
 
 ```ts
 await grid.setQueryState({
@@ -197,6 +197,18 @@ await grid.setQueryState({
   filter: [{ columnId: "c0", operator: "greaterThan", value: 50 }]
 });
 ```
+
+## Alpha 5 filtering controls
+
+Core accepts `filterPresentation: "none" | "header-menu" | "filter-row"` and exposes `setFilterPresentation(mode)`. Angular accepts `[filterPresentation]` and exposes the same setter. The default is `none`. Switching presentations keeps the mounted grid and its `GridQueryState`; neither presentation changes the descriptor format. A visible column header is required for either filtering UI.
+
+The header menu has a separate button beside the column title. The filter row places an input and an options button beneath each visible header. Both use the same operator and value controls. Enter in the value field or the menu's Apply button submits the condition. Editing a draft does not start a Worker query. Clear removes conditions for that column. The controls expose one condition per column; `setQueryState()` can still supply multiple conditions for one column. Applying a UI condition replaces that column's conditions and retains all other columns' conditions. There is no built-in OR editor.
+
+Text columns offer text, date, and datetime inputs. Number and boolean columns use their declared types. Text offers equality, contains, starts-with, and null checks. Number and date offer equality, ordering, and null checks. Boolean offers equality and null checks. Programmatic `in` filters remain available but have no dedicated UI editor. Date and datetime values remain strings in the serializable descriptor and use Alpha 4 date comparison semantics. The text case-sensitivity option affects `contains` and `startsWith`; Alpha 4 equality comparison remains unchanged.
+
+`setQueryState()` rejects unknown column IDs, unsupported operators, mismatched scalar or array values, and invalid date or numeric input before sending work to the Worker. Filter results and failures arrive through the existing `onQueryChange` or Angular `(queryChange)` event. Keyboard focus can enter the filter row or menu controls; Escape closes the menu. The filter row adds one ARIA row before the body, including when frozen panes are active.
+
+Open the Core examples with `/apps/core-demo/index.html?sorting=multiple&filter=header-menu` or `filter=filter-row`. The Angular demo accepts `/apps/angular-demo/index.html?sortingMode=multiple&filter=filter-row`; its Filter UI button cycles the presentations.
 
 In the Core demo, use **Open sorting demo** or open `/apps/core-demo/index.html?sorting=multiple`. The demo URL also accepts `sorting=single` or `sorting=none`; mode values are case-insensitive, so `sorting=Single` works too. The visible mode selector and **Try multi-sort** buttons apply Column 3 ascending plus Column 6 descending, with an optional filter. For manual sorting, click one header, then click another twice to make it descending. The same combined query can be submitted from DevTools with `window.dispatchEvent(new CustomEvent("gethen-demo-set-query-state", { detail: { sort: [{ columnId: "c2", direction: "asc" }, { columnId: "c5", direction: "desc" }], filter: [{ columnId: "c0", operator: "greaterThan", value: 50 }] } }))`. This groups false/true values first, then orders each group by Column 6. The Angular demo uses `/apps/angular-demo/index.html?sortingMode=multiple` and likewise accepts case-insensitive mode values; its `Sort mode` button cycles the three modes and the query status shows the active descriptors.
 

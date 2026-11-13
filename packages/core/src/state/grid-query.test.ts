@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { GridSortingMode, nextHeaderSort, normalizeGridQueryState } from "./grid-query.js";
+import { GridSortingMode, nextHeaderSort, normalizeGridQueryState, parseGridFilterDraft, replaceColumnFilter } from "./grid-query.js";
 
 const columns = [
   { id: "name", dataType: "text" },
@@ -54,5 +54,46 @@ describe("Grid query state", () => {
     expect(() => normalizeGridQueryState({ sort: [
       { columnId: "score", direction: "asc" }, { columnId: "score", direction: "desc" }
     ], filter: [] }, columns)).toThrow("Duplicate sort column");
+  });
+
+  it("rejects invalid filter operators and values before execution", () => {
+    expect(() => normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "score", operator: "contains", value: "2" }
+    ] }, columns)).toThrow("Invalid filter operator");
+    expect(() => normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "score", operator: "greaterThan", value: "2" }
+    ] }, columns)).toThrow("Invalid filter value");
+    expect(() => normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "hidden", operator: "equals", value: "true" }
+    ] }, columns)).toThrow("Invalid filter value");
+    expect(() => normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "name", operator: "isNull", value: "x" }
+    ] }, columns)).toThrow("does not accept a value");
+    expect(normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "name", operator: "equals", value: null }
+    ] }, columns).filter[0]?.value).toBeNull();
+    expect(() => normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "name", operator: "equals", value: "2026-02-30T10:00", comparisonType: "date" }
+    ] }, columns)).toThrow("Invalid filter value");
+  });
+
+  it("parses typed UI drafts and replaces only one column's filters", () => {
+    const number = parseGridFilterDraft("score", "greaterThan", "42", "number", false);
+    const bool = parseGridFilterDraft("hidden", "equals", "false", "boolean", false);
+    const date = parseGridFilterDraft("name", "equals", "2026-11-11", "date", false);
+    expect(number.value).toBe(42);
+    expect(bool.value).toBe(false);
+    expect(date.value).toBe("2026-11-11");
+    expect(() => parseGridFilterDraft("score", "equals", "oops", "number", false)).toThrow("Invalid number");
+    expect(() => parseGridFilterDraft("name", "equals", "2026-99-99", "date", false)).toThrow("Invalid date");
+    expect(() => parseGridFilterDraft("name", "equals", "2026-02-30", "date", false)).toThrow("Invalid date");
+    expect(() => parseGridFilterDraft("name", "equals", "2026-02-30T10:00", "date", false)).toThrow("Invalid date");
+    const state = normalizeGridQueryState({ sort: [], filter: [
+      { columnId: "name", operator: "contains", value: "A" },
+      { columnId: "score", operator: "lessThan", value: 50 }
+    ] }, columns);
+    expect(replaceColumnFilter(state, "score", number).filter).toEqual([
+      { columnId: "name", operator: "contains", value: "A", comparisonType: "text" }, number
+    ]);
   });
 });

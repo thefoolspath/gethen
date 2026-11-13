@@ -46,6 +46,8 @@ Use more than one run. Do not rely on arithmetic mean alone.
 
 The 1,000,000-row primary workload completed but missed responsiveness/cancellation thresholds. The complete 500,000-row fallback gate passed for TypeScript Worker, which is the selected production engine. Rust/WASM remains an internal oracle. See [../research/findings/2026-09-08-alpha4-engine-selection.md](../research/findings/2026-09-08-alpha4-engine-selection.md).
 
+The local Alpha 5 filter measurement is recorded in [ALPHA_5_FILTER_LOCAL_BENCHMARK.md](ALPHA_5_FILTER_LOCAL_BENCHMARK.md). It is an engine-only A5-04 check and does not replace the A5-06 interaction and memory gates.
+
 ## Verified Alpha 2 Commands
 
 - `node benchmarks/typescript-reference/alpha2-customization-clipboard.mjs`

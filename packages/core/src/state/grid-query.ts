@@ -1,5 +1,5 @@
 import type { GridColumn } from "@thefoolspath/gethen-protocol";
-import type { GridFilterDescriptor, GridSortDescriptor } from "../shaping/grid-data-shaping.js";
+import type { GridComparisonType, GridFilterDescriptor, GridFilterOperator, GridSortDescriptor } from "../shaping/grid-data-shaping.js";
 
 /** Portable query intent shared by header sorting and the future filter presentations. */
 export interface GridQueryState {
@@ -22,6 +22,71 @@ export interface GridQueryEvent {
 }
 
 type QueryColumn = Pick<GridColumn, "id" | "dataType">;
+
+const textOperators = new Set<GridFilterOperator>([
+  "equals", "notEquals", "contains", "startsWith", "in", "isNull", "isNotNull"
+]);
+const orderedOperators = new Set<GridFilterOperator>([
+  "equals", "notEquals", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual",
+  "in", "isNull", "isNotNull"
+]);
+const booleanOperators = new Set<GridFilterOperator>(["equals", "notEquals", "in", "isNull", "isNotNull"]);
+
+export function getGridFilterOperators(type: GridComparisonType): readonly GridFilterOperator[] {
+  const allowed = type === "text" ? textOperators : type === "boolean" ? booleanOperators : orderedOperators;
+  return [...allowed];
+}
+
+function isValidFilterValue(value: unknown, type: GridComparisonType): boolean {
+  if (value === null) return true;
+  if (type === "number") return typeof value === "number" && Number.isFinite(value);
+  if (type === "boolean") return typeof value === "boolean";
+  if (type === "date") {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?$/.test(value)
+      || Number.isNaN(Date.parse(value))) return false;
+    const date = value.slice(0, 10);
+    return new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date;
+  }
+  return typeof value === "string";
+}
+
+export function parseGridFilterDraft(
+  columnId: string,
+  operator: GridFilterOperator,
+  rawValue: string,
+  comparisonType: GridComparisonType,
+  caseSensitive: boolean
+): GridFilterDescriptor {
+  if (operator === "isNull" || operator === "isNotNull") {
+    return { columnId, operator, comparisonType };
+  }
+  let value: string | number | boolean;
+  if (comparisonType === "number") {
+    value = Number(rawValue);
+    if (rawValue.trim() === "" || !Number.isFinite(value)) throw new Error("Invalid number filter value.");
+  } else if (comparisonType === "boolean") {
+    if (rawValue !== "true" && rawValue !== "false") throw new Error("Invalid boolean filter value.");
+    value = rawValue === "true";
+  } else {
+    value = rawValue;
+    if (comparisonType === "date" && !isValidFilterValue(value, "date")) throw new Error("Invalid date filter value.");
+  }
+  return {
+    columnId, operator, value, comparisonType,
+    ...(comparisonType === "text" ? { caseSensitive } : {})
+  };
+}
+
+export function replaceColumnFilter(
+  state: GridQueryState,
+  columnId: string,
+  descriptor?: GridFilterDescriptor
+): GridQueryState {
+  return {
+    sort: state.sort,
+    filter: [...state.filter.filter((filter) => filter.columnId !== columnId), ...(descriptor ? [descriptor] : [])]
+  };
+}
 
 export function copyGridQueryState(state: GridQueryState): GridQueryState {
   return {
@@ -64,6 +129,20 @@ export function normalizeGridQueryState(
     const comparisonType = descriptor.comparisonType ?? column.dataType;
     if (!["text", "number", "boolean", "date", "json"].includes(comparisonType)) {
       throw new Error(`Invalid comparison type for '${descriptor.columnId}'.`);
+    }
+    if (!getGridFilterOperators(comparisonType).includes(descriptor.operator)) {
+      throw new Error(`Invalid filter operator for '${descriptor.columnId}'.`);
+    }
+    if (descriptor.operator === "isNull" || descriptor.operator === "isNotNull") {
+      if (descriptor.value !== undefined) throw new Error(`Filter '${descriptor.operator}' does not accept a value.`);
+    } else if (descriptor.operator === "in") {
+      if (!Array.isArray(descriptor.value) || descriptor.value.length === 0
+        || descriptor.value.some((value) => !isValidFilterValue(value, comparisonType))) {
+        throw new Error(`Invalid filter value for '${descriptor.columnId}'.`);
+      }
+    } else if (!isValidFilterValue(descriptor.value, comparisonType)
+      || (descriptor.value === null && descriptor.operator !== "equals" && descriptor.operator !== "notEquals")) {
+      throw new Error(`Invalid filter value for '${descriptor.columnId}'.`);
     }
     return {
       ...descriptor,
